@@ -1,12 +1,12 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,8 +18,8 @@
 @_implementationOnly import Glibc
 #endif
 
-/// A collection of HTTP fields. It is used in `HTTPRequest` and `HTTPResponse`, and also used for
-/// HTTP trailer fields.
+/// A collection of HTTP fields. It is used in `HTTPRequest` and `HTTPResponse`, and can also be
+/// used as HTTP trailer fields.
 ///
 /// HTTP fields are an ordered list of name-value pairs. Each field is represented as an instance
 /// of `HTTPField` struct. `HTTPFields` also offers conveniences to look up fields by their names.
@@ -30,48 +30,48 @@ public struct HTTPFields: Sendable, Hashable {
     private final class _Storage: @unchecked Sendable, Hashable {
         var fields: [(HTTPField, UInt16)] = []
         var index: [String: UInt16]? = [:]
-#if canImport(os.lock)
+        #if canImport(os.lock)
         let lock = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
-#else
+        #else
         let lock = UnsafeMutablePointer<pthread_mutex_t>.allocate(capacity: 1)
-#endif
+        #endif
 
         init() {
-#if canImport(os.lock)
-            lock.initialize(to: os_unfair_lock())
-#else
+            #if canImport(os.lock)
+            self.lock.initialize(to: os_unfair_lock())
+            #else
             let err = pthread_mutex_init(lock, nil)
             precondition(err == 0, "pthread_mutex_init failed with error \(err)")
-#endif
+            #endif
         }
 
         deinit {
-#if !canImport(os.lock)
+            #if !canImport(os.lock)
             let err = pthread_mutex_destroy(lock)
             precondition(err == 0, "pthread_mutex_destroy failed with error \(err)")
-#endif
+            #endif
             lock.deallocate()
         }
 
         var ensureIndex: [String: UInt16] {
-#if canImport(os.lock)
-            os_unfair_lock_lock(lock)
+            #if canImport(os.lock)
+            os_unfair_lock_lock(self.lock)
             defer { os_unfair_lock_unlock(lock) }
-#else
+            #else
             let err = pthread_mutex_lock(lock)
             precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
             defer {
                 let err = pthread_mutex_unlock(lock)
                 precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
             }
-#endif
-            if let index = index {
+            #endif
+            if let index = self.index {
                 return index
             }
             var newIndex = [String: UInt16]()
-            for i in fields.indices.reversed() {
-                let name = fields[i].0.name.canonicalName
-                fields[i].1 = newIndex[name] ?? .max
+            for i in self.fields.indices.reversed() {
+                let name = self.fields[i].0.name.canonicalName
+                self.fields[i].1 = newIndex[name] ?? .max
                 newIndex[name] = UInt16(i)
             }
             index = newIndex
@@ -80,29 +80,29 @@ public struct HTTPFields: Sendable, Hashable {
 
         func copy() -> _Storage {
             let newStorage = _Storage()
-            newStorage.fields = fields
-#if canImport(os.lock)
-            os_unfair_lock_lock(lock)
-#else
+            newStorage.fields = self.fields
+            #if canImport(os.lock)
+            os_unfair_lock_lock(self.lock)
+            #else
             do {
                 let err = pthread_mutex_lock(lock)
                 precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
             }
-#endif
-            newStorage.index = index
-#if canImport(os.lock)
-            os_unfair_lock_unlock(lock)
-#else
+            #endif
+            newStorage.index = self.index
+            #if canImport(os.lock)
+            os_unfair_lock_unlock(self.lock)
+            #else
             do {
                 let err = pthread_mutex_unlock(lock)
                 precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
             }
-#endif
+            #endif
             return newStorage
         }
 
         func hash(into hasher: inout Hasher) {
-            for (field, _) in fields {
+            for (field, _) in self.fields {
                 hasher.combine(field)
             }
         }
@@ -115,28 +115,24 @@ public struct HTTPFields: Sendable, Hashable {
             let name = field.name.canonicalName
             if var index = index?[name] {
                 while true {
-                    let next = fields[Int(index)].1
+                    let next = self.fields[Int(index)].1
                     if next == .max { break }
                     index = next
                 }
-                fields[Int(index)].1 = UInt16(fields.count)
+                self.fields[Int(index)].1 = UInt16(self.fields.count)
             } else {
-                index?[name] = UInt16(fields.count)
+                index?[name] = UInt16(self.fields.count)
             }
-            fields.append((field, .max))
+            self.fields.append((field, .max))
         }
     }
 
     private var _storage = _Storage()
 
     /// Create an empty list of HTTP fields
-    public init() {
-    }
+    public init() {}
 
     /// Access the field value string by name.
-    ///
-    /// If multiple fields with the same name exist, they are concatenated with commas (or
-    /// semicolons in the case of the "Cookie" header field).
     ///
     /// Example:
     /// ```swift
@@ -146,6 +142,9 @@ public struct HTTPFields: Sendable, Hashable {
     /// // Access a header field value from the response.
     /// let contentTypeValue = response.headerFields[.contentType]
     /// ```
+    ///
+    /// If multiple fields with the same name exist, they are concatenated with commas (or
+    /// semicolons in the case of the "Cookie" header field).
     ///
     /// When setting a "Cookie" header field value, it is split into multiple "Cookie" fields by
     /// semicolon.
@@ -164,7 +163,7 @@ public struct HTTPFields: Sendable, Hashable {
                 if #available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *),
                    name == .cookie {
                     self[fields: name] = newValue.split(separator: "; ", omittingEmptySubsequences: false).map {
-                        HTTPField(name: name, value: $0)
+                        HTTPField(name: name, value: String($0))
                     }
                 } else {
                     self[raw: name] = [newValue]
@@ -189,35 +188,35 @@ public struct HTTPFields: Sendable, Hashable {
     public subscript(fields name: HTTPField.Name) -> [HTTPField] {
         get {
             var fields = [HTTPField]()
-            var index = _storage.ensureIndex[name.canonicalName] ?? .max
+            var index = self._storage.ensureIndex[name.canonicalName] ?? .max
             while index != .max {
-                let (field, next) = _storage.fields[Int(index)]
+                let (field, next) = self._storage.fields[Int(index)]
                 fields.append(field)
                 index = next
             }
             return fields
         }
         set {
-            if !isKnownUniquelyReferenced(&_storage) {
-                _storage = _storage.copy()
+            if !isKnownUniquelyReferenced(&self._storage) {
+                self._storage = self._storage.copy()
             }
-            var existingIndex = _storage.ensureIndex[name.canonicalName] ?? .max
+            var existingIndex = self._storage.ensureIndex[name.canonicalName] ?? .max
             var newFieldIterator = newValue.makeIterator()
             var toDelete = [Int]()
             while existingIndex != .max {
                 if let field = newFieldIterator.next() {
-                    _storage.fields[Int(existingIndex)].0 = field
+                    self._storage.fields[Int(existingIndex)].0 = field
                 } else {
                     toDelete.append(Int(existingIndex))
                 }
-                existingIndex = _storage.fields[Int(existingIndex)].1
+                existingIndex = self._storage.fields[Int(existingIndex)].1
             }
             if !toDelete.isEmpty {
-                _storage.fields.remove(at: toDelete)
-                _storage.index = nil
+                self._storage.fields.remove(at: toDelete)
+                self._storage.index = nil
             }
             while let field = newFieldIterator.next() {
-                _storage.append(field: field)
+                self._storage.append(field: field)
             }
         }
     }
@@ -226,14 +225,14 @@ public struct HTTPFields: Sendable, Hashable {
     /// - Parameter name: The field name.
     /// - Returns: Whether a field exists.
     public func contains(_ name: HTTPField.Name) -> Bool {
-        _storage.ensureIndex[name.canonicalName] != nil
+        self._storage.ensureIndex[name.canonicalName] != nil
     }
 }
 
 extension HTTPFields: ExpressibleByDictionaryLiteral {
     public init(dictionaryLiteral elements: (HTTPField.Name, String)...) {
         for (name, value) in elements {
-            _storage.append(field: HTTPField(name: name, value: value))
+            self._storage.append(field: HTTPField(name: name, value: value))
         }
     }
 }
@@ -243,73 +242,73 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
     public typealias Index = Int
 
     public var startIndex: Int {
-        _storage.fields.startIndex
+        self._storage.fields.startIndex
     }
 
     public var endIndex: Int {
-        _storage.fields.endIndex
+        self._storage.fields.endIndex
     }
 
     public var isEmpty: Bool {
-        _storage.fields.isEmpty
+        self._storage.fields.isEmpty
     }
 
     public subscript(position: Int) -> HTTPField {
         get {
-            guard position >= self.startIndex && position < self.endIndex else {
+            guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("getter position: \(position) out of range in HTTPFields")
             }
-            return _storage.fields[position].0
+            return self._storage.fields[position].0
         }
         set {
-            guard position >= self.startIndex && position < self.endIndex else {
+            guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("setter position: \(position) out of range in HTTPFields")
             }
-            if _storage.fields[position].0 == newValue {
+            if self._storage.fields[position].0 == newValue {
                 return
             }
-            if !isKnownUniquelyReferenced(&_storage) {
-                _storage = _storage.copy()
+            if !isKnownUniquelyReferenced(&self._storage) {
+                self._storage = self._storage.copy()
             }
-            if newValue.name != _storage.fields[position].0.name {
-                _storage.index = nil
+            if newValue.name != self._storage.fields[position].0.name {
+                self._storage.index = nil
             }
-            _storage.fields[position].0 = newValue
+            self._storage.fields[position].0 = newValue
         }
     }
 
     public mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C) where C: Collection, Element == C.Element {
-        if !isKnownUniquelyReferenced(&_storage) {
-            _storage = _storage.copy()
+        if !isKnownUniquelyReferenced(&self._storage) {
+            self._storage = self._storage.copy()
         }
         if subrange.startIndex == count {
             for field in newElements {
-                _storage.append(field: field)
+                self._storage.append(field: field)
             }
         } else {
-            _storage.index = nil
-            _storage.fields.replaceSubrange(subrange, with: newElements.lazy.map { ($0, 0) })
+            self._storage.index = nil
+            self._storage.fields.replaceSubrange(subrange, with: newElements.lazy.map { ($0, 0) })
         }
     }
 
     public mutating func reserveCapacity(_ n: Int) {
-        if !isKnownUniquelyReferenced(&_storage) {
-            _storage = _storage.copy()
+        if !isKnownUniquelyReferenced(&self._storage) {
+            self._storage = self._storage.copy()
         }
-        _storage.index?.reserveCapacity(n)
-        _storage.fields.reserveCapacity(n)
+        self._storage.index?.reserveCapacity(n)
+        self._storage.fields.reserveCapacity(n)
     }
 }
 
 extension HTTPFields: CustomDebugStringConvertible {
     public var debugDescription: String {
-        _storage.fields.description
+        self._storage.fields.description
     }
 }
 
 extension Array {
     // `removalIndices` must be ordered.
-    mutating func remove<S: Sequence>(at removalIndices: S) where S.Element == Index {
+    mutating func remove(at removalIndices: some Sequence<Index>) {
         var offset = 0
         var iterator = removalIndices.makeIterator()
         var nextToRemoveOptional = iterator.next()

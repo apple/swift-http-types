@@ -1,42 +1,44 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
-/// HTTP request message consists of the ":status" pseudo header field, an optional reason phrase,
-/// and header fields.
+/// An HTTP response message consisting of the ":status" pseudo header field and header fields.
 ///
 /// Conveniences are provided to access the status code and its reason phrase.
 public struct HTTPResponse: Sendable, Hashable {
-    /// Status consists of a 3-digit status code and a reason phrase. The reason phrase is ignored
-    /// by modern HTTP versions.
+    /// The response status consisting of a 3-digit status code and a reason phrase. The reason
+    /// phrase is ignored by modern HTTP versions.
     public struct Status: Hashable, ExpressibleByIntegerLiteral, CustomStringConvertible {
         /// The 3-digit status code.
         public let code: Int
-        /// The optional reason phrase (ISOLatin1 encoded).
-        public let reasonPhrase: String?
+        /// The reason phrase.
+        ///
+        /// ISO Latin 1 encoding should be used to serialize and deserialize this string.
+        public let reasonPhrase: String
 
         /// Create a custom status from a code and a reason phrase.
         /// - Parameters:
         ///   - code: The status code.
-        ///   - reasonPhrase: The optional reason phrase. Invalid characters are converted into
-        ///                   whitespace characters.
-        public init(code: Int, reasonPhrase: String? = nil) {
-            precondition((0...999).contains(code), "Invalid status code")
+        ///   - reasonPhrase: The optional reason phrase. Invalid characters, including any
+        ///                   characters not representable in ISO Latin 1 encoding, are converted
+        ///                   into space characters.
+        public init(code: Int, reasonPhrase: String = "") {
+            precondition((0 ... 999).contains(code), "Invalid status code")
             self.code = code
-            self.reasonPhrase = reasonPhrase.map(Self.legalizingReasonPhrase)
+            self.reasonPhrase = Self.legalizingReasonPhrase(reasonPhrase)
         }
 
-        fileprivate init(uncheckedCode: Int, reasonPhrase: String?) {
+        fileprivate init(uncheckedCode: Int, reasonPhrase: String) {
             self.code = uncheckedCode
             self.reasonPhrase = reasonPhrase
         }
@@ -44,58 +46,67 @@ public struct HTTPResponse: Sendable, Hashable {
         /// Create a custom status from an integer literal.
         /// - Parameter value: The status code.
         public init(integerLiteral value: Int) {
-            precondition((0...999).contains(value), "Invalid status code")
-            code = value
-            reasonPhrase = nil
+            precondition((0 ... 999).contains(value), "Invalid status code")
+            self.code = value
+            self.reasonPhrase = ""
         }
 
-        /// The status code is informational (1xx) and the response is not final.
-        public var isInformational: Bool {
-            (100...199).contains(code)
+        /// The first digit of the status code defines the kind of response.
+        @frozen public enum Kind {
+            /// The status code is outside the range of 100...599.
+            case invalid
+            /// The status code is informational (1xx) and the response is not final.
+            case informational
+            /// The status code is successful (2xx).
+            case successful
+            /// The status code is a redirection (3xx).
+            case redirection
+            /// The status code is a client error (4xx).
+            case clientError
+            /// The status code is a server error (5xx).
+            case serverError
         }
 
-        /// The status code is successful (2xx).
-        public var isSuccessful: Bool {
-            (200...299).contains(code)
-        }
-
-        /// The status code is a redirection (3xx).
-        public var isRedirection: Bool {
-            (300...399).contains(code)
-        }
-
-        /// The status code is a client error (4xx).
-        public var isClientError: Bool {
-            (400...499).contains(code)
-        }
-
-        /// The status code is a server error (5xx).
-        public var isServerError: Bool {
-            (500...599).contains(code)
+        /// The kind of the status code.
+        public var kind: Kind {
+            switch self.code {
+            case 100 ... 199:
+                return .informational
+            case 200 ... 299:
+                return .successful
+            case 300 ... 399:
+                return .redirection
+            case 400 ... 499:
+                return .clientError
+            case 500 ... 599:
+                return .serverError
+            default:
+                return .invalid
+            }
         }
 
         public func hash(into hasher: inout Hasher) {
-            hasher.combine(code)
+            hasher.combine(self.code)
         }
 
-        public static func ==(lhs: Status, rhs: Status) -> Bool {
+        public static func == (lhs: Status, rhs: Status) -> Bool {
             lhs.code == rhs.code
         }
 
         public var description: String {
-            "\(code)"
+            "\(self.code) \(self.reasonPhrase)"
         }
 
         var fieldValue: String {
             String([
-                Character(Unicode.Scalar(UInt8(code / 100) + 48)),
-                Character(Unicode.Scalar(UInt8((code / 10) % 10) + 48)),
-                Character(Unicode.Scalar(UInt8(code % 10) + 48))
+                Character(Unicode.Scalar(UInt8(self.code / 100) + 48)),
+                Character(Unicode.Scalar(UInt8((self.code / 10) % 10) + 48)),
+                Character(Unicode.Scalar(UInt8(self.code % 10) + 48)),
             ])
         }
 
         static func isValidStatus(_ status: String) -> Bool {
-            status.count == 3 && status.utf8.allSatisfy { (0x30...0x39).contains($0) }
+            status.count == 3 && status.utf8.allSatisfy { (0x30 ... 0x39).contains($0) }
         }
 
         static func isValidReasonPhrase(_ reasonPhrase: String) -> Bool {
@@ -103,7 +114,7 @@ public struct HTTPResponse: Sendable, Hashable {
                 switch $0 {
                 case 0x09, 0x20:
                     return true
-                case 0x21...0x7E, 0x80...0xFF:
+                case 0x21 ... 0x7E, 0x80 ... 0xFF:
                     return true
                 default:
                     return false
@@ -119,7 +130,7 @@ public struct HTTPResponse: Sendable, Hashable {
                     switch scala.value {
                     case 0x09, 0x20:
                         return scala
-                    case 0x21...0x7E, 0x80...0xFF:
+                    case 0x21 ... 0x7E, 0x80 ... 0xFF:
                         return scala
                     default:
                         return " "
@@ -133,25 +144,36 @@ public struct HTTPResponse: Sendable, Hashable {
     }
 
     /// The status of the response.
+    ///
+    /// A convenient way to access the value of the ":status" pseudo header field and the reason
+    /// phrase.
     public var status: Status {
         get {
-            Status(uncheckedCode: Int(statusField.rawValue._storage)!, reasonPhrase: reasonPhrase)
+            Status(uncheckedCode: Int(self.pseudoHeaderFields.status.rawValue._storage)!, reasonPhrase: self.reasonPhrase)
         }
         set {
-            statusField.rawValue = ISOLatin1String(unchecked: newValue.fieldValue)
-            reasonPhrase = newValue.reasonPhrase
+            self.pseudoHeaderFields.status.rawValue = ISOLatin1String(unchecked: newValue.fieldValue)
+            self.reasonPhrase = newValue.reasonPhrase
         }
     }
 
-    /// The underlying ":status" pseudo header field.
-    public var statusField: HTTPField {
-        willSet {
-            precondition(newValue.name == .status, "Cannot change pseudo-header field name")
-            precondition(Status.isValidStatus(newValue.rawValue._storage), "Invalid status code")
+    /// The pseudo header fields of a response.
+    public struct PseudoHeaderFields: Sendable, Hashable {
+        /// The underlying ":status" pseudo header field.
+        ///
+        /// The value of this field must be 3 ASCII decimal digits.
+        public var status: HTTPField {
+            willSet {
+                precondition(newValue.name == .status, "Cannot change pseudo-header field name")
+                precondition(Status.isValidStatus(newValue.rawValue._storage), "Invalid status code")
+            }
         }
     }
 
-    private var reasonPhrase: String?
+    /// The pseudo header fields.
+    public var pseudoHeaderFields: PseudoHeaderFields
+
+    private var reasonPhrase: String
 
     /// The response header fields.
     public var headerFields: HTTPFields
@@ -161,39 +183,40 @@ public struct HTTPResponse: Sendable, Hashable {
     ///   - status: The status code and an optional reason phrase.
     ///   - headerFields: The response header fields.
     public init(status: Status, headerFields: HTTPFields = [:]) {
-        statusField = HTTPField(name: .status, uncheckedValue: ISOLatin1String(unchecked: status.fieldValue))
-        reasonPhrase = status.reasonPhrase
+        let statusField = HTTPField(name: .status, uncheckedValue: ISOLatin1String(unchecked: status.fieldValue))
+        self.pseudoHeaderFields = .init(status: statusField)
+        self.reasonPhrase = status.reasonPhrase
         self.headerFields = headerFields
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(statusField)
-        hasher.combine(headerFields)
+        hasher.combine(self.pseudoHeaderFields)
+        hasher.combine(self.headerFields)
     }
 
-    public static func ==(lhs: HTTPResponse, rhs: HTTPResponse) -> Bool {
-        lhs.statusField == rhs.statusField && lhs.headerFields == lhs.headerFields
+    public static func == (lhs: HTTPResponse, rhs: HTTPResponse) -> Bool {
+        lhs.pseudoHeaderFields == rhs.pseudoHeaderFields && lhs.headerFields == lhs.headerFields
     }
 }
 
 extension HTTPResponse: CustomDebugStringConvertible {
     public var debugDescription: String {
-        "\(status)"
+        "\(self.status)"
     }
 }
 
 extension HTTPResponse.Status {
     // MARK: 1xx
+
     /// 100 Continue
     public static var `continue`: Self { .init(uncheckedCode: 100, reasonPhrase: "Continue") }
     /// 101 Switching Protocols
     public static var switchingProtocols: Self { .init(uncheckedCode: 101, reasonPhrase: "Switching Protocols") }
-    /// 102 Processing
-    public static var processing: Self { .init(uncheckedCode: 102, reasonPhrase: "Processing") }
     /// 103 Early Hints
     public static var earlyHints: Self { .init(uncheckedCode: 103, reasonPhrase: "Early Hints") }
 
     // MARK: 2xx
+
     /// 200 OK
     public static var ok: Self { .init(uncheckedCode: 200, reasonPhrase: "OK") }
     /// 201 Created
@@ -208,14 +231,9 @@ extension HTTPResponse.Status {
     public static var resetContent: Self { .init(uncheckedCode: 205, reasonPhrase: "Reset Content") }
     /// 206 Partial Content
     public static var partialContent: Self { .init(uncheckedCode: 206, reasonPhrase: "Partial Content") }
-    /// 207 Multi-Status
-    public static var multiStatus: Self { .init(uncheckedCode: 207, reasonPhrase: "Multi-Status") }
-    /// 208 Already Reported
-    public static var alreadyReported: Self { .init(uncheckedCode: 208, reasonPhrase: "Already Reported") }
-    /// 226 IM Used
-    public static var imUsed: Self { .init(uncheckedCode: 226, reasonPhrase: "IM Used") }
 
     // MARK: 3xx
+
     /// 300 Multiple Choices
     public static var multipleChoices: Self { .init(uncheckedCode: 300, reasonPhrase: "Multiple Choices") }
     /// 301 Moved Permanently
@@ -226,20 +244,17 @@ extension HTTPResponse.Status {
     public static var seeOther: Self { .init(uncheckedCode: 303, reasonPhrase: "See Other") }
     /// 304 Not Modified
     public static var notModified: Self { .init(uncheckedCode: 304, reasonPhrase: "Not Modified") }
-    /// 305 Use Proxy
-    public static var useProxy: Self { .init(uncheckedCode: 305, reasonPhrase: "Use Proxy") }
     /// 307 Temporary Redirect
     public static var temporaryRedirect: Self { .init(uncheckedCode: 307, reasonPhrase: "Temporary Redirect") }
     /// 308 Permanent Redirect
     public static var permanentRedirect: Self { .init(uncheckedCode: 308, reasonPhrase: "Permanent Redirect") }
 
     // MARK: 4xx
+
     /// 400 Bad Request
     public static var badRequest: Self { .init(uncheckedCode: 400, reasonPhrase: "Bad Request") }
     /// 401 Unauthorized
     public static var unauthorized: Self { .init(uncheckedCode: 401, reasonPhrase: "Unauthorized") }
-    /// 402 Payment Required
-    public static var paymentRequired: Self { .init(uncheckedCode: 402, reasonPhrase: "Payment Required") }
     /// 403 Forbidden
     public static var forbidden: Self { .init(uncheckedCode: 403, reasonPhrase: "Forbidden") }
     /// 404 Not Found
@@ -260,8 +275,8 @@ extension HTTPResponse.Status {
     public static var lengthRequired: Self { .init(uncheckedCode: 411, reasonPhrase: "Length Required") }
     /// 412 Precondition Failed
     public static var preconditionFailed: Self { .init(uncheckedCode: 412, reasonPhrase: "Precondition Failed") }
-    /// 413 Payload Too Large
-    public static var payloadTooLarge: Self { .init(uncheckedCode: 413, reasonPhrase: "Payload Too Large") }
+    /// 413 Content Too Large
+    public static var contentTooLarge: Self { .init(uncheckedCode: 413, reasonPhrase: "Content Too Large") }
     /// 414 URI Too Long
     public static var uriTooLong: Self { .init(uncheckedCode: 414, reasonPhrase: "URI Too Long") }
     /// 415 Unsupported Media Type
@@ -272,12 +287,10 @@ extension HTTPResponse.Status {
     public static var expectationFailed: Self { .init(uncheckedCode: 417, reasonPhrase: "Expectation Failed") }
     /// 421 Misdirected Request
     public static var misdirectedRequest: Self { .init(uncheckedCode: 421, reasonPhrase: "Misdirected Request") }
-    /// 422 Unprocessable Entity
-    public static var unprocessableEntity: Self { .init(uncheckedCode: 422, reasonPhrase: "Unprocessable Entity") }
-    /// 423 Locked
-    public static var locked: Self { .init(uncheckedCode: 423, reasonPhrase: "Locked") }
-    /// 424 Failed Dependency
-    public static var failedDependency: Self { .init(uncheckedCode: 424, reasonPhrase: "Failed Dependency") }
+    /// 422 Unprocessable Content
+    public static var unprocessableContent: Self { .init(uncheckedCode: 422, reasonPhrase: "Unprocessable Content") }
+    /// 425 Too Early
+    public static var tooEarly: Self { .init(uncheckedCode: 425, reasonPhrase: "Too Early") }
     /// 426 Upgrade Required
     public static var upgradeRequired: Self { .init(uncheckedCode: 426, reasonPhrase: "Upgrade Required") }
     /// 428 Precondition Required
@@ -290,6 +303,7 @@ extension HTTPResponse.Status {
     public static var unavailableForLegalReasons: Self { .init(uncheckedCode: 451, reasonPhrase: "Unavailable For Legal Reasons") }
 
     // MARK: 5xx
+
     /// 500 Internal Server Error
     public static var internalServerError: Self { .init(uncheckedCode: 500, reasonPhrase: "Internal Server Error") }
     /// 501 Not Implemented
@@ -302,14 +316,6 @@ extension HTTPResponse.Status {
     public static var gatewayTimeout: Self { .init(uncheckedCode: 504, reasonPhrase: "Gateway Timeout") }
     /// 505 HTTP Version Not Supported
     public static var httpVersionNotSupported: Self { .init(uncheckedCode: 505, reasonPhrase: "HTTP Version Not Supported") }
-    /// 506 Variant Also Negotiates
-    public static var variantAlsoNegotiates: Self { .init(uncheckedCode: 506, reasonPhrase: "Variant Also Negotiates") }
-    /// 507 Insufficient Storage
-    public static var insufficientStorage: Self { .init(uncheckedCode: 507, reasonPhrase: "Insufficient Storage") }
-    /// 508 Loop Detected
-    public static var loopDetected: Self { .init(uncheckedCode: 508, reasonPhrase: "Loop Detected") }
-    /// 510 Not Extended
-    public static var notExtended: Self { .init(uncheckedCode: 510, reasonPhrase: "Not Extended") }
     /// 511 Network Authentication Required
     public static var networkAuthenticationRequired: Self { .init(uncheckedCode: 511, reasonPhrase: "Network Authentication Required") }
 }

@@ -1,24 +1,24 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
 extension HTTPField {
-    /// HTTP field name is a case-insensitive but case-preserving ASCII string with an allowed
-    /// character set defined in RFC 9110.
+    /// A case-insensitive but case-preserving ASCII string with an allowed character set defined
+    /// in RFC 9110.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names
     ///
-    /// Common HTTP field names are provided as convenience static functions, and for custom field
+    /// Common HTTP field names are provided as convenience static properties, and for custom field
     /// names, it is recommended to extend the `HTTPField.Name` struct with new static members.
     ///
     /// ```
@@ -44,8 +44,8 @@ extension HTTPField {
             guard HTTPField.isValidToken(name) else {
                 return nil
             }
-            rawName = name
-            canonicalName = name.lowercased()
+            self.rawName = name
+            self.canonicalName = name.lowercased()
         }
 
         private init(rawName: String, canonicalName: String) {
@@ -60,7 +60,7 @@ extension HTTPField.Name: Hashable {
         hasher.combine(canonicalName)
     }
 
-    public static func ==(lhs: HTTPField.Name, rhs: HTTPField.Name) -> Bool {
+    public static func == (lhs: HTTPField.Name, rhs: HTTPField.Name) -> Bool {
         lhs.canonicalName == rhs.canonicalName
     }
 }
@@ -73,7 +73,7 @@ extension HTTPField.Name: LosslessStringConvertible {
 
 extension HTTPField.Name: CustomPlaygroundDisplayConvertible {
     public var playgroundDescription: Any {
-        description
+        self.description
     }
 }
 

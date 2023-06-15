@@ -1,18 +1,18 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
-/// HTTP request message consists of pseudo header fields and header fields.
+/// An HTTP request message consisting of pseudo header fields and header fields.
 ///
 /// Currently supported pseudo header fields are ":method", ":scheme", ":authority", ":path", and
 /// ":protocol". Conveniences are provided to set these pseudo header fields through a URL and
@@ -21,7 +21,7 @@
 /// In a legacy HTTP/1 context, the ":scheme" is ignored and the ":authority" is translated into
 /// the "Host" header.
 public struct HTTPRequest: Sendable, Hashable {
-    /// HTTP request method
+    /// The HTTP request method
     public struct Method: Hashable, RawRepresentable, LosslessStringConvertible {
         /// The string value of the request.
         public let rawValue: String
@@ -29,14 +29,14 @@ public struct HTTPRequest: Sendable, Hashable {
         /// Create a request method from a string. Returns nil if the string contains invalid
         /// characters defined in RFC 9110.
         ///
-        /// https://www.rfc-editor.org/rfc/rfc9110.html#name-overview
+        /// https://www.rfc-editor.org/rfc/rfc9110.html#name-methods
         ///
         /// - Parameter method: The method string. It can be accessed from the `rawValue` property.
         public init?(_ method: String) {
             guard HTTPField.isValidToken(method) else {
                 return nil
             }
-            rawValue = method
+            self.rawValue = method
         }
 
         public init?(rawValue: String) {
@@ -44,153 +44,159 @@ public struct HTTPRequest: Sendable, Hashable {
         }
 
         private init(unchecked: String) {
-            rawValue = unchecked
+            self.rawValue = unchecked
         }
 
         public var description: String {
-            rawValue
+            self.rawValue
         }
     }
 
     /// The HTTP request method.
+    ///
+    /// A convenient way to access the value of the ":method" pseudo header field.
     public var method: Method {
         get {
-            Method(methodField.rawValue._storage)!
+            Method(self.pseudoHeaderFields.method.rawValue._storage)!
         }
         set {
-            methodField.rawValue = ISOLatin1String(unchecked: newValue.rawValue)
+            self.pseudoHeaderFields.method.rawValue = ISOLatin1String(unchecked: newValue.rawValue)
         }
     }
 
-    /// The value of the ":scheme" pseudo header field.
+    /// A convenient way to access the value of the ":scheme" pseudo header field.
     ///
     /// The scheme is ignored in a legacy HTTP/1 context.
     public var scheme: String? {
         get {
-            schemeField?.value
+            self.pseudoHeaderFields.scheme?.value
         }
         set {
             if let newValue {
-                if var field = schemeField {
+                if var field = pseudoHeaderFields.scheme {
                     field.value = newValue
-                    schemeField = field
+                    self.pseudoHeaderFields.scheme = field
                 } else {
-                    var field = HTTPField(name: .scheme, value: newValue)
-                    field.indexingStrategy = .prefer
-                    schemeField = field
+                    self.pseudoHeaderFields.scheme = HTTPField(name: .scheme, value: newValue)
                 }
             } else {
-                schemeField = nil
+                self.pseudoHeaderFields.scheme = nil
             }
         }
     }
 
-    /// The value of the ":authority" pseudo header field.
+    /// A convenient way to access the value of the ":authority" pseudo header field.
     ///
     /// The authority is translated into the "Host" header in a legacy HTTP/1 context.
     public var authority: String? {
         get {
-            authorityField?.value
+            self.pseudoHeaderFields.authority?.value
         }
         set {
             if let newValue {
-                if var field = authorityField {
+                if var field = pseudoHeaderFields.authority {
                     field.value = newValue
-                    authorityField = field
+                    self.pseudoHeaderFields.authority = field
                 } else {
-                    var field = HTTPField(name: .authority, value: newValue)
-                    field.indexingStrategy = .prefer
-                    authorityField = field
+                    self.pseudoHeaderFields.authority = HTTPField(name: .authority, value: newValue)
                 }
             } else {
-                authorityField = nil
+                self.pseudoHeaderFields.authority = nil
             }
         }
     }
 
-    /// The value of the ":path" pseudo header field.
+    /// A convenient way to access the value of the ":path" pseudo header field.
     public var path: String? {
         get {
-            pathField?.value
+            self.pseudoHeaderFields.path?.value
         }
         set {
             if let newValue {
-                if var field = pathField {
+                if var field = pseudoHeaderFields.path {
                     field.value = newValue
-                    pathField = field
+                    self.pseudoHeaderFields.path = field
                 } else {
-                    pathField = HTTPField(name: .path, value: newValue)
+                    self.pseudoHeaderFields.path = HTTPField(name: .path, value: newValue)
                 }
             } else {
-                pathField = nil
+                self.pseudoHeaderFields.path = nil
             }
         }
     }
 
-    /// The value of the ":protocol" pseudo header field.
+    /// A convenient way to access the value of the ":protocol" pseudo header field.
     public var extendedConnectProtocol: String? {
         get {
-            extendedConnectProtocolField?.value
+            self.pseudoHeaderFields.extendedConnectProtocol?.value
         }
         set {
             if let newValue {
-                if var field = extendedConnectProtocolField {
+                if var field = pseudoHeaderFields.extendedConnectProtocol {
                     field.value = newValue
-                    extendedConnectProtocolField = field
+                    self.pseudoHeaderFields.extendedConnectProtocol = field
                 } else {
-                    var field = HTTPField(name: .protocol, value: newValue)
-                    field.indexingStrategy = .prefer
-                    extendedConnectProtocolField = field
+                    self.pseudoHeaderFields.extendedConnectProtocol = HTTPField(name: .protocol, value: newValue)
                 }
             } else {
-                extendedConnectProtocolField = nil
+                self.pseudoHeaderFields.extendedConnectProtocol = nil
             }
         }
     }
 
-    /// The underlying ":method" pseudo header field.
-    public var methodField: HTTPField {
-        willSet {
-            precondition(newValue.name == .method, "Cannot change pseudo-header field name")
-            precondition(HTTPField.isValidToken(newValue.rawValue._storage), "Invalid character in method field")
+    /// The pseudo header fields of a request.
+    public struct PseudoHeaderFields: Sendable, Hashable {
+        /// The underlying ":method" pseudo header field.
+        ///
+        /// The value of this field must be a valid method.
+        ///
+        /// https://www.rfc-editor.org/rfc/rfc9110.html#name-methods
+        public var method: HTTPField {
+            willSet {
+                precondition(newValue.name == .method, "Cannot change pseudo-header field name")
+                precondition(HTTPField.isValidToken(newValue.rawValue._storage), "Invalid character in method field")
+            }
         }
-    }
 
-    /// The underlying ":scheme" pseudo header field.
-    public var schemeField: HTTPField? {
-        willSet {
-            if let name = newValue?.name {
-                precondition(name == .scheme, "Cannot change pseudo-header field name")
+        /// The underlying ":scheme" pseudo header field.
+        public var scheme: HTTPField? {
+            willSet {
+                if let name = newValue?.name {
+                    precondition(name == .scheme, "Cannot change pseudo-header field name")
+                }
+            }
+        }
+
+        /// The underlying ":authority" pseudo header field.
+        public var authority: HTTPField? {
+            willSet {
+                if let name = newValue?.name {
+                    precondition(name == .authority, "Cannot change pseudo-header field name")
+                }
+            }
+        }
+
+        /// The underlying ":path" pseudo header field.
+        public var path: HTTPField? {
+            willSet {
+                if let name = newValue?.name {
+                    precondition(name == .path, "Cannot change pseudo-header field name")
+                }
+            }
+        }
+
+        /// The underlying ":protocol" pseudo header field.
+        public var extendedConnectProtocol: HTTPField? {
+            willSet {
+                if let name = newValue?.name {
+                    precondition(name == .protocol, "Cannot change pseudo-header field name")
+                }
             }
         }
     }
 
-    /// The underlying ":authority" pseudo header field.
-    public var authorityField: HTTPField? {
-        willSet {
-            if let name = newValue?.name {
-                precondition(name == .authority, "Cannot change pseudo-header field name")
-            }
-        }
-    }
-
-    /// The underlying ":path" pseudo header field.
-    public var pathField: HTTPField? {
-        willSet {
-            if let name = newValue?.name {
-                precondition(name == .path, "Cannot change pseudo-header field name")
-            }
-        }
-    }
-
-    /// The underlying ":protocol" pseudo header field.
-    public var extendedConnectProtocolField: HTTPField? {
-        willSet {
-            if let name = newValue?.name {
-                precondition(name == .protocol, "Cannot change pseudo-header field name")
-            }
-        }
-    }
+    /// The pseudo header fields.
+    public var pseudoHeaderFields: PseudoHeaderFields
 
     /// The request header fields.
     public var headerFields: HTTPFields
@@ -203,98 +209,90 @@ public struct HTTPRequest: Sendable, Hashable {
     ///   - path: The value of the ":path" pseudo header field.
     ///   - headerFields: The request header fields.
     public init(method: Method, scheme: String?, authority: String?, path: String?, headerFields: HTTPFields = [:]) {
-        methodField = HTTPField(name: .method, uncheckedValue: ISOLatin1String(unchecked: method.rawValue))
-        methodField.indexingStrategy = .prefer
-        schemeField = scheme.map {
-            var field = HTTPField(name: .scheme, value: $0)
-            field.indexingStrategy = .prefer
-            return field
-        }
-        authorityField = authority.map {
-            var field = HTTPField(name: .authority, value: $0)
-            field.indexingStrategy = .prefer
-            return field
-        }
-        pathField = path.map { HTTPField(name: .path, value: $0) }
+        let methodField = HTTPField(name: .method, uncheckedValue: ISOLatin1String(unchecked: method.rawValue))
+        let schemeField = scheme.map { HTTPField(name: .scheme, value: $0) }
+        let authorityField = authority.map { HTTPField(name: .authority, value: $0) }
+        let pathField = path.map { HTTPField(name: .path, value: $0) }
+        self.pseudoHeaderFields = .init(method: methodField, scheme: schemeField, authority: authorityField, path: pathField)
         self.headerFields = headerFields
     }
 }
 
 extension HTTPRequest: CustomDebugStringConvertible {
     public var debugDescription: String {
-        "(\(methodField.rawValue._storage)) \((schemeField?.value).map { "\($0)://" } ?? "")\(authorityField?.value ?? "")\(pathField?.value ?? "")"
+        "(\(self.pseudoHeaderFields.method.rawValue._storage)) \((self.pseudoHeaderFields.scheme?.value).map { "\($0)://" } ?? "")\(self.pseudoHeaderFields.authority?.value ?? "")\(self.pseudoHeaderFields.path?.value ?? "")"
     }
 }
 
 extension HTTPRequest.Method {
     /// GET
-    public static let get = HTTPRequest.Method(unchecked: "GET")
+    public static var get: Self { .init(unchecked: "GET") }
     /// PUT
-    public static let put = HTTPRequest.Method(unchecked: "PUT")
+    public static var put: Self { .init(unchecked: "PUT") }
     /// ACL
-    public static let acl = HTTPRequest.Method(unchecked: "ACL")
+    public static var acl: Self { .init(unchecked: "ACL") }
     /// HEAD
-    public static let head = HTTPRequest.Method(unchecked: "HEAD")
+    public static var head: Self { .init(unchecked: "HEAD") }
     /// POST
-    public static let post = HTTPRequest.Method(unchecked: "POST")
+    public static var post: Self { .init(unchecked: "POST") }
     /// COPY
-    public static let copy = HTTPRequest.Method(unchecked: "COPY")
+    public static var copy: Self { .init(unchecked: "COPY") }
     /// LOCK
-    public static let lock = HTTPRequest.Method(unchecked: "LOCK")
+    public static var lock: Self { .init(unchecked: "LOCK") }
     /// MOVE
-    public static let move = HTTPRequest.Method(unchecked: "MOVE")
+    public static var move: Self { .init(unchecked: "MOVE") }
     /// BIND
-    public static let bind = HTTPRequest.Method(unchecked: "BIND")
+    public static var bind: Self { .init(unchecked: "BIND") }
     /// LINK
-    public static let link = HTTPRequest.Method(unchecked: "LINK")
+    public static var link: Self { .init(unchecked: "LINK") }
     /// PATCH
-    public static let patch = HTTPRequest.Method(unchecked: "PATCH")
+    public static var patch: Self { .init(unchecked: "PATCH") }
     /// TRACE
-    public static let trace = HTTPRequest.Method(unchecked: "TRACE")
+    public static var trace: Self { .init(unchecked: "TRACE") }
     /// MKCOL
-    public static let mkcol = HTTPRequest.Method(unchecked: "MKCOL")
+    public static var mkcol: Self { .init(unchecked: "MKCOL") }
     /// MERGE
-    public static let merge = HTTPRequest.Method(unchecked: "MERGE")
+    public static var merge: Self { .init(unchecked: "MERGE") }
     /// PURGE
-    public static let purge = HTTPRequest.Method(unchecked: "PURGE")
+    public static var purge: Self { .init(unchecked: "PURGE") }
     /// NOTIFY
-    public static let notify = HTTPRequest.Method(unchecked: "NOTIFY")
+    public static var notify: Self { .init(unchecked: "NOTIFY") }
     /// SEARCH
-    public static let search = HTTPRequest.Method(unchecked: "SEARCH")
+    public static var search: Self { .init(unchecked: "SEARCH") }
     /// UNLOCK
-    public static let unlock = HTTPRequest.Method(unchecked: "UNLOCK")
+    public static var unlock: Self { .init(unchecked: "UNLOCK") }
     /// REBIND
-    public static let rebind = HTTPRequest.Method(unchecked: "REBIND")
+    public static var rebind: Self { .init(unchecked: "REBIND") }
     /// UNBIND
-    public static let unbind = HTTPRequest.Method(unchecked: "UNBIND")
+    public static var unbind: Self { .init(unchecked: "UNBIND") }
     /// REPORT
-    public static let report = HTTPRequest.Method(unchecked: "REPORT")
+    public static var report: Self { .init(unchecked: "REPORT") }
     /// DELETE
-    public static let delete = HTTPRequest.Method(unchecked: "DELETE")
+    public static var delete: Self { .init(unchecked: "DELETE") }
     /// UNLINK
-    public static let unlink = HTTPRequest.Method(unchecked: "UNLINK")
+    public static var unlink: Self { .init(unchecked: "UNLINK") }
     /// CONNECT
-    public static let connect = HTTPRequest.Method(unchecked: "CONNECT")
+    public static var connect: Self { .init(unchecked: "CONNECT") }
     /// MSEARCH
-    public static let msearch = HTTPRequest.Method(unchecked: "MSEARCH")
+    public static var msearch: Self { .init(unchecked: "MSEARCH") }
     /// OPTIONS
-    public static let options = HTTPRequest.Method(unchecked: "OPTIONS")
+    public static var options: Self { .init(unchecked: "OPTIONS") }
     /// PROPFIND
-    public static let propfind = HTTPRequest.Method(unchecked: "PROPFIND")
+    public static var propfind: Self { .init(unchecked: "PROPFIND") }
     /// CHECKOUT
-    public static let checkout = HTTPRequest.Method(unchecked: "CHECKOUT")
+    public static var checkout: Self { .init(unchecked: "CHECKOUT") }
     /// PROPPATCH
-    public static let proppatch = HTTPRequest.Method(unchecked: "PROPPATCH")
+    public static var proppatch: Self { .init(unchecked: "PROPPATCH") }
     /// SUBSCRIBE
-    public static let subscribe = HTTPRequest.Method(unchecked: "SUBSCRIBE")
+    public static var subscribe: Self { .init(unchecked: "SUBSCRIBE") }
     /// MKCALENDAR
-    public static let mkcalendar = HTTPRequest.Method(unchecked: "MKCALENDAR")
+    public static var mkcalendar: Self { .init(unchecked: "MKCALENDAR") }
     /// MKACTIVITY
-    public static let mkactivity = HTTPRequest.Method(unchecked: "MKACTIVITY")
+    public static var mkactivity: Self { .init(unchecked: "MKACTIVITY") }
     /// UNSUBSCRIBE
-    public static let unsubscribe = HTTPRequest.Method(unchecked: "UNSUBSCRIBE")
+    public static var unsubscribe: Self { .init(unchecked: "UNSUBSCRIBE") }
     /// SOURCE
-    public static let source = HTTPRequest.Method(unchecked: "SOURCE")
+    public static var source: Self { .init(unchecked: "SOURCE") }
     /// CONNECT-UDP
-    static let connectUDP = HTTPRequest.Method(unchecked: "CONNECT-UDP")
+    static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
 }

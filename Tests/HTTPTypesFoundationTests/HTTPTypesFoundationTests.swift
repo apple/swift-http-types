@@ -1,20 +1,20 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
-import XCTest
 import HTTPTypes
 import HTTPTypesFoundation
+import XCTest
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -22,33 +22,33 @@ import FoundationNetworking
 final class HTTPTypesFoundationTests: XCTestCase {
     func testRequestURLParsing() {
         let request1 = HTTPRequest(url: URL(string: "h://a")!)
-        XCTAssertEqual(request1.schemeField?.value, "h")
-        XCTAssertEqual(request1.authorityField?.value, "a")
-        XCTAssertEqual(request1.pathField?.value, "/")
+        XCTAssertEqual(request1.scheme, "h")
+        XCTAssertEqual(request1.authority, "a")
+        XCTAssertEqual(request1.path, "/")
         XCTAssertEqual(request1.url?.absoluteString, "h://a/")
 
         let request2 = HTTPRequest(url: URL(string: "h://a:4?")!)
-        XCTAssertEqual(request2.schemeField?.value, "h")
-        XCTAssertEqual(request2.authorityField?.value, "a:4")
-        XCTAssertEqual(request2.pathField?.value, "/?")
+        XCTAssertEqual(request2.scheme, "h")
+        XCTAssertEqual(request2.authority, "a:4")
+        XCTAssertEqual(request2.path, "/?")
         XCTAssertEqual(request2.url?.absoluteString, "h://a:4/?")
 
         let request3 = HTTPRequest(url: URL(string: "h://a/")!)
-        XCTAssertEqual(request3.schemeField?.value, "h")
-        XCTAssertEqual(request3.authorityField?.value, "a")
-        XCTAssertEqual(request3.pathField?.value, "/")
+        XCTAssertEqual(request3.scheme, "h")
+        XCTAssertEqual(request3.authority, "a")
+        XCTAssertEqual(request3.path, "/")
         XCTAssertEqual(request3.url?.absoluteString, "h://a/")
 
         let request4 = HTTPRequest(url: URL(string: "h://a/p?q#1")!)
-        XCTAssertEqual(request4.schemeField?.value, "h")
-        XCTAssertEqual(request4.authorityField?.value, "a")
-        XCTAssertEqual(request4.pathField?.value, "/p?q")
+        XCTAssertEqual(request4.scheme, "h")
+        XCTAssertEqual(request4.authority, "a")
+        XCTAssertEqual(request4.path, "/p?q")
         XCTAssertEqual(request4.url?.absoluteString, "h://a/p?q")
 
         let request5 = HTTPRequest(url: URL(string: "data:,Hello%2C%20World%21")!)
-        XCTAssertEqual(request5.schemeField?.value, "data")
-        XCTAssertNil(request5.authorityField)
-        XCTAssertEqual(request5.pathField?.value, "/")
+        XCTAssertEqual(request5.scheme, "data")
+        XCTAssertNil(request5.authority)
+        XCTAssertEqual(request5.path, "/")
         XCTAssertNil(request5.url)
     }
 
@@ -101,7 +101,7 @@ final class HTTPTypesFoundationTests: XCTestCase {
         let urlResponse = HTTPURLResponse(
             url: URL(string: "https://www.example.com/")!, statusCode: 204, httpVersion: nil,
             headerFields: [
-                "X-Emoji": "ð"
+                "X-Emoji": "ð",
             ]
         )!
 

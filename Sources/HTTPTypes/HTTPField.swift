@@ -1,41 +1,46 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
-/// HTTP field is a name-value pair with additional metadata.
+/// A name-value pair with additional metadata.
 ///
-/// HTTP field name is a case-insensitive but case-preserving ASCII string; HTTP field value is a
+/// The field name is a case-insensitive but case-preserving ASCII string; the field value is a
 /// collection of bytes.
 public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
-    public enum DynamicTableIndexingStrategy: UInt8, Sendable, Hashable {
+    public struct DynamicTableIndexingStrategy: Sendable, Hashable {
         /// Default strategy.
-        case automatic
+        public static var automatic: Self { .init(rawValue: 0) }
+
         /// Always put this field in the dynamic table if possible.
-        case prefer
+        public static var prefer: Self { .init(rawValue: 1) }
+
         /// Don't put this field in the dynamic table.
-        case avoid
+        public static var avoid: Self { .init(rawValue: 2) }
+
         /// Don't put this field in the dynamic table, and set a flag to disallow intermediaries to
         /// index this field.
-        case disallow
+        public static var disallow: Self { .init(rawValue: 3) }
+
+        private let rawValue: UInt8
     }
 
     /// Create an HTTP field from a name and a value.
     /// - Parameters:
     ///   - name: The HTTP field name.
     ///   - value: The HTTP field value is initialized from the UTF-8 encoded bytes of the string.
-    ///            Invalid bytes are converted into whitespace characters.
-    public init(name: Name, value: some StringProtocol) {
+    ///            Invalid bytes are converted into space characters.
+    public init(name: Name, value: String) {
         self.name = name
         self.rawValue = Self.legalizeValue(ISOLatin1String(value))
     }
@@ -43,7 +48,7 @@ public struct HTTPField: Sendable, Hashable {
     /// Create an HTTP field from a name and a value.
     /// - Parameters:
     ///   - name: The HTTP field name.
-    ///   - value: The HTTP field value. Invalid bytes are converted into whitespace characters.
+    ///   - value: The HTTP field value. Invalid bytes are converted into space characters.
     public init(name: Name, value: some Collection<UInt8>) {
         self.name = name
         self.rawValue = Self.legalizeValue(ISOLatin1String(value))
@@ -59,18 +64,18 @@ public struct HTTPField: Sendable, Hashable {
 
     /// The HTTP field value as a UTF-8 string.
     ///
-    /// When setting the value, invalid bytes (defined in RFC 9110) are converted into whitespace characters.
+    /// When setting the value, invalid bytes (defined in RFC 9110) are converted into space characters.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-values
     ///
-    /// If the field is not UTF-8 encoded, `withUnsafeValueBytes` can be used to access the
+    /// If the field is not UTF-8 encoded, `withUnsafeBytesOfValue` can be used to access the
     /// underlying bytes of the field value.
     public var value: String {
         get {
-            rawValue.string
+            self.rawValue.string
         }
         set {
-            rawValue = Self.legalizeValue(ISOLatin1String(newValue))
+            self.rawValue = Self.legalizeValue(ISOLatin1String(newValue))
         }
     }
 
@@ -83,8 +88,8 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter body: The closure to be invoked with the buffer.
     /// - Returns: Result of the `body` closure.
-    public func withUnsafeValueBytes<Result>(_ body: (UnsafeBufferPointer<UInt8>) throws -> Result) rethrows -> Result {
-        try rawValue.withUnsafeBytes(body)
+    public func withUnsafeBytesOfValue<Result>(_ body: (UnsafeBufferPointer<UInt8>) throws -> Result) rethrows -> Result {
+        try self.rawValue.withUnsafeBytes(body)
     }
 
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
@@ -106,7 +111,7 @@ public struct HTTPField: Sendable, Hashable {
             switch byte {
             case 0x09, 0x20:
                 break
-            case 0x21...0x7E, 0x80...0xFF:
+            case 0x21 ... 0x7E, 0x80 ... 0xFF:
                 break
             default:
                 return false
@@ -132,7 +137,7 @@ public struct HTTPField: Sendable, Hashable {
                 switch byte {
                 case 0x09, 0x20:
                     return byte
-                case 0x21...0x7E, 0x80...0xFF:
+                case 0x21 ... 0x7E, 0x80 ... 0xFF:
                     return byte
                 default:
                     return 0x20
@@ -149,8 +154,8 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter value: The string to validate.
     /// - Returns: Whether the string is valid.
-    public static func isValidValue(_ value: some StringProtocol) -> Bool {
-        _isValidValue(value.utf8)
+    public static func isValidValue(_ value: String) -> Bool {
+        self._isValidValue(value.utf8)
     }
 
     /// Whether the byte collection is valid for an HTTP field value based on RFC 9110.
@@ -160,19 +165,19 @@ public struct HTTPField: Sendable, Hashable {
     /// - Parameter value: The byte collection to validate.
     /// - Returns: Whether the byte collection is valid.
     public static func isValidValue(_ value: some Collection<UInt8>) -> Bool {
-        _isValidValue(value)
+        self._isValidValue(value)
     }
 }
 
 extension HTTPField: CustomStringConvertible {
     public var description: String {
-        "\(name): \(value)"
+        "\(self.name): \(self.value)"
     }
 }
 
 extension HTTPField: CustomPlaygroundDisplayConvertible {
     public var playgroundDescription: Any {
-        description
+        self.description
     }
 }
 
@@ -182,7 +187,7 @@ extension HTTPField {
             switch $0 {
             case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
                 return true
-            case 0x30...0x39, 0x41...0x5A, 0x61...0x7A: // DIGHT, ALPHA
+            case 0x30 ... 0x39, 0x41 ... 0x5A, 0x61 ... 0x7A: // DIGHT, ALPHA
                 return true
             default:
                 return false

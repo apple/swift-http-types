@@ -1,12 +1,12 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,7 +42,7 @@ extension HTTPField {
         if value.isASCII {
             return value
         } else {
-            return withUnsafeValueBytes { buffer in
+            return withUnsafeBytesOfValue { buffer in
                 let scalars = buffer.lazy.map { UnicodeScalar(UInt32($0))! }
                 var string = ""
                 string.unicodeScalars.append(contentsOf: scalars)

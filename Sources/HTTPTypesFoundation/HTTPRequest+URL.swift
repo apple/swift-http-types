@@ -1,32 +1,32 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift HTTP Types open source project
+// This source file is part of the Swift open source project
 //
-// Copyright (c) 2023 Apple Inc. and the Swift HTTP Types project authors
+// Copyright (c) 2023 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of Swift HTTP Types project authors
+// See CONTRIBUTORS.txt for the list of Swift project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
-import HTTPTypes
-import Foundation
 @_implementationOnly import CoreFoundation
+import Foundation
+import HTTPTypes
 
-public extension HTTPRequest {
+extension HTTPRequest {
     /// The URL of the request synthesized from the scheme, authority, and path pseudo header
     /// fields.
-    var url: URL? {
+    public var url: URL? {
         get {
-            if let schemeField,
-               let authorityField,
-               let pathField {
-                return schemeField.withUnsafeValueBytes { scheme in
-                    authorityField.withUnsafeValueBytes { authority in
-                        pathField.withUnsafeValueBytes { path in
+            if let schemeField = pseudoHeaderFields.scheme,
+               let authorityField = pseudoHeaderFields.authority,
+               let pathField = pseudoHeaderFields.path {
+                return schemeField.withUnsafeBytesOfValue { scheme in
+                    authorityField.withUnsafeBytesOfValue { authority in
+                        pathField.withUnsafeBytesOfValue { path in
                             URL(scheme: scheme, authority: authority, path: path)
                         }
                     }
@@ -42,9 +42,9 @@ public extension HTTPRequest {
                 self.authority = authority.map { String(decoding: $0, as: UTF8.self) }
                 self.path = String(decoding: path, as: UTF8.self)
             } else {
-                schemeField = nil
-                authorityField = nil
-                pathField = nil
+                pseudoHeaderFields.scheme = nil
+                pseudoHeaderFields.authority = nil
+                pseudoHeaderFields.path = nil
             }
         }
     }
@@ -54,7 +54,7 @@ public extension HTTPRequest {
     ///   - method: The request method, defaults to GET.
     ///   - url: The URL to populate the scheme, authority, and path pseudo header fields.
     ///   - headerFields: The request header fields.
-    init(method: Method = .get, url: URL, headerFields: HTTPFields = [:]) {
+    public init(method: Method = .get, url: URL, headerFields: HTTPFields = [:]) {
         let (scheme, authority, path) = url.httpRequestComponents
         let schemeString = String(decoding: scheme, as: UTF8.self)
         let authorityString = authority.map { String(decoding: $0, as: UTF8.self) }
@@ -64,8 +64,8 @@ public extension HTTPRequest {
     }
 }
 
-private extension URL {
-    init?(scheme: some Collection<UInt8>, authority: some Collection<UInt8>, path: some Collection<UInt8>) {
+extension URL {
+    fileprivate init?(scheme: some Collection<UInt8>, authority: some Collection<UInt8>, path: some Collection<UInt8>) {
         var buffer = [UInt8]()
         buffer.reserveCapacity(scheme.count + 3 + authority.count + path.count)
         buffer.append(contentsOf: scheme)
@@ -82,7 +82,7 @@ private extension URL {
         }
     }
 
-    var httpRequestComponents: (scheme: [UInt8], authority: [UInt8]?, path: [UInt8]) {
+    fileprivate var httpRequestComponents: (scheme: [UInt8], authority: [UInt8]?, path: [UInt8]) {
         // CFURL parser based on byte ranges does not unnecessarily percent-encode WHATWG URL
         let url = unsafeBitCast(self as NSURL, to: CFURL.self)
         let length = CFURLGetBytes(url, nil, 0)
@@ -92,11 +92,11 @@ private extension URL {
             func unionRange(_ a: CFRange, _ b: CFRange) -> CFRange {
                 if a.location == kCFNotFound { return b }
                 if b.location == kCFNotFound { return a }
-                return CFRange(location: a.location, length: b.location + b.length - a.location )
+                return CFRange(location: a.location, length: b.location + b.length - a.location)
             }
 
             func bufferSlice(_ range: CFRange) -> some Collection<UInt8> {
-                buffer[range.location..<range.location + range.length]
+                buffer[range.location ..< range.location + range.length]
             }
 
             let schemeRange = CFURLGetByteRangeForComponent(url, .scheme, nil)
