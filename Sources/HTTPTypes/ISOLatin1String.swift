@@ -32,7 +32,11 @@ struct ISOLatin1String: Sendable, Hashable {
         try withUnsafeTemporaryAllocation(of: UInt8.self, capacity: self._storage.unicodeScalars.count) { buffer in
             for (index, scalar) in self._storage.unicodeScalars.enumerated() {
                 assert(scalar.value <= UInt8.max)
+                #if swift(>=5.8)
                 buffer.initializeElement(at: index, to: UInt8(truncatingIfNeeded: scalar.value))
+                #else
+                buffer[index] = UInt8(truncatingIfNeeded: scalar.value)
+                #endif
             }
             return try body(UnsafeBufferPointer(buffer))
         }

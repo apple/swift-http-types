@@ -28,9 +28,17 @@ extension HTTPField {
             self = withUnsafeTemporaryAllocation(of: UInt8.self, capacity: isoLatin1Value.unicodeScalars.count) { buffer in
                 for (index, scalar) in isoLatin1Value.unicodeScalars.enumerated() {
                     if scalar.value > UInt8.max {
+                        #if swift(>=5.8)
                         buffer.initializeElement(at: index, to: 0x20)
+                        #else
+                        buffer[index] = 0x20
+                        #endif
                     } else {
+                        #if swift(>=5.8)
                         buffer.initializeElement(at: index, to: UInt8(truncatingIfNeeded: scalar.value))
+                        #else
+                        buffer[index] = UInt8(truncatingIfNeeded: scalar.value)
+                        #endif
                     }
                 }
                 return HTTPField(name: name, value: buffer)
