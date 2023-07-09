@@ -123,15 +123,9 @@ extension URL {
                 } else {
                     let pathBuffer = bufferSlice(requestPathRange)
                     path = [UInt8](unsafeUninitializedCapacity: pathBuffer.count + 1) { buffer, initializedCount in
-                        #if swift(>=5.8)
-                        buffer.initializeElement(at: 0, to: 0x2F)
-                        let endIndex = buffer[1...].initialize(fromContentsOf: pathBuffer)
-                        #else
                         buffer[0] = 0x2F
-                        memcpy(buffer.baseAddress!.advanced(by: 1), pathBuffer.baseAddress!, pathBuffer.count)
-                        let endIndex = buffer.startIndex.advanced(by: pathBuffer.count + 1)
-                        #endif
-                        initializedCount = buffer.distance(from: buffer.startIndex, to: endIndex)
+                        UnsafeMutableRawBufferPointer(UnsafeMutableBufferPointer(rebasing: buffer[1...])).copyMemory(from: UnsafeRawBufferPointer(pathBuffer))
+                        initializedCount = pathBuffer.count + 1
                     }
                 }
             } else {
