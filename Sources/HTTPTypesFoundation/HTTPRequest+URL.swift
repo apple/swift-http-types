@@ -95,12 +95,12 @@ extension URL {
                 return CFRange(location: a.location, length: b.location + b.length - a.location)
             }
 
-            func bufferSlice(_ range: CFRange) -> some Collection<UInt8> {
-                buffer[range.location ..< range.location + range.length]
+            func bufferSlice(_ range: CFRange) -> UnsafeMutableBufferPointer<UInt8> {
+                UnsafeMutableBufferPointer(rebasing: buffer[range.location ..< range.location + range.length])
             }
 
             let schemeRange = CFURLGetByteRangeForComponent(url, .scheme, nil)
-            precondition(schemeRange.location != kCFNotFound, "")
+            precondition(schemeRange.location != kCFNotFound, "Schemeless URL is not supported")
             let scheme = Array(bufferSlice(schemeRange))
 
             let authority: [UInt8]?
@@ -123,9 +123,9 @@ extension URL {
                 } else {
                     let pathBuffer = bufferSlice(requestPathRange)
                     path = [UInt8](unsafeUninitializedCapacity: pathBuffer.count + 1) { buffer, initializedCount in
-                        buffer.initializeElement(at: 0, to: 0x2F)
-                        let endIndex = buffer[1...].initialize(fromContentsOf: pathBuffer)
-                        initializedCount = buffer.distance(from: buffer.startIndex, to: endIndex)
+                        buffer[0] = 0x2F
+                        UnsafeMutableRawBufferPointer(UnsafeMutableBufferPointer(rebasing: buffer[1...])).copyMemory(from: UnsafeRawBufferPointer(pathBuffer))
+                        initializedCount = pathBuffer.count + 1
                     }
                 }
             } else {
