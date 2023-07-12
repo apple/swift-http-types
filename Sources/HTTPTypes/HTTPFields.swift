@@ -40,28 +40,28 @@ public struct HTTPFields: Sendable, Hashable {
             #if canImport(os.lock)
             self.lock.initialize(to: os_unfair_lock())
             #else
-            let err = pthread_mutex_init(lock, nil)
+            let err = pthread_mutex_init(self.lock, nil)
             precondition(err == 0, "pthread_mutex_init failed with error \(err)")
             #endif
         }
 
         deinit {
             #if !canImport(os.lock)
-            let err = pthread_mutex_destroy(lock)
+            let err = pthread_mutex_destroy(self.lock)
             precondition(err == 0, "pthread_mutex_destroy failed with error \(err)")
             #endif
-            lock.deallocate()
+            self.lock.deallocate()
         }
 
         var ensureIndex: [String: UInt16] {
             #if canImport(os.lock)
             os_unfair_lock_lock(self.lock)
-            defer { os_unfair_lock_unlock(lock) }
+            defer { os_unfair_lock_unlock(self.lock) }
             #else
-            let err = pthread_mutex_lock(lock)
+            let err = pthread_mutex_lock(self.lock)
             precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
             defer {
-                let err = pthread_mutex_unlock(lock)
+                let err = pthread_mutex_unlock(self.lock)
                 precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
             }
             #endif
@@ -69,12 +69,12 @@ public struct HTTPFields: Sendable, Hashable {
                 return index
             }
             var newIndex = [String: UInt16]()
-            for i in self.fields.indices.reversed() {
-                let name = self.fields[i].0.name.canonicalName
-                self.fields[i].1 = newIndex[name] ?? .max
-                newIndex[name] = UInt16(i)
+            for index in self.fields.indices.reversed() {
+                let name = self.fields[index].0.name.canonicalName
+                self.fields[index].1 = newIndex[name] ?? .max
+                newIndex[name] = UInt16(index)
             }
-            index = newIndex
+            self.index = newIndex
             return newIndex
         }
 
@@ -85,7 +85,7 @@ public struct HTTPFields: Sendable, Hashable {
             os_unfair_lock_lock(self.lock)
             #else
             do {
-                let err = pthread_mutex_lock(lock)
+                let err = pthread_mutex_lock(self.lock)
                 precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
             }
             #endif
@@ -94,7 +94,7 @@ public struct HTTPFields: Sendable, Hashable {
             os_unfair_lock_unlock(self.lock)
             #else
             do {
-                let err = pthread_mutex_unlock(lock)
+                let err = pthread_mutex_unlock(self.lock)
                 precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
             }
             #endif
@@ -113,7 +113,7 @@ public struct HTTPFields: Sendable, Hashable {
 
         func append(field: HTTPField) {
             let name = field.name.canonicalName
-            if var index = index?[name] {
+            if var index = self.index?[name] {
                 while true {
                     let next = self.fields[Int(index)].1
                     if next == .max { break }
@@ -121,7 +121,7 @@ public struct HTTPFields: Sendable, Hashable {
                 }
                 self.fields[Int(index)].1 = UInt16(self.fields.count)
             } else {
-                index?[name] = UInt16(self.fields.count)
+                self.index?[name] = UInt16(self.fields.count)
             }
             self.fields.append((field, .max))
         }
@@ -291,12 +291,12 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
         }
     }
 
-    public mutating func reserveCapacity(_ n: Int) {
+    public mutating func reserveCapacity(_ capacity: Int) {
         if !isKnownUniquelyReferenced(&self._storage) {
             self._storage = self._storage.copy()
         }
-        self._storage.index?.reserveCapacity(n)
-        self._storage.fields.reserveCapacity(n)
+        self._storage.index?.reserveCapacity(capacity)
+        self._storage.fields.reserveCapacity(capacity)
     }
 }
 
@@ -312,14 +312,14 @@ extension Array {
         var offset = 0
         var iterator = removalIndices.makeIterator()
         var nextToRemoveOptional = iterator.next()
-        for i in indices {
-            while let nextToRemove = nextToRemoveOptional, index(i, offsetBy: offset) == nextToRemove {
+        for index in self.indices {
+            while let nextToRemove = nextToRemoveOptional, self.index(index, offsetBy: offset) == nextToRemove {
                 offset += 1
                 nextToRemoveOptional = iterator.next()
             }
-            let toKeep = index(i, offsetBy: offset)
-            if toKeep < endIndex {
-                swapAt(i, toKeep)
+            let toKeep = self.index(index, offsetBy: offset)
+            if toKeep < self.endIndex {
+                self.swapAt(index, toKeep)
             } else {
                 break
             }

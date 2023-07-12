@@ -57,7 +57,7 @@ extension HTTPField {
 
 extension HTTPField.Name: Hashable {
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(canonicalName)
+        hasher.combine(self.canonicalName)
     }
 
     public static func == (lhs: HTTPField.Name, rhs: HTTPField.Name) -> Bool {
@@ -67,7 +67,7 @@ extension HTTPField.Name: Hashable {
 
 extension HTTPField.Name: LosslessStringConvertible {
     public var description: String {
-        rawName
+        self.rawName
     }
 }
 

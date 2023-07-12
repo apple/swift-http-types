@@ -14,7 +14,7 @@
 
 extension String {
     var isASCII: Bool {
-        utf8.allSatisfy { $0 & 0x80 == 0 }
+        self.utf8.allSatisfy { $0 & 0x80 == 0 }
     }
 }
 

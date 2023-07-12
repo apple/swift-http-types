@@ -21,17 +21,17 @@ import FoundationNetworking
 extension URLSessionTask {
     /// The original HTTP request this task was created with.
     public var originalHTTPRequest: HTTPRequest? {
-        originalRequest?.httpRequest
+        self.originalRequest?.httpRequest
     }
 
     /// The current HTTP request -- may differ from the `originalHTTPRequest` due to HTTP redirection.
     public var currentHTTPRequest: HTTPRequest? {
-        currentRequest?.httpRequest
+        self.currentRequest?.httpRequest
     }
 
     /// The HTTP response received from the server.
     public var httpResponse: HTTPResponse? {
-        (response as? HTTPURLResponse)?.httpResponse
+        (self.response as? HTTPURLResponse)?.httpResponse
     }
 }
 
@@ -41,6 +41,7 @@ private enum HTTPTypeConversionError: Error {
 }
 
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS)
+
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension URLSession {
     /// Convenience method to load data using an `HTTPRequest`; creates and resumes a `URLSessionDataTask` internally.
@@ -52,7 +53,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (data, urlResponse) = try await data(for: urlRequest, delegate: delegate)
+        let (data, urlResponse) = try await self.data(for: urlRequest, delegate: delegate)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }
@@ -69,7 +70,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (data, urlResponse) = try await upload(for: urlRequest, fromFile: fileURL, delegate: delegate)
+        let (data, urlResponse) = try await self.upload(for: urlRequest, fromFile: fileURL, delegate: delegate)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }
@@ -86,7 +87,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (data, urlResponse) = try await upload(for: urlRequest, from: bodyData, delegate: delegate)
+        let (data, urlResponse) = try await self.upload(for: urlRequest, from: bodyData, delegate: delegate)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }
@@ -102,7 +103,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (location, urlResponse) = try await download(for: urlRequest, delegate: delegate)
+        let (location, urlResponse) = try await self.download(for: urlRequest, delegate: delegate)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }
@@ -118,7 +119,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (data, urlResponse) = try await bytes(for: urlRequest, delegate: delegate)
+        let (data, urlResponse) = try await self.bytes(for: urlRequest, delegate: delegate)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }
