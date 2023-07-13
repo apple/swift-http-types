@@ -227,72 +227,22 @@ extension HTTPRequest: CustomDebugStringConvertible {
 extension HTTPRequest.Method {
     /// GET
     public static var get: Self { .init(unchecked: "GET") }
-    /// PUT
-    public static var put: Self { .init(unchecked: "PUT") }
-    /// ACL
-    public static var acl: Self { .init(unchecked: "ACL") }
     /// HEAD
     public static var head: Self { .init(unchecked: "HEAD") }
     /// POST
     public static var post: Self { .init(unchecked: "POST") }
-    /// COPY
-    public static var copy: Self { .init(unchecked: "COPY") }
-    /// LOCK
-    public static var lock: Self { .init(unchecked: "LOCK") }
-    /// MOVE
-    public static var move: Self { .init(unchecked: "MOVE") }
-    /// BIND
-    public static var bind: Self { .init(unchecked: "BIND") }
-    /// LINK
-    public static var link: Self { .init(unchecked: "LINK") }
-    /// PATCH
-    public static var patch: Self { .init(unchecked: "PATCH") }
-    /// TRACE
-    public static var trace: Self { .init(unchecked: "TRACE") }
-    /// MKCOL
-    public static var mkcol: Self { .init(unchecked: "MKCOL") }
-    /// MERGE
-    public static var merge: Self { .init(unchecked: "MERGE") }
-    /// PURGE
-    public static var purge: Self { .init(unchecked: "PURGE") }
-    /// NOTIFY
-    public static var notify: Self { .init(unchecked: "NOTIFY") }
-    /// SEARCH
-    public static var search: Self { .init(unchecked: "SEARCH") }
-    /// UNLOCK
-    public static var unlock: Self { .init(unchecked: "UNLOCK") }
-    /// REBIND
-    public static var rebind: Self { .init(unchecked: "REBIND") }
-    /// UNBIND
-    public static var unbind: Self { .init(unchecked: "UNBIND") }
-    /// REPORT
-    public static var report: Self { .init(unchecked: "REPORT") }
+    /// PUT
+    public static var put: Self { .init(unchecked: "PUT") }
     /// DELETE
     public static var delete: Self { .init(unchecked: "DELETE") }
-    /// UNLINK
-    public static var unlink: Self { .init(unchecked: "UNLINK") }
     /// CONNECT
     public static var connect: Self { .init(unchecked: "CONNECT") }
-    /// MSEARCH
-    public static var msearch: Self { .init(unchecked: "MSEARCH") }
     /// OPTIONS
     public static var options: Self { .init(unchecked: "OPTIONS") }
-    /// PROPFIND
-    public static var propfind: Self { .init(unchecked: "PROPFIND") }
-    /// CHECKOUT
-    public static var checkout: Self { .init(unchecked: "CHECKOUT") }
-    /// PROPPATCH
-    public static var proppatch: Self { .init(unchecked: "PROPPATCH") }
-    /// SUBSCRIBE
-    public static var subscribe: Self { .init(unchecked: "SUBSCRIBE") }
-    /// MKCALENDAR
-    public static var mkcalendar: Self { .init(unchecked: "MKCALENDAR") }
-    /// MKACTIVITY
-    public static var mkactivity: Self { .init(unchecked: "MKACTIVITY") }
-    /// UNSUBSCRIBE
-    public static var unsubscribe: Self { .init(unchecked: "UNSUBSCRIBE") }
-    /// SOURCE
-    public static var source: Self { .init(unchecked: "SOURCE") }
+    /// TRACE
+    public static var trace: Self { .init(unchecked: "TRACE") }
+    /// PATCH
+    public static var patch: Self { .init(unchecked: "PATCH") }
     /// CONNECT-UDP
     static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
 }
