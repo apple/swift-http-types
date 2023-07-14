@@ -125,4 +125,55 @@ extension URLSession {
         return (data, response)
     }
 }
+
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+extension URLSession {
+    /// Convenience method to load data using an `HTTPRequest`; creates and resumes a `URLSessionDataTask` internally.
+    ///
+    /// - Parameter request: The `HTTPRequest` for which to load data.
+    /// - Returns: Data and response.
+    public func data(for request: HTTPRequest) async throws -> (Data, HTTPResponse) {
+        guard let urlRequest = URLRequest(httpRequest: request) else {
+            throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
+        }
+        let (data, urlResponse) = try await data(for: urlRequest)
+        guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
+            throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
+        }
+        return (data, response)
+    }
+
+    /// Convenience method to upload data using an `HTTPRequest`; creates and resumes a `URLSessionUploadTask` internally.
+    ///
+    /// - Parameter request: The `HTTPRequest` for which to upload data.
+    /// - Parameter fileURL: File to upload.
+    /// - Returns: Data and response.
+    public func upload(for request: HTTPRequest, fromFile fileURL: URL) async throws -> (Data, HTTPResponse) {
+        guard let urlRequest = URLRequest(httpRequest: request) else {
+            throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
+        }
+        let (data, urlResponse) = try await upload(for: urlRequest, fromFile: fileURL)
+        guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
+            throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
+        }
+        return (data, response)
+    }
+
+    /// Convenience method to upload data using an `HTTPRequest`, creates and resumes a `URLSessionUploadTask` internally.
+    ///
+    /// - Parameter request: The `HTTPRequest` for which to upload data.
+    /// - Parameter bodyData: Data to upload.
+    /// - Returns: Data and response.
+    public func upload(for request: HTTPRequest, from bodyData: Data) async throws -> (Data, HTTPResponse) {
+        guard let urlRequest = URLRequest(httpRequest: request) else {
+            throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
+        }
+        let (data, urlResponse) = try await upload(for: urlRequest, from: bodyData)
+        guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
+            throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
+        }
+        return (data, response)
+    }
+}
+
 #endif
