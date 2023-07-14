@@ -16,7 +16,7 @@ import HTTPTypes
 
 extension String {
     var isASCII: Bool {
-        utf8.allSatisfy { $0 & 0x80 == 0 }
+        self.utf8.allSatisfy { $0 & 0x80 == 0 }
     }
 }
 
@@ -39,10 +39,10 @@ extension HTTPField {
     }
 
     var isoLatin1Value: String {
-        if value.isASCII {
-            return value
+        if self.value.isASCII {
+            return self.value
         } else {
-            return withUnsafeBytesOfValue { buffer in
+            return self.withUnsafeBytesOfValue { buffer in
                 let scalars = buffer.lazy.map { UnicodeScalar(UInt32($0))! }
                 var string = ""
                 string.unicodeScalars.append(contentsOf: scalars)

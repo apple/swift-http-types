@@ -12,6 +12,8 @@ needs to be listed here.
 ### Contributors
 
 - Guoye Zhang <guoye_zhang@apple.com>
+- Sergey Dmitriev <s.dmitriev@safe-tech.ru>
+- Tomohiro Kumagai <tomo@ez-net.jp>
 
 **Updating this list**
 

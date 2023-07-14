@@ -21,9 +21,9 @@ extension HTTPRequest {
     /// fields.
     public var url: URL? {
         get {
-            if let schemeField = pseudoHeaderFields.scheme,
-               let authorityField = pseudoHeaderFields.authority,
-               let pathField = pseudoHeaderFields.path {
+            if let schemeField = self.pseudoHeaderFields.scheme,
+               let authorityField = self.pseudoHeaderFields.authority,
+               let pathField = self.pseudoHeaderFields.path {
                 return schemeField.withUnsafeBytesOfValue { scheme in
                     authorityField.withUnsafeBytesOfValue { authority in
                         pathField.withUnsafeBytesOfValue { path in
@@ -42,9 +42,9 @@ extension HTTPRequest {
                 self.authority = authority.map { String(decoding: $0, as: UTF8.self) }
                 self.path = String(decoding: path, as: UTF8.self)
             } else {
-                pseudoHeaderFields.scheme = nil
-                pseudoHeaderFields.authority = nil
-                pseudoHeaderFields.path = nil
+                self.pseudoHeaderFields.scheme = nil
+                self.pseudoHeaderFields.authority = nil
+                self.pseudoHeaderFields.path = nil
             }
         }
     }
@@ -89,10 +89,10 @@ extension URL {
         return withUnsafeTemporaryAllocation(of: UInt8.self, capacity: length) { buffer in
             CFURLGetBytes(url, buffer.baseAddress, buffer.count)
 
-            func unionRange(_ a: CFRange, _ b: CFRange) -> CFRange {
-                if a.location == kCFNotFound { return b }
-                if b.location == kCFNotFound { return a }
-                return CFRange(location: a.location, length: b.location + b.length - a.location)
+            func unionRange(_ first: CFRange, _ second: CFRange) -> CFRange {
+                if first.location == kCFNotFound { return second }
+                if second.location == kCFNotFound { return first }
+                return CFRange(location: first.location, length: second.location + second.length - first.location)
             }
 
             func bufferSlice(_ range: CFRange) -> UnsafeMutableBufferPointer<UInt8> {

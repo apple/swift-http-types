@@ -46,13 +46,13 @@ extension URLRequest {
 
     /// Convert the `URLRequest` into an `HTTPRequest`.
     public var httpRequest: HTTPRequest? {
-        guard let method = HTTPRequest.Method(httpMethod ?? "GET"),
+        guard let method = HTTPRequest.Method(self.httpMethod ?? "GET"),
               let url
         else {
             return nil
         }
         var request = HTTPRequest(method: method, url: url)
-        if let allHTTPHeaderFields {
+        if let allHTTPHeaderFields = self.allHTTPHeaderFields {
             request.headerFields.reserveCapacity(allHTTPHeaderFields.count)
             for (name, value) in allHTTPHeaderFields {
                 if let name = HTTPField.Name(name) {

@@ -40,11 +40,11 @@ extension HTTPURLResponse {
 
     /// Convert the `HTTPURLResponse` into an `HTTPResponse`.
     public var httpResponse: HTTPResponse? {
-        guard (0 ... 999).contains(statusCode) else {
+        guard (0 ... 999).contains(self.statusCode) else {
             return nil
         }
-        var response = HTTPResponse(status: .init(code: statusCode))
-        if let fields = allHeaderFields as? [String: String] {
+        var response = HTTPResponse(status: .init(code: self.statusCode))
+        if let fields = self.allHeaderFields as? [String: String] {
             response.headerFields.reserveCapacity(fields.count)
             for (name, value) in fields {
                 if let name = HTTPField.Name(name) {

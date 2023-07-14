@@ -16,5 +16,6 @@
 
 # rules
 
+--disable andOperator
 --disable blankLinesAroundMark
 --disable wrapMultilineStatementBraces
