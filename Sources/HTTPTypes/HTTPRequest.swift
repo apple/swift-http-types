@@ -22,7 +22,7 @@
 /// the "Host" header.
 public struct HTTPRequest: Sendable, Hashable {
     /// The HTTP request method
-    public struct Method: Hashable, RawRepresentable, LosslessStringConvertible {
+    public struct Method: Sendable, Hashable, RawRepresentable, LosslessStringConvertible {
         /// The string value of the request.
         public let rawValue: String
 
