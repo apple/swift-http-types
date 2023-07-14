@@ -72,4 +72,31 @@ final class HTTPTypesTests: XCTestCase {
         XCTAssertEqual(response2.headerFields.count, 3)
         XCTAssertEqual(response2.headerFields[.server], "HTTPServer/1.0")
     }
+
+    func testSendable() {
+        func isSendable(_ value: some Sendable) -> Bool { true }
+        func isSendable(_ value: Any) -> Bool { false }
+
+        let field: HTTPField = HTTPField(name: .userAgent, value: "")
+        let indexingStrategy: HTTPField.DynamicTableIndexingStrategy = field.indexingStrategy
+        let name: HTTPField.Name = field.name
+        let fields: HTTPFields = [:]
+        let request: HTTPRequest = HTTPRequest(method: .post, scheme: nil, authority: nil, path: nil)
+        let method: HTTPRequest.Method = request.method
+        let requestPseudoHeaderFields: HTTPRequest.PseudoHeaderFields = request.pseudoHeaderFields
+        let response: HTTPResponse = HTTPResponse(status: .ok)
+        let status: HTTPResponse.Status = response.status
+        let responsePseudoHeaderFields: HTTPResponse.PseudoHeaderFields = response.pseudoHeaderFields
+
+        XCTAssertTrue(isSendable(field))
+        XCTAssertTrue(isSendable(indexingStrategy))
+        XCTAssertTrue(isSendable(name))
+        XCTAssertTrue(isSendable(fields))
+        XCTAssertTrue(isSendable(request))
+        XCTAssertTrue(isSendable(method))
+        XCTAssertTrue(isSendable(requestPseudoHeaderFields))
+        XCTAssertTrue(isSendable(response))
+        XCTAssertTrue(isSendable(status))
+        XCTAssertTrue(isSendable(responsePseudoHeaderFields))
+    }
 }
