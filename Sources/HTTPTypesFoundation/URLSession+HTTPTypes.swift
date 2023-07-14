@@ -137,7 +137,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (data, urlResponse) = try await data(for: urlRequest)
+        let (data, urlResponse) = try await self.data(for: urlRequest)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }
@@ -153,7 +153,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (data, urlResponse) = try await upload(for: urlRequest, fromFile: fileURL)
+        let (data, urlResponse) = try await self.upload(for: urlRequest, fromFile: fileURL)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }
@@ -169,7 +169,7 @@ extension URLSession {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
-        let (data, urlResponse) = try await upload(for: urlRequest, from: bodyData)
+        let (data, urlResponse) = try await self.upload(for: urlRequest, from: bodyData)
         guard let response = (urlResponse as? HTTPURLResponse)?.httpResponse else {
             throw HTTPTypeConversionError.failedToConvertURLResponseToHTTPResponse
         }

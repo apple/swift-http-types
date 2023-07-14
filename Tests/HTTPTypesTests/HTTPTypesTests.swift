@@ -77,14 +77,14 @@ final class HTTPTypesTests: XCTestCase {
         func isSendable(_ value: some Sendable) -> Bool { true }
         func isSendable(_ value: Any) -> Bool { false }
 
-        let field: HTTPField = HTTPField(name: .userAgent, value: "")
+        let field: HTTPField = .init(name: .userAgent, value: "")
         let indexingStrategy: HTTPField.DynamicTableIndexingStrategy = field.indexingStrategy
         let name: HTTPField.Name = field.name
         let fields: HTTPFields = [:]
-        let request: HTTPRequest = HTTPRequest(method: .post, scheme: nil, authority: nil, path: nil)
+        let request: HTTPRequest = .init(method: .post, scheme: nil, authority: nil, path: nil)
         let method: HTTPRequest.Method = request.method
         let requestPseudoHeaderFields: HTTPRequest.PseudoHeaderFields = request.pseudoHeaderFields
-        let response: HTTPResponse = HTTPResponse(status: .ok)
+        let response: HTTPResponse = .init(status: .ok)
         let status: HTTPResponse.Status = response.status
         let responsePseudoHeaderFields: HTTPResponse.PseudoHeaderFields = response.pseudoHeaderFields
 
