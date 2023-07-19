@@ -106,6 +106,9 @@ public struct HTTPField: Sendable, Hashable {
         if byte == 0x09 || byte == 0x20 {
             // First character cannot be a space or a tab.
             return false
+        } else if 0x80 <= byte && byte <= 0xBF {
+            // First character cannot be 0x80 to 0xBF
+            return false
         }
         while true {
             switch byte {
@@ -143,7 +146,7 @@ public struct HTTPField: Sendable, Hashable {
                     return 0x20
                 }
             }
-            let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop { $0 == 0x09 || $0 == 0x20 }
+            let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop { $0 == 0x09 || $0 == 0x20 || ( 0x80 <= $0 && $0 <= 0xBF ) }
             return ISOLatin1String(unchecked: String(decoding: trimmed, as: UTF8.self))
         }
     }
