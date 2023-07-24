@@ -15,10 +15,10 @@
 /// An HTTP response message consisting of the ":status" pseudo header field and header fields.
 ///
 /// Conveniences are provided to access the status code and its reason phrase.
-public struct HTTPResponse: Sendable, Hashable {
+public struct HTTPResponse: Sendable, Hashable, Codable {
     /// The response status consisting of a 3-digit status code and a reason phrase. The reason
     /// phrase is ignored by modern HTTP versions.
-    public struct Status: Sendable, Hashable, ExpressibleByIntegerLiteral, CustomStringConvertible {
+    public struct Status: Sendable, Hashable, ExpressibleByIntegerLiteral, CustomStringConvertible, Codable {
         /// The 3-digit status code.
         public let code: Int
         /// The reason phrase.
@@ -52,7 +52,7 @@ public struct HTTPResponse: Sendable, Hashable {
         }
 
         /// The first digit of the status code defines the kind of response.
-        @frozen public enum Kind {
+        @frozen public enum Kind: Codable {
             /// The status code is outside the range of 100...599.
             case invalid
             /// The status code is informational (1xx) and the response is not final.
@@ -158,7 +158,7 @@ public struct HTTPResponse: Sendable, Hashable {
     }
 
     /// The pseudo header fields of a response.
-    public struct PseudoHeaderFields: Sendable, Hashable {
+    public struct PseudoHeaderFields: Sendable, Hashable, Codable {
         /// The underlying ":status" pseudo header field.
         ///
         /// The value of this field must be 3 ASCII decimal digits.

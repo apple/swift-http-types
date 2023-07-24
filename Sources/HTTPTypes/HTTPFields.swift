@@ -26,8 +26,8 @@
 ///
 /// `HTTPFields` adheres to modern HTTP semantics. In particular, the "Cookie" request header field
 /// is split into separate header fields by default.
-public struct HTTPFields: Sendable, Hashable {
-    private final class _Storage: @unchecked Sendable, Hashable {
+public struct HTTPFields: Sendable, Hashable, Codable {
+    private final class _Storage: @unchecked Sendable, Hashable, Codable {
         var fields: [(HTTPField, UInt16)] = []
         var index: [String: UInt16]? = [:]
         #if canImport(os.lock)
@@ -124,6 +124,29 @@ public struct HTTPFields: Sendable, Hashable {
                 self.index?[name] = UInt16(self.fields.count)
             }
             self.fields.append((field, .max))
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case fields0
+            case fields1
+            case index
+        }
+
+        convenience init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let fields0 = try container.decode([HTTPField].self, forKey: .fields0)
+            let fields1 = try container.decode([UInt16].self, forKey: .fields1)
+            let index = try container.decodeIfPresent([String: UInt16].self, forKey: .index)
+            self.init()
+            self.fields = zip(fields0, fields1).map { ($0, $1) }
+            self.index = index
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(fields.map(\.0), forKey: .fields0)
+            try container.encode(fields.map(\.1), forKey: .fields1)
+            try container.encodeIfPresent(index, forKey: .index)
         }
     }
 

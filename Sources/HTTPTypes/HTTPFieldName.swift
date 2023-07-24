@@ -26,7 +26,7 @@ extension HTTPField {
     ///     static let example = Self("X-Example")!
     /// }
     /// ```
-    public struct Name: Sendable {
+    public struct Name: Sendable, Codable {
         /// The original name of the HTTP field received or supplied to the initializer.
         public let rawName: String
 

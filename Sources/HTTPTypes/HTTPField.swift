@@ -16,9 +16,9 @@
 ///
 /// The field name is a case-insensitive but case-preserving ASCII string; the field value is a
 /// collection of bytes.
-public struct HTTPField: Sendable, Hashable {
+public struct HTTPField: Sendable, Hashable, Codable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
-    public struct DynamicTableIndexingStrategy: Sendable, Hashable {
+    public struct DynamicTableIndexingStrategy: Sendable, Hashable, Codable {
         /// Default strategy.
         public static var automatic: Self { .init(rawValue: 0) }
 

@@ -18,7 +18,7 @@ extension String {
     }
 }
 
-struct ISOLatin1String: Sendable, Hashable {
+struct ISOLatin1String: Sendable, Hashable, Codable {
     let _storage: String
 
     private static func transcodeSlowPath(from bytes: some Collection<UInt8>) -> String {

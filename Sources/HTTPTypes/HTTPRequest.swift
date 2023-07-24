@@ -20,9 +20,9 @@
 ///
 /// In a legacy HTTP/1 context, the ":scheme" is ignored and the ":authority" is translated into
 /// the "Host" header.
-public struct HTTPRequest: Sendable, Hashable {
+public struct HTTPRequest: Sendable, Hashable, Codable {
     /// The HTTP request method
-    public struct Method: Sendable, Hashable, RawRepresentable, LosslessStringConvertible {
+    public struct Method: Sendable, Hashable, RawRepresentable, LosslessStringConvertible, Codable {
         /// The string value of the request.
         public let rawValue: String
 
@@ -145,7 +145,7 @@ public struct HTTPRequest: Sendable, Hashable {
     }
 
     /// The pseudo header fields of a request.
-    public struct PseudoHeaderFields: Sendable, Hashable {
+    public struct PseudoHeaderFields: Sendable, Hashable, Codable {
         /// The underlying ":method" pseudo header field.
         ///
         /// The value of this field must be a valid method.
