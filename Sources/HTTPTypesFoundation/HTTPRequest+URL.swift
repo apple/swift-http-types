@@ -84,7 +84,7 @@ extension URL {
 
     fileprivate var httpRequestComponents: (scheme: [UInt8], authority: [UInt8]?, path: [UInt8]) {
         // CFURL parser based on byte ranges does not unnecessarily percent-encode WHATWG URL
-        let url = unsafeBitCast(self as NSURL, to: CFURL.self)
+        let url = unsafeBitCast(self.absoluteURL as NSURL, to: CFURL.self)
         let length = CFURLGetBytes(url, nil, 0)
         return withUnsafeTemporaryAllocation(of: UInt8.self, capacity: length) { buffer in
             CFURLGetBytes(url, buffer.baseAddress, buffer.count)
