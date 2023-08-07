@@ -108,7 +108,29 @@ public struct HTTPFields: Sendable, Hashable {
         }
 
         static func == (lhs: _Storage, rhs: _Storage) -> Bool {
-            lhs.fields.lazy.map(\.0) == rhs.fields.lazy.map(\.0)
+            let leftFieldsIndex = lhs.ensureIndex
+            let rightFieldsIndex = rhs.ensureIndex
+            if leftFieldsIndex.count != rightFieldsIndex.count {
+                return false
+            }
+            for (name, var leftIndex) in leftFieldsIndex {
+                guard var rightIndex = rightFieldsIndex[name] else {
+                    return false
+                }
+                while leftIndex != .max && rightIndex != .max {
+                    let (leftField, leftNext) = lhs.fields[Int(leftIndex)]
+                    let (rightField, rightNext) = rhs.fields[Int(rightIndex)]
+                    if leftField != rightField {
+                        return false
+                    }
+                    leftIndex = leftNext
+                    rightIndex = rightNext
+                }
+                if leftIndex != rightIndex {
+                    return false
+                }
+            }
+            return true
         }
 
         func append(field: HTTPField) {

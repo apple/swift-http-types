@@ -73,6 +73,49 @@ final class HTTPTypesTests: XCTestCase {
         XCTAssertEqual(response2.headerFields[.server], "HTTPServer/1.0")
     }
 
+    func testComparison() {
+        let fields1: HTTPFields = [
+            .acceptEncoding: "br",
+            .acceptEncoding: "gzip",
+            .accept: "*/*",
+        ]
+        XCTAssertNotEqual(fields1, [:])
+
+        let fields2: HTTPFields = [
+            .acceptEncoding: "br",
+            .acceptEncoding: "gzip",
+            .accept: "*/*",
+        ]
+        XCTAssertEqual(fields1, fields2)
+
+        let fields3: HTTPFields = [
+            .acceptEncoding: "br",
+            .accept: "*/*",
+            .acceptEncoding: "gzip",
+        ]
+        XCTAssertEqual(fields1, fields3)
+
+        let fields4: HTTPFields = [
+            .acceptEncoding: "br",
+            .accept: "*/*",
+        ]
+        XCTAssertNotEqual(fields1, fields4)
+
+        let fields5: HTTPFields = [
+            .acceptEncoding: "gzip",
+            .acceptEncoding: "br",
+            .accept: "*/*",
+        ]
+        XCTAssertNotEqual(fields1, fields5)
+
+        let fields6: HTTPFields = [
+            .acceptEncoding: "gzip",
+            .acceptEncoding: "br",
+            .acceptLanguage: "en",
+        ]
+        XCTAssertNotEqual(fields1, fields6)
+    }
+
     func testSendable() {
         func isSendable(_ value: some Sendable) -> Bool { true }
         func isSendable(_ value: Any) -> Bool { false }
