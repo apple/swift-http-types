@@ -43,7 +43,7 @@ public struct HTTPRequest: Sendable, Hashable {
             self.init(rawValue)
         }
 
-        private init(unchecked: String) {
+        fileprivate init(unchecked: String) {
             self.rawValue = unchecked
         }
 
@@ -57,7 +57,7 @@ public struct HTTPRequest: Sendable, Hashable {
     /// A convenient way to access the value of the ":method" pseudo header field.
     public var method: Method {
         get {
-            Method(self.pseudoHeaderFields.method.rawValue._storage)!
+            Method(unchecked: self.pseudoHeaderFields.method.rawValue._storage)
         }
         set {
             self.pseudoHeaderFields.method.rawValue = ISOLatin1String(unchecked: newValue.rawValue)
@@ -221,6 +221,106 @@ public struct HTTPRequest: Sendable, Hashable {
 extension HTTPRequest: CustomDebugStringConvertible {
     public var debugDescription: String {
         "(\(self.pseudoHeaderFields.method.rawValue._storage)) \((self.pseudoHeaderFields.scheme?.value).map { "\($0)://" } ?? "")\(self.pseudoHeaderFields.authority?.value ?? "")\(self.pseudoHeaderFields.path?.value ?? "")"
+    }
+}
+
+extension HTTPRequest.PseudoHeaderFields: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode(self.method)
+        if let scheme = self.scheme {
+            try container.encode(scheme)
+        }
+        if let authority = self.authority {
+            try container.encode(authority)
+        }
+        if let path = self.path {
+            try container.encode(path)
+        }
+        if let extendedConnectProtocol = self.extendedConnectProtocol {
+            try container.encode(extendedConnectProtocol)
+        }
+    }
+
+    private enum DecodingError: Error {
+        case missingMethod
+        case multipleMethod
+        case multipleScheme
+        case multipleAuthority
+        case multiplePath
+        case multipleExtendedConnectProtocol
+        case invalidMethod(String)
+        case notPseudo(String)
+    }
+
+    public init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        var method: HTTPField?
+        var scheme: HTTPField?
+        var authority: HTTPField?
+        var path: HTTPField?
+        var extendedConnectProtocol: HTTPField?
+        while !container.isAtEnd {
+            let field = try container.decode(HTTPField.self)
+            switch field.name {
+            case .method:
+                guard method == nil else {
+                    throw DecodingError.multipleMethod
+                }
+                method = field
+            case .scheme:
+                guard scheme == nil else {
+                    throw DecodingError.multipleScheme
+                }
+                scheme = field
+            case .authority:
+                guard authority == nil else {
+                    throw DecodingError.multipleAuthority
+                }
+                authority = field
+            case .path:
+                guard path == nil else {
+                    throw DecodingError.multiplePath
+                }
+                path = field
+            case .protocol:
+                guard extendedConnectProtocol == nil else {
+                    throw DecodingError.multipleExtendedConnectProtocol
+                }
+                extendedConnectProtocol = field
+            default:
+                guard field.name.rawName.hasPrefix(":") else {
+                    throw DecodingError.notPseudo(field.name.rawName)
+                }
+            }
+        }
+        guard let method else {
+            throw DecodingError.missingMethod
+        }
+        guard HTTPField.isValidToken(method.rawValue._storage) else {
+            throw DecodingError.invalidMethod(method.rawValue._storage)
+        }
+        self.init(method: method, scheme: scheme, authority: authority, path: path,
+                  extendedConnectProtocol: extendedConnectProtocol)
+    }
+}
+
+extension HTTPRequest: Codable {
+    enum CodingKeys: String, CodingKey {
+        case pseudoHeaderFields
+        case headerFields
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.pseudoHeaderFields, forKey: .pseudoHeaderFields)
+        try container.encode(self.headerFields, forKey: .headerFields)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.pseudoHeaderFields = try container.decode(PseudoHeaderFields.self, forKey: .pseudoHeaderFields)
+        self.headerFields = try container.decode(HTTPFields.self, forKey: .headerFields)
     }
 }
 

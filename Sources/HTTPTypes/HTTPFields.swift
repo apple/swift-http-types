@@ -306,6 +306,31 @@ extension HTTPFields: CustomDebugStringConvertible {
     }
 }
 
+extension HTTPFields: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode(contentsOf: self)
+    }
+
+    private enum DecodingError: Error {
+        case isPseudo(String)
+    }
+
+    public init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        if let count = container.count {
+            self.reserveCapacity(count)
+        }
+        while !container.isAtEnd {
+            let field = try container.decode(HTTPField.self)
+            guard !field.name.rawName.hasPrefix(":") else {
+                throw DecodingError.isPseudo(field.name.rawName)
+            }
+            self.append(field)
+        }
+    }
+}
+
 extension Array {
     // `removalIndices` must be ordered.
     mutating func remove(at removalIndices: some Sequence<Index>) {

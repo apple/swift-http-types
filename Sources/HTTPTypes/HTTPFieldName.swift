@@ -77,6 +77,34 @@ extension HTTPField.Name: CustomPlaygroundDisplayConvertible {
     }
 }
 
+extension HTTPField.Name: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.rawName)
+    }
+
+    private enum DecodingError: Error {
+        case invalidString(String)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let nameString = try container.decode(String.self)
+        if nameString.hasPrefix(":") {
+            guard nameString.lowercased() == nameString,
+                  HTTPField.isValidToken(nameString.dropFirst()) else {
+                throw DecodingError.invalidString(nameString)
+            }
+            self.init(rawName: nameString, canonicalName: nameString)
+        } else {
+            guard let name = Self(nameString) else {
+                throw DecodingError.invalidString(nameString)
+            }
+            self = name
+        }
+    }
+}
+
 extension HTTPField.Name {
     static var method: Self { .init(rawName: ":method", canonicalName: ":method") }
     static var scheme: Self { .init(rawName: ":scheme", canonicalName: ":scheme") }

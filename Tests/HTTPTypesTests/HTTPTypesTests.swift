@@ -99,4 +99,53 @@ final class HTTPTypesTests: XCTestCase {
         XCTAssertTrue(isSendable(status))
         XCTAssertTrue(isSendable(responsePseudoHeaderFields))
     }
+
+    func testRequestCoding() throws {
+        let request = HTTPRequest(method: .put, scheme: "https", authority: "www.example.com", path: "/upload", headerFields: [
+            .acceptEncoding: "br",
+            .acceptEncoding: "gzip",
+            .contentLength: "1024",
+        ])
+        let encoded = try JSONEncoder().encode(request)
+
+        let json = try JSONSerialization.jsonObject(with: encoded)
+        XCTAssertEqual(json as? NSDictionary, [
+            "pseudoHeaderFields": [
+                ["name": ":method", "value": "PUT"],
+                ["name": ":scheme", "value": "https"],
+                ["name": ":authority", "value": "www.example.com"],
+                ["name": ":path", "value": "/upload"],
+            ],
+            "headerFields": [
+                ["name": "Accept-Encoding", "value": "br"],
+                ["name": "Accept-Encoding", "value": "gzip"],
+                ["name": "Content-Length", "value": "1024"],
+            ]
+        ])
+
+        let decoded = try JSONDecoder().decode(HTTPRequest.self, from: encoded)
+        XCTAssertEqual(request, decoded)
+    }
+
+    func testResponseCoding() throws {
+        var response = HTTPResponse(status: .noContent, headerFields: [
+            .server: "HTTPServer/1.0",
+        ])
+        response.headerFields[0].indexingStrategy = .prefer
+        let encoded = try JSONEncoder().encode(response)
+
+        let json = try JSONSerialization.jsonObject(with: encoded)
+        XCTAssertEqual(json as? NSDictionary, [
+            "pseudoHeaderFields": [
+                ["name": ":status", "value": "204"],
+            ],
+            "reasonPhrase": "No Content",
+            "headerFields": [
+                ["name": "Server", "value": "HTTPServer/1.0", "indexingStrategy": 1],
+            ]
+        ])
+
+        let decoded = try JSONDecoder().decode(HTTPResponse.self, from: encoded)
+        XCTAssertEqual(response, decoded)
+    }
 }

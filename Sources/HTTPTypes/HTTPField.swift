@@ -20,19 +20,33 @@ public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
     public struct DynamicTableIndexingStrategy: Sendable, Hashable {
         /// Default strategy.
-        public static var automatic: Self { .init(rawValue: 0) }
+        public static var automatic: Self { .init(uncheckedValue: 0) }
 
         /// Always put this field in the dynamic table if possible.
-        public static var prefer: Self { .init(rawValue: 1) }
+        public static var prefer: Self { .init(uncheckedValue: 1) }
 
         /// Don't put this field in the dynamic table.
-        public static var avoid: Self { .init(rawValue: 2) }
+        public static var avoid: Self { .init(uncheckedValue: 2) }
 
         /// Don't put this field in the dynamic table, and set a flag to disallow intermediaries to
         /// index this field.
-        public static var disallow: Self { .init(rawValue: 3) }
+        public static var disallow: Self { .init(uncheckedValue: 3) }
 
-        private let rawValue: UInt8
+        fileprivate let rawValue: UInt8
+
+        private static let maxRawValue: UInt8 = 3
+
+        private init(uncheckedValue: UInt8) {
+            assert(uncheckedValue <= Self.maxRawValue)
+            self.rawValue = uncheckedValue
+        }
+
+        fileprivate init?(rawValue: UInt8) {
+            if rawValue > Self.maxRawValue {
+                return nil
+            }
+            self.rawValue = rawValue
+        }
     }
 
     /// Create an HTTP field from a name and a value.
@@ -181,8 +195,43 @@ extension HTTPField: CustomPlaygroundDisplayConvertible {
     }
 }
 
+extension HTTPField: Codable {
+    enum CodingKeys: String, CodingKey {
+        case name
+        case value
+        case indexingStrategy
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.name, forKey: .name)
+        try container.encode(self.rawValue._storage, forKey: .value)
+        if self.indexingStrategy != .automatic {
+            try container.encode(self.indexingStrategy.rawValue, forKey: .indexingStrategy)
+        }
+    }
+
+    private enum DecodingError: Error {
+        case invalidValue(String)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let name = try container.decode(Name.self, forKey: .name)
+        let value = try container.decode(String.self, forKey: .value)
+        guard Self.isValidValue(value) else {
+            throw DecodingError.invalidValue(value)
+        }
+        self.init(name: name, uncheckedValue: ISOLatin1String(unchecked: value))
+        if let indexingStrategyValue = try container.decodeIfPresent(UInt8.self, forKey: .indexingStrategy),
+           let indexingStrategy = DynamicTableIndexingStrategy(rawValue: indexingStrategyValue) {
+            self.indexingStrategy = indexingStrategy
+        }
+    }
+}
+
 extension HTTPField {
-    static func isValidToken(_ token: String) -> Bool {
+    static func isValidToken(_ token: some StringProtocol) -> Bool {
         !token.isEmpty && token.utf8.allSatisfy {
             switch $0 {
             case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
