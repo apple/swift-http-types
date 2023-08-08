@@ -211,16 +211,12 @@ extension HTTPField: Codable {
         }
     }
 
-    private enum DecodingError: Error {
-        case invalidValue(String)
-    }
-
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(Name.self, forKey: .name)
         let value = try container.decode(String.self, forKey: .value)
         guard Self.isValidValue(value) else {
-            throw DecodingError.invalidValue(value)
+            throw DecodingError.dataCorruptedError(forKey: .value, in: container, debugDescription: "HTTP field value \"\(value)\" contains invalid characters")
         }
         self.init(name: name, uncheckedValue: ISOLatin1String(unchecked: value))
         if let indexingStrategyValue = try container.decodeIfPresent(UInt8.self, forKey: .indexingStrategy),

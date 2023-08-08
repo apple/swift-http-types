@@ -242,17 +242,6 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
         }
     }
 
-    private enum DecodingError: Error {
-        case missingMethod
-        case multipleMethod
-        case multipleScheme
-        case multipleAuthority
-        case multiplePath
-        case multipleExtendedConnectProtocol
-        case invalidMethod(String)
-        case notPseudo(String)
-    }
-
     public init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
         var method: HTTPField?
@@ -265,40 +254,40 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
             switch field.name {
             case .method:
                 guard method == nil else {
-                    throw DecodingError.multipleMethod
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":method\" pseudo header fields")
                 }
                 method = field
             case .scheme:
                 guard scheme == nil else {
-                    throw DecodingError.multipleScheme
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":scheme\" pseudo header fields")
                 }
                 scheme = field
             case .authority:
                 guard authority == nil else {
-                    throw DecodingError.multipleAuthority
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":authority\" pseudo header fields")
                 }
                 authority = field
             case .path:
                 guard path == nil else {
-                    throw DecodingError.multiplePath
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":path\" pseudo header fields")
                 }
                 path = field
             case .protocol:
                 guard extendedConnectProtocol == nil else {
-                    throw DecodingError.multipleExtendedConnectProtocol
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":protocol\" pseudo header fields")
                 }
                 extendedConnectProtocol = field
             default:
                 guard field.name.rawName.hasPrefix(":") else {
-                    throw DecodingError.notPseudo(field.name.rawName)
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(field)\" is not a pseudo header field")
                 }
             }
         }
         guard let method else {
-            throw DecodingError.missingMethod
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\":method\" pseudo header field is missing")
         }
         guard HTTPField.isValidToken(method.rawValue._storage) else {
-            throw DecodingError.invalidMethod(method.rawValue._storage)
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(method.rawValue._storage)\" is not a valid method")
         }
         self.init(method: method, scheme: scheme, authority: authority, path: path,
                   extendedConnectProtocol: extendedConnectProtocol)

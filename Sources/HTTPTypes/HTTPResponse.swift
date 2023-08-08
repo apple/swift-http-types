@@ -211,13 +211,6 @@ extension HTTPResponse.PseudoHeaderFields: Codable {
         try container.encode(self.status)
     }
 
-    private enum DecodingError: Error {
-        case missingStatus
-        case multipleStatus
-        case invalidStatus(String)
-        case notPseudo(String)
-    }
-
     public init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
         var status: HTTPField?
@@ -226,20 +219,20 @@ extension HTTPResponse.PseudoHeaderFields: Codable {
             switch field.name {
             case .status:
                 guard status == nil else {
-                    throw DecodingError.missingStatus
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":status\" pseudo header fields")
                 }
                 status = field
             default:
                 guard field.name.rawName.hasPrefix(":") else {
-                    throw DecodingError.notPseudo(field.name.rawName)
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(field)\" is not a pseudo header field")
                 }
             }
         }
         guard let status else {
-            throw DecodingError.missingStatus
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\":status\" pseudo header field is missing")
         }
         guard HTTPResponse.Status.isValidStatus(status.rawValue._storage) else {
-            throw DecodingError.invalidStatus(status.rawValue._storage)
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(status.rawValue._storage)\" is not a valid status code")
         }
         self.init(status: status)
     }
