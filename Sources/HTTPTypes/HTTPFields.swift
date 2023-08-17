@@ -134,6 +134,7 @@ public struct HTTPFields: Sendable, Hashable {
         }
 
         func append(field: HTTPField) {
+            precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
             let name = field.name.canonicalName
             if var index = self.index?[name] {
                 while true {
@@ -146,6 +147,7 @@ public struct HTTPFields: Sendable, Hashable {
                 self.index?[name] = UInt16(self.fields.count)
             }
             self.fields.append((field, .max))
+            precondition(self.fields.count < UInt16.max, "Too many fields")
         }
     }
 
@@ -254,8 +256,10 @@ public struct HTTPFields: Sendable, Hashable {
 extension HTTPFields: ExpressibleByDictionaryLiteral {
     public init(dictionaryLiteral elements: (HTTPField.Name, String)...) {
         for (name, value) in elements {
+            precondition(!name.isPseudo, "Pseudo header field \"\(name)\" disallowed")
             self._storage.append(field: HTTPField(name: name, value: value))
         }
+        precondition(self.count < UInt16.max, "Too many fields")
     }
 }
 
@@ -293,6 +297,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
                 self._storage = self._storage.copy()
             }
             if newValue.name != self._storage.fields[position].0.name {
+                precondition(!newValue.name.isPseudo, "Pseudo header field \"\(newValue.name)\" disallowed")
                 self._storage.index = nil
             }
             self._storage.fields[position].0 = newValue
@@ -303,13 +308,18 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
         if !isKnownUniquelyReferenced(&self._storage) {
             self._storage = self._storage.copy()
         }
-        if subrange.startIndex == count {
+        if subrange.startIndex == self.count {
             for field in newElements {
+                precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
                 self._storage.append(field: field)
             }
         } else {
             self._storage.index = nil
-            self._storage.fields.replaceSubrange(subrange, with: newElements.lazy.map { ($0, 0) })
+            self._storage.fields.replaceSubrange(subrange, with: newElements.lazy.map { field in
+                precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
+                return (field, 0)
+            })
+            precondition(self.count < UInt16.max, "Too many fields")
         }
     }
 
@@ -325,6 +335,27 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
 extension HTTPFields: CustomDebugStringConvertible {
     public var debugDescription: String {
         self._storage.fields.description
+    }
+}
+
+extension HTTPFields: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode(contentsOf: self)
+    }
+
+    public init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        if let count = container.count {
+            self.reserveCapacity(count)
+        }
+        while !container.isAtEnd {
+            let field = try container.decode(HTTPField.self)
+            guard !field.name.isPseudo else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Pseudo header field \"\(field)\" disallowed")
+            }
+            self.append(field)
+        }
     }
 }
 

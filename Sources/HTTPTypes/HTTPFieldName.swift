@@ -52,6 +52,10 @@ extension HTTPField {
             self.rawName = rawName
             self.canonicalName = canonicalName
         }
+
+        var isPseudo: Bool {
+            self.rawName.hasPrefix(":")
+        }
     }
 }
 
@@ -74,6 +78,30 @@ extension HTTPField.Name: LosslessStringConvertible {
 extension HTTPField.Name: CustomPlaygroundDisplayConvertible {
     public var playgroundDescription: Any {
         self.description
+    }
+}
+
+extension HTTPField.Name: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.rawName)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let nameString = try container.decode(String.self)
+        if nameString.hasPrefix(":") {
+            guard nameString.lowercased() == nameString,
+                  HTTPField.isValidToken(nameString.dropFirst()) else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "HTTP pseudo field name \"\(nameString)\" contains invalid characters")
+            }
+            self.init(rawName: nameString, canonicalName: nameString)
+        } else {
+            guard let name = Self(nameString) else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "HTTP field name \"\(nameString)\" contains invalid characters")
+            }
+            self = name
+        }
     }
 }
 

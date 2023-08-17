@@ -205,6 +205,69 @@ extension HTTPResponse: CustomDebugStringConvertible {
     }
 }
 
+extension HTTPResponse.PseudoHeaderFields: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode(self.status)
+    }
+
+    public init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        var status: HTTPField?
+        while !container.isAtEnd {
+            let field = try container.decode(HTTPField.self)
+            switch field.name {
+            case .status:
+                guard status == nil else {
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":status\" pseudo header fields")
+                }
+                status = field
+            default:
+                guard field.name.rawName.hasPrefix(":") else {
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(field)\" is not a pseudo header field")
+                }
+            }
+        }
+        guard let status else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\":status\" pseudo header field is missing")
+        }
+        guard HTTPResponse.Status.isValidStatus(status.rawValue._storage) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(status.rawValue._storage)\" is not a valid status code")
+        }
+        self.init(status: status)
+    }
+}
+
+extension HTTPResponse: Codable {
+    enum CodingKeys: String, CodingKey {
+        case pseudoHeaderFields
+        case headerFields
+        case reasonPhrase
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.pseudoHeaderFields, forKey: .pseudoHeaderFields)
+        try container.encode(self.reasonPhrase, forKey: .reasonPhrase)
+        try container.encode(self.headerFields, forKey: .headerFields)
+    }
+
+    private enum DecodingError: Error {
+        case invalidReasonPhrase(String)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.pseudoHeaderFields = try container.decode(PseudoHeaderFields.self, forKey: .pseudoHeaderFields)
+        let reasonPhrase = try container.decode(String.self, forKey: .reasonPhrase)
+        guard Status.isValidReasonPhrase(reasonPhrase) else {
+            throw DecodingError.invalidReasonPhrase(reasonPhrase)
+        }
+        self.reasonPhrase = reasonPhrase
+        self.headerFields = try container.decode(HTTPFields.self, forKey: .headerFields)
+    }
+}
+
 extension HTTPResponse.Status {
     // MARK: 1xx
 
