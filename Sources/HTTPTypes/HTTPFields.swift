@@ -28,8 +28,8 @@
 /// is split into separate header fields by default.
 public struct HTTPFields: Sendable, Hashable {
     private final class _Storage: @unchecked Sendable, Hashable {
-        var fields: [(HTTPField, UInt16)] = []
-        var index: [String: UInt16]? = [:]
+        var fields: [(field: HTTPField, next: UInt16)] = []
+        var index: [String: (first: UInt16, last: UInt16)]? = [:]
         #if canImport(os.lock)
         let lock = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
         #else
@@ -53,7 +53,7 @@ public struct HTTPFields: Sendable, Hashable {
             self.lock.deallocate()
         }
 
-        var ensureIndex: [String: UInt16] {
+        var ensureIndex: [String: (first: UInt16, last: UInt16)] {
             #if canImport(os.lock)
             os_unfair_lock_lock(self.lock)
             defer { os_unfair_lock_unlock(self.lock) }
@@ -68,11 +68,14 @@ public struct HTTPFields: Sendable, Hashable {
             if let index = self.index {
                 return index
             }
-            var newIndex = [String: UInt16]()
-            for index in self.fields.indices.reversed() {
-                let name = self.fields[index].0.name.canonicalName
-                self.fields[index].1 = newIndex[name] ?? .max
-                newIndex[name] = UInt16(index)
+            var newIndex = [String: (first: UInt16, last: UInt16)]()
+            for index in self.fields.indices {
+                let name = self.fields[index].field.name.canonicalName
+                self.fields[index].next = .max
+                if let lastIndex = newIndex[name]?.last {
+                    self.fields[Int(lastIndex)].next = UInt16(index)
+                }
+                newIndex[name, default: (first: UInt16(index), last: 0)].last = UInt16(index)
             }
             self.index = newIndex
             return newIndex
@@ -113,8 +116,8 @@ public struct HTTPFields: Sendable, Hashable {
             if leftFieldsIndex.count != rightFieldsIndex.count {
                 return false
             }
-            for (name, var leftIndex) in leftFieldsIndex {
-                guard var rightIndex = rightFieldsIndex[name] else {
+            for (name, (var leftIndex, _)) in leftFieldsIndex {
+                guard var rightIndex = rightFieldsIndex[name]?.first else {
                     return false
                 }
                 while leftIndex != .max && rightIndex != .max {
@@ -136,16 +139,11 @@ public struct HTTPFields: Sendable, Hashable {
         func append(field: HTTPField) {
             precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
             let name = field.name.canonicalName
-            if var index = self.index?[name] {
-                while true {
-                    let next = self.fields[Int(index)].1
-                    if next == .max { break }
-                    index = next
-                }
-                self.fields[Int(index)].1 = UInt16(self.fields.count)
-            } else {
-                self.index?[name] = UInt16(self.fields.count)
+            let location = UInt16(self.fields.count)
+            if let index = self.index?[name] {
+                self.fields[Int(index.last)].next = location
             }
+            self.index?[name, default: (first: location, last: 0)].last = location
             self.fields.append((field, .max))
             precondition(self.fields.count < UInt16.max, "Too many fields")
         }
@@ -212,7 +210,7 @@ public struct HTTPFields: Sendable, Hashable {
     public subscript(fields name: HTTPField.Name) -> [HTTPField] {
         get {
             var fields = [HTTPField]()
-            var index = self._storage.ensureIndex[name.canonicalName] ?? .max
+            var index = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
             while index != .max {
                 let (field, next) = self._storage.fields[Int(index)]
                 fields.append(field)
@@ -224,16 +222,16 @@ public struct HTTPFields: Sendable, Hashable {
             if !isKnownUniquelyReferenced(&self._storage) {
                 self._storage = self._storage.copy()
             }
-            var existingIndex = self._storage.ensureIndex[name.canonicalName] ?? .max
+            var existingIndex = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
             var newFieldIterator = newValue.makeIterator()
             var toDelete = [Int]()
             while existingIndex != .max {
                 if let field = newFieldIterator.next() {
-                    self._storage.fields[Int(existingIndex)].0 = field
+                    self._storage.fields[Int(existingIndex)].field = field
                 } else {
                     toDelete.append(Int(existingIndex))
                 }
-                existingIndex = self._storage.fields[Int(existingIndex)].1
+                existingIndex = self._storage.fields[Int(existingIndex)].next
             }
             if !toDelete.isEmpty {
                 self._storage.fields.remove(at: toDelete)
@@ -284,23 +282,23 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
             guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("getter position: \(position) out of range in HTTPFields")
             }
-            return self._storage.fields[position].0
+            return self._storage.fields[position].field
         }
         set {
             guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("setter position: \(position) out of range in HTTPFields")
             }
-            if self._storage.fields[position].0 == newValue {
+            if self._storage.fields[position].field == newValue {
                 return
             }
             if !isKnownUniquelyReferenced(&self._storage) {
                 self._storage = self._storage.copy()
             }
-            if newValue.name != self._storage.fields[position].0.name {
+            if newValue.name != self._storage.fields[position].field.name {
                 precondition(!newValue.name.isPseudo, "Pseudo header field \"\(newValue.name)\" disallowed")
                 self._storage.index = nil
             }
-            self._storage.fields[position].0 = newValue
+            self._storage.fields[position].field = newValue
         }
     }
 
