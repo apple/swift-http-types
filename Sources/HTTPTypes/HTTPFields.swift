@@ -172,7 +172,7 @@ public struct HTTPFields: Sendable, Hashable {
     /// semicolon.
     public subscript(name: HTTPField.Name) -> String? {
         get {
-            let values = self[raw: name]
+            let values = self[values: name]
             if !values.isEmpty {
                 let separator = name == .cookie ? "; " : ", "
                 return values.joined(separator: separator)
@@ -188,16 +188,16 @@ public struct HTTPFields: Sendable, Hashable {
                         HTTPField(name: name, value: String($0))
                     }
                 } else {
-                    self[raw: name] = [newValue]
+                    self[values: name] = [newValue]
                 }
             } else {
-                self[raw: name] = []
+                self[values: name] = []
             }
         }
     }
 
     /// Access the field values by name as an array of strings. The order of fields is preserved.
-    public subscript(raw name: HTTPField.Name) -> [String] {
+    public subscript(values name: HTTPField.Name) -> [String] {
         get {
             self[fields: name].map(\.value)
         }

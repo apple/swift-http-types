@@ -50,13 +50,13 @@ extension HTTPField.Name {
 // Set
 request.headerFields[.userAgent] = "MyApp/1.0"
 request.headerFields[.myCustomHeader] = "custom-value"
-request.headerFields[raw: .acceptLanguage] = ["en-US", "zh-Hans-CN"]
+request.headerFields[values: .acceptLanguage] = ["en-US", "zh-Hans-CN"]
 
 // Get
 request.headerFields[.userAgent] // "MyApp/1.0"
 request.headerFields[.myCustomHeader] // "custom-value"
 request.headerFields[.acceptLanguage] // "en-US, zh-Hans-CN"
-request.headerFields[raw: .acceptLanguage] // ["en-US", "zh-Hans-CN"]
+request.headerFields[values: .acceptLanguage] // ["en-US", "zh-Hans-CN"]
 ```
 
 #### Use with URLSession
