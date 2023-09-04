@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "http-types",
+    name: "swift-http-types",
     products: [
         .library(name: "HTTPTypes", targets: ["HTTPTypes"]),
         .library(name: "HTTPTypesFoundation", targets: ["HTTPTypesFoundation"]),
