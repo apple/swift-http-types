@@ -315,23 +315,49 @@ extension HTTPRequest: Codable {
 
 extension HTTPRequest.Method {
     /// GET
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var get: Self { .init(unchecked: "GET") }
+
     /// HEAD
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var head: Self { .init(unchecked: "HEAD") }
+
     /// POST
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var post: Self { .init(unchecked: "POST") }
+
     /// PUT
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var put: Self { .init(unchecked: "PUT") }
+
     /// DELETE
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var delete: Self { .init(unchecked: "DELETE") }
+
     /// CONNECT
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var connect: Self { .init(unchecked: "CONNECT") }
     /// OPTIONS
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var options: Self { .init(unchecked: "OPTIONS") }
+
     /// TRACE
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var trace: Self { .init(unchecked: "TRACE") }
+
     /// PATCH
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc5789.html
     public static var patch: Self { .init(unchecked: "PATCH") }
+
     /// CONNECT-UDP
     static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
 }
