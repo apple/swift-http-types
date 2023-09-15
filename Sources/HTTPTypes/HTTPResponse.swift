@@ -195,7 +195,7 @@ public struct HTTPResponse: Sendable, Hashable {
     }
 
     public static func == (lhs: HTTPResponse, rhs: HTTPResponse) -> Bool {
-        lhs.pseudoHeaderFields == rhs.pseudoHeaderFields && lhs.headerFields == lhs.headerFields
+        lhs.pseudoHeaderFields == rhs.pseudoHeaderFields && lhs.headerFields == rhs.headerFields
     }
 }
 
