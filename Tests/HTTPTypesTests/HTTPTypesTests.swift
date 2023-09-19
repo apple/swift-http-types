@@ -30,7 +30,7 @@ final class HTTPTypesTests: XCTestCase {
         fields.insert(HTTPField(name: .acceptEncodingMixed, value: "deflate"), at: 1)
 
         XCTAssertEqual(fields[.acceptEncoding], "gzip, deflate, br")
-        XCTAssertEqual(fields[raw: .acceptEncodingUpper].count, 3)
+        XCTAssertEqual(fields[values: .acceptEncodingUpper].count, 3)
     }
 
     func testFieldValue() {
