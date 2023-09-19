@@ -163,7 +163,7 @@ final class HTTPTypesTests: XCTestCase {
                 ["name": "Accept-Encoding", "value": "br"],
                 ["name": "Accept-Encoding", "value": "gzip"],
                 ["name": "Content-Length", "value": "1024"],
-            ]
+            ],
         ])
 
         let decoded = try JSONDecoder().decode(HTTPRequest.self, from: encoded)
@@ -185,7 +185,7 @@ final class HTTPTypesTests: XCTestCase {
             "reasonPhrase": "No Content",
             "headerFields": [
                 ["name": "Server", "value": "HTTPServer/1.0", "indexingStrategy": 1],
-            ]
+            ],
         ])
 
         let decoded = try JSONDecoder().decode(HTTPResponse.self, from: encoded)
