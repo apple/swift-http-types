@@ -289,8 +289,13 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
         guard HTTPField.isValidToken(method.rawValue._storage) else {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(method.rawValue._storage)\" is not a valid method")
         }
-        self.init(method: method, scheme: scheme, authority: authority, path: path,
-                  extendedConnectProtocol: extendedConnectProtocol)
+        self.init(
+            method: method,
+            scheme: scheme,
+            authority: authority,
+            path: path,
+            extendedConnectProtocol: extendedConnectProtocol
+        )
     }
 }
 

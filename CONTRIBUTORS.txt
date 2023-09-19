@@ -11,7 +11,9 @@ needs to be listed here.
 
 ### Contributors
 
+- Franz Busch <f.busch@apple.com>
 - Guoye Zhang <guoye_zhang@apple.com>
+- Jager-yoo <y73447jh@gmail.com>
 - Sergey Dmitriev <s.dmitriev@safe-tech.ru>
 - Tomohiro Kumagai <tomo@ez-net.jp>
 

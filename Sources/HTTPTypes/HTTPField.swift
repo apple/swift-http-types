@@ -144,7 +144,7 @@ public struct HTTPField: Sendable, Hashable {
     }
 
     static func legalizeValue(_ value: ISOLatin1String) -> ISOLatin1String {
-        if Self._isValidValue(value._storage.utf8) {
+        if self._isValidValue(value._storage.utf8) {
             return value
         } else {
             let bytes = value._storage.utf8.lazy.map { byte -> UInt8 in

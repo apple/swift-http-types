@@ -123,7 +123,7 @@ public struct HTTPResponse: Sendable, Hashable {
         }
 
         static func legalizingReasonPhrase(_ reasonPhrase: String) -> String {
-            if Self.isValidReasonPhrase(reasonPhrase) {
+            if self.isValidReasonPhrase(reasonPhrase) {
                 return reasonPhrase
             } else {
                 let scalars = reasonPhrase.unicodeScalars.lazy.map { scala -> UnicodeScalar in
