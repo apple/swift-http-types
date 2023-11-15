@@ -13,9 +13,9 @@
 //===----------------------------------------------------------------------===//
 
 #if canImport(os.lock)
-@_implementationOnly import os.lock
+import os.lock
 #else
-@_implementationOnly import Glibc
+import Glibc
 #endif
 
 /// A collection of HTTP fields. It is used in `HTTPRequest` and `HTTPResponse`, and can also be
