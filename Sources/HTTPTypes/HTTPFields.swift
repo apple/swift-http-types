@@ -172,10 +172,10 @@ public struct HTTPFields: Sendable, Hashable {
     /// semicolon.
     public subscript(name: HTTPField.Name) -> String? {
         get {
-            let values = self[values: name]
-            if !values.isEmpty {
+            let values = self.fields(for: name)
+            if values.first(where: { _ in true }) != nil {
                 let separator = name == .cookie ? "; " : ", "
-                return values.joined(separator: separator)
+                return values.lazy.map(\.value).joined(separator: separator)
             } else {
                 return nil
             }
@@ -184,14 +184,14 @@ public struct HTTPFields: Sendable, Hashable {
             if let newValue {
                 if #available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *),
                    name == .cookie {
-                    self[fields: name] = newValue.split(separator: "; ", omittingEmptySubsequences: false).map {
+                    self.setFields(newValue.split(separator: "; ", omittingEmptySubsequences: false).lazy.map {
                         HTTPField(name: name, value: String($0))
-                    }
+                    }, for: name)
                 } else {
-                    self[values: name] = [newValue]
+                    self.setFields(CollectionOfOne(HTTPField(name: name, value: newValue)), for: name)
                 }
             } else {
-                self[values: name] = []
+                self.setFields(EmptyCollection(), for: name)
             }
         }
     }
@@ -199,47 +199,72 @@ public struct HTTPFields: Sendable, Hashable {
     /// Access the field values by name as an array of strings. The order of fields is preserved.
     public subscript(values name: HTTPField.Name) -> [String] {
         get {
-            self[fields: name].map(\.value)
+            self.fields(for: name).map(\.value)
         }
         set {
-            self[fields: name] = newValue.map { HTTPField(name: name, value: $0) }
+            self.setFields(newValue.lazy.map { HTTPField(name: name, value: $0) }, for: name)
         }
     }
 
     /// Access the fields by name as an array. The order of fields is preserved.
     public subscript(fields name: HTTPField.Name) -> [HTTPField] {
         get {
-            var fields = [HTTPField]()
-            var index = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
-            while index != .max {
-                let (field, next) = self._storage.fields[Int(index)]
-                fields.append(field)
-                index = next
-            }
-            return fields
+            Array(self.fields(for: name))
         }
         set {
-            if !isKnownUniquelyReferenced(&self._storage) {
-                self._storage = self._storage.copy()
-            }
-            var existingIndex = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
-            var newFieldIterator = newValue.makeIterator()
-            var toDelete = [Int]()
-            while existingIndex != .max {
-                if let field = newFieldIterator.next() {
-                    self._storage.fields[Int(existingIndex)].field = field
-                } else {
-                    toDelete.append(Int(existingIndex))
+            self.setFields(newValue, for: name)
+        }
+    }
+
+    private func fields(for name: HTTPField.Name) -> some Sequence<HTTPField> {
+        struct HTTPFieldSequence: Sequence {
+            let fields: [(field: HTTPField, next: UInt16)]
+            let index: UInt16
+
+            struct Iterator: IteratorProtocol {
+                let fields: [(field: HTTPField, next: UInt16)]
+                var index: UInt16
+
+                mutating func next() -> HTTPField? {
+                    if self.index == .max {
+                        return nil
+                    }
+                    let (field, next) = self.fields[Int(self.index)]
+                    self.index = next
+                    return field
                 }
-                existingIndex = self._storage.fields[Int(existingIndex)].next
             }
-            if !toDelete.isEmpty {
-                self._storage.fields.remove(at: toDelete)
-                self._storage.index = nil
+
+            func makeIterator() -> Iterator {
+                Iterator(fields: self.fields, index: self.index)
             }
-            while let field = newFieldIterator.next() {
-                self._storage.append(field: field)
+        }
+
+        let index = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
+        return HTTPFieldSequence(fields: self._storage.fields, index: index)
+    }
+
+    private mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
+        if !isKnownUniquelyReferenced(&self._storage) {
+            self._storage = self._storage.copy()
+        }
+        var existingIndex = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
+        var newFieldIterator = fieldSequence.makeIterator()
+        var toDelete = [Int]()
+        while existingIndex != .max {
+            if let field = newFieldIterator.next() {
+                self._storage.fields[Int(existingIndex)].field = field
+            } else {
+                toDelete.append(Int(existingIndex))
             }
+            existingIndex = self._storage.fields[Int(existingIndex)].next
+        }
+        if !toDelete.isEmpty {
+            self._storage.fields.remove(at: toDelete)
+            self._storage.index = nil
+        }
+        while let field = newFieldIterator.next() {
+            self._storage.append(field: field)
         }
     }
 
