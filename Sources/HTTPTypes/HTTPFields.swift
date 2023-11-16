@@ -172,10 +172,10 @@ public struct HTTPFields: Sendable, Hashable {
     /// semicolon.
     public subscript(name: HTTPField.Name) -> String? {
         get {
-            let values = self.fields(for: name)
-            if values.first(where: { _ in true }) != nil {
+            let fields = self.fields(for: name)
+            if fields.first(where: { _ in true }) != nil {
                 let separator = name == .cookie ? "; " : ", "
-                return values.lazy.map(\.value).joined(separator: separator)
+                return fields.lazy.map(\.value).joined(separator: separator)
             } else {
                 return nil
             }
