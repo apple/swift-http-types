@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-@_implementationOnly import CoreFoundation
+import CoreFoundation
 import Foundation
 import HTTPTypes
 
