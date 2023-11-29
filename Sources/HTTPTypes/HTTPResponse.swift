@@ -98,11 +98,20 @@ public struct HTTPResponse: Sendable, Hashable {
         }
 
         var fieldValue: String {
-            String([
-                Character(Unicode.Scalar(UInt8(self.code / 100) + 48)),
-                Character(Unicode.Scalar(UInt8((self.code / 10) % 10) + 48)),
-                Character(Unicode.Scalar(UInt8(self.code % 10) + 48)),
-            ])
+            if #available(macOS 11.0, iOS 14.0, watchOS 7.0, tvOS 14.0, *) {
+                return String(unsafeUninitializedCapacity: 3) { buffer in
+                    buffer[0] = UInt8(self.code / 100) + 48
+                    buffer[1] = UInt8((self.code / 10) % 10) + 48
+                    buffer[2] = UInt8(self.code % 10) + 48
+                    return 3
+                }
+            } else {
+                return String([
+                    Character(Unicode.Scalar(UInt8(self.code / 100) + 48)),
+                    Character(Unicode.Scalar(UInt8((self.code / 10) % 10) + 48)),
+                    Character(Unicode.Scalar(UInt8(self.code % 10) + 48)),
+                ])
+            }
         }
 
         static func isValidStatus(_ status: String) -> Bool {
@@ -149,7 +158,11 @@ public struct HTTPResponse: Sendable, Hashable {
     /// phrase.
     public var status: Status {
         get {
-            Status(uncheckedCode: Int(self.pseudoHeaderFields.status.rawValue._storage)!, reasonPhrase: self.reasonPhrase)
+            var codeIterator = self.pseudoHeaderFields.status.rawValue._storage.utf8.makeIterator()
+            let code = (Int(codeIterator.next()! - 48) * 100 +
+                        Int(codeIterator.next()! - 48) * 10 +
+                        Int(codeIterator.next()! - 48))
+            return Status(uncheckedCode: code, reasonPhrase: self.reasonPhrase)
         }
         set {
             self.pseudoHeaderFields.status.rawValue = ISOLatin1String(unchecked: newValue.fieldValue)
