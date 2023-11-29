@@ -159,9 +159,9 @@ public struct HTTPResponse: Sendable, Hashable {
     public var status: Status {
         get {
             var codeIterator = self.pseudoHeaderFields.status.rawValue._storage.utf8.makeIterator()
-            let code = (Int(codeIterator.next()! - 48) * 100 +
-                        Int(codeIterator.next()! - 48) * 10 +
-                        Int(codeIterator.next()! - 48))
+            let code = Int(codeIterator.next()! - 48) * 100 +
+                Int(codeIterator.next()! - 48) * 10 +
+                Int(codeIterator.next()! - 48)
             return Status(uncheckedCode: code, reasonPhrase: self.reasonPhrase)
         }
         set {
