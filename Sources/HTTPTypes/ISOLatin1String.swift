@@ -21,7 +21,7 @@ extension String {
 struct ISOLatin1String: Sendable, Hashable {
     let _storage: String
 
-    private static func transcodeSlowPath(from bytes: some Collection<UInt8>) -> String {
+    private static func transcodeSlowPath<C: Collection>(from bytes: C) -> String where C.Element == UInt8 {
         let scalars = bytes.lazy.map { UnicodeScalar(UInt32($0))! }
         var string = ""
         string.unicodeScalars.append(contentsOf: scalars)
@@ -46,7 +46,7 @@ struct ISOLatin1String: Sendable, Hashable {
         }
     }
 
-    init(_ bytes: some Collection<UInt8>) {
+    init<C: Collection>(_ bytes: C) where C.Element == UInt8 {
         let ascii = bytes.allSatisfy { $0 & 0x80 == 0 }
         if ascii {
             self._storage = String(decoding: bytes, as: UTF8.self)

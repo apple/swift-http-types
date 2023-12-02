@@ -216,35 +216,35 @@ public struct HTTPFields: Sendable, Hashable {
         }
     }
 
-    private func fields(for name: HTTPField.Name) -> some Sequence<HTTPField> {
-        struct HTTPFieldSequence: Sequence {
+    private struct HTTPFieldSequence: Sequence {
+        let fields: [(field: HTTPField, next: UInt16)]
+        let index: UInt16
+
+        struct Iterator: IteratorProtocol {
             let fields: [(field: HTTPField, next: UInt16)]
-            let index: UInt16
+            var index: UInt16
 
-            struct Iterator: IteratorProtocol {
-                let fields: [(field: HTTPField, next: UInt16)]
-                var index: UInt16
-
-                mutating func next() -> HTTPField? {
-                    if self.index == .max {
-                        return nil
-                    }
-                    let (field, next) = self.fields[Int(self.index)]
-                    self.index = next
-                    return field
+            mutating func next() -> HTTPField? {
+                if self.index == .max {
+                    return nil
                 }
-            }
-
-            func makeIterator() -> Iterator {
-                Iterator(fields: self.fields, index: self.index)
+                let (field, next) = self.fields[Int(self.index)]
+                self.index = next
+                return field
             }
         }
 
+        func makeIterator() -> Iterator {
+            Iterator(fields: self.fields, index: self.index)
+        }
+    }
+
+    private func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
         let index = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
         return HTTPFieldSequence(fields: self._storage.fields, index: index)
     }
 
-    private mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
+    private mutating func setFields<S: Sequence>(_ fieldSequence: S, for name: HTTPField.Name) where S.Element == HTTPField {
         if !isKnownUniquelyReferenced(&self._storage) {
             self._storage = self._storage.copy()
         }
@@ -384,7 +384,7 @@ extension HTTPFields: Codable {
 
 extension Array {
     // `removalIndices` must be ordered.
-    mutating func remove(at removalIndices: some Sequence<Index>) {
+    mutating func remove<S: Sequence>(at removalIndices: S) where S.Element == Index {
         var offset = 0
         var iterator = removalIndices.makeIterator()
         var nextToRemoveOptional = iterator.next()

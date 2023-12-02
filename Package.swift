@@ -4,12 +4,6 @@ import PackageDescription
 
 let package = Package(
     name: "swift-http-types",
-    platforms: [
-        .macOS("10.15"),
-        .iOS("13.0"),
-        .watchOS("6.0"),
-        .tvOS("13.0"),
-    ],
     products: [
         .library(name: "HTTPTypes", targets: ["HTTPTypes"]),
         .library(name: "HTTPTypesFoundation", targets: ["HTTPTypesFoundation"]),
