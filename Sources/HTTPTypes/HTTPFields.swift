@@ -244,7 +244,7 @@ public struct HTTPFields: Sendable, Hashable {
         return HTTPFieldSequence(fields: self._storage.fields, index: index)
     }
 
-    private mutating func setFields<S: Sequence>(_ fieldSequence: S, for name: HTTPField.Name) where S.Element == HTTPField {
+    private mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
         if !isKnownUniquelyReferenced(&self._storage) {
             self._storage = self._storage.copy()
         }
@@ -384,7 +384,7 @@ extension HTTPFields: Codable {
 
 extension Array {
     // `removalIndices` must be ordered.
-    mutating func remove<S: Sequence>(at removalIndices: S) where S.Element == Index {
+    mutating func remove(at removalIndices: some Sequence<Index>) {
         var offset = 0
         var iterator = removalIndices.makeIterator()
         var nextToRemoveOptional = iterator.next()

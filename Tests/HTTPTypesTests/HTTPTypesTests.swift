@@ -117,7 +117,7 @@ final class HTTPTypesTests: XCTestCase {
     }
 
     func testSendable() {
-        func isSendable<T: Sendable>(_ value: T) -> Bool { true }
+        func isSendable(_ value: some Sendable) -> Bool { true }
         func isSendable(_ value: Any) -> Bool { false }
 
         let field: HTTPField = .init(name: .userAgent, value: "")

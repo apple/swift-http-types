@@ -65,7 +65,7 @@ extension HTTPRequest {
 }
 
 extension URL {
-    fileprivate init?<C1: Collection, C2: Collection, C3: Collection>(scheme: C1, authority: C2, path: C3) where C1.Element == UInt8, C2.Element == UInt8, C3.Element == UInt8 {
+    fileprivate init?(scheme: some Collection<UInt8>, authority: some Collection<UInt8>, path: some Collection<UInt8>) {
         var buffer = [UInt8]()
         buffer.reserveCapacity(scheme.count + 3 + authority.count + path.count)
         buffer.append(contentsOf: scheme)

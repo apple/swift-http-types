@@ -63,7 +63,7 @@ public struct HTTPField: Sendable, Hashable {
     /// - Parameters:
     ///   - name: The HTTP field name.
     ///   - value: The HTTP field value. Invalid bytes are converted into space characters.
-    public init<C: Collection>(name: Name, value: C) where C.Element == UInt8 {
+    public init(name: Name, value: some Collection<UInt8>) {
         self.name = name
         self.rawValue = Self.legalizeValue(ISOLatin1String(value))
     }
@@ -111,7 +111,7 @@ public struct HTTPField: Sendable, Hashable {
 
     var rawValue: ISOLatin1String
 
-    private static func _isValidValue<S: Sequence>(_ bytes: S) -> Bool where S.Element == UInt8 {
+    private static func _isValidValue(_ bytes: some Sequence<UInt8>) -> Bool {
         var iterator = bytes.makeIterator()
         guard var byte = iterator.next() else {
             // Empty string is allowed.
@@ -178,7 +178,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter value: The byte collection to validate.
     /// - Returns: Whether the byte collection is valid.
-    public static func isValidValue<C: Collection>(_ value: C) -> Bool where C.Element == UInt8 {
+    public static func isValidValue(_ value: some Collection<UInt8>) -> Bool {
         self._isValidValue(value)
     }
 }
@@ -227,7 +227,7 @@ extension HTTPField: Codable {
 }
 
 extension HTTPField {
-    static func isValidToken<S: StringProtocol>(_ token: S) -> Bool {
+    static func isValidToken(_ token: some StringProtocol) -> Bool {
         !token.isEmpty && token.utf8.allSatisfy {
             switch $0 {
             case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:

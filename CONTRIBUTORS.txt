@@ -13,8 +13,10 @@ needs to be listed here.
 
 - Franz Busch <f.busch@apple.com>
 - Guoye Zhang <guoye_zhang@apple.com>
+- Gwynne Raskind <gwynne@vapor.codes>
 - Jager-yoo <y73447jh@gmail.com>
 - Sergey Dmitriev <s.dmitriev@safe-tech.ru>
+- Tim Condon <0xTim@users.noreply.github.com>
 - Tomohiro Kumagai <tomo@ez-net.jp>
 
 **Updating this list**
