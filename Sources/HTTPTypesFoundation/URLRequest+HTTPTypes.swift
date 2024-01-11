@@ -18,6 +18,8 @@ import HTTPTypes
 import FoundationNetworking
 #endif
 
+#if !os(WASI)
+
 extension URLRequest {
     /// Create a `URLRequest` from an `HTTPRequest`.
     /// - Parameter httpRequest: The HTTP request to convert from.
@@ -63,3 +65,5 @@ extension URLRequest {
         return request
     }
 }
+
+#endif

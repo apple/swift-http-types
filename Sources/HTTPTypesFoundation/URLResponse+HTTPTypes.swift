@@ -18,6 +18,8 @@ import HTTPTypes
 import FoundationNetworking
 #endif
 
+#if !os(WASI)
+
 extension HTTPURLResponse {
     /// Create an `HTTPURLResponse` from an `HTTPResponse`.
     /// - Parameter httpResponse: The HTTP response to convert from.
@@ -55,3 +57,5 @@ extension HTTPURLResponse {
         return response
     }
 }
+
+#endif

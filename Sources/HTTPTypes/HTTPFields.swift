@@ -14,8 +14,10 @@
 
 #if canImport(os.lock)
 import os.lock
-#else
+#elseif canImport(Glibc)
 import Glibc
+#elseif canImport(WASILibc)
+import WASILibc
 #endif
 
 /// A collection of HTTP fields. It is used in `HTTPRequest` and `HTTPResponse`, and can also be
