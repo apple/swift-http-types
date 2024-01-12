@@ -18,6 +18,8 @@ import HTTPTypes
 import FoundationNetworking
 #endif
 
+#if !os(WASI)
+
 extension URLSessionTask {
     /// The original HTTP request this task was created with.
     public var originalHTTPRequest: HTTPRequest? {
@@ -39,6 +41,8 @@ private enum HTTPTypeConversionError: Error {
     case failedToConvertHTTPRequestToURLRequest
     case failedToConvertURLResponseToHTTPResponse
 }
+
+#endif
 
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS)
 
