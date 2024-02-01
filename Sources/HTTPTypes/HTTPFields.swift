@@ -280,6 +280,7 @@ public struct HTTPFields: Sendable, Hashable {
 
 extension HTTPFields: ExpressibleByDictionaryLiteral {
     public init(dictionaryLiteral elements: (HTTPField.Name, String)...) {
+        self.reserveCapacity(elements.count)
         for (name, value) in elements {
             precondition(!name.isPseudo, "Pseudo header field \"\(name)\" disallowed")
             self._storage.append(field: HTTPField(name: name, value: value))
