@@ -71,7 +71,8 @@ public struct HTTPField: Sendable, Hashable {
     /// Create an HTTP field from a name and a value. Leniently legalize the value.
     /// - Parameters:
     ///   - name: The HTTP field name.
-    ///   - value: The HTTP field value. Newlines and NULs are converted into space characters.
+    ///   - lenientValue: The HTTP field value. Newlines and NULs are converted into space
+    ///                   characters.
     public init(name: Name, lenientValue: some Collection<UInt8>) {
         self.name = name
         self.rawValue = Self.lenientLegalizeValue(ISOLatin1String(lenientValue))
