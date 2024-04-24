@@ -68,6 +68,15 @@ public struct HTTPField: Sendable, Hashable {
         self.rawValue = Self.legalizeValue(ISOLatin1String(value))
     }
 
+    /// Create an HTTP field from a name and a value. Leniently legalize the value.
+    /// - Parameters:
+    ///   - name: The HTTP field name.
+    ///   - value: The HTTP field value. Newlines and NULs are converted into space characters.
+    public init(name: Name, lenientValue: some Collection<UInt8>) {
+        self.name = name
+        self.rawValue = Self.lenientLegalizeValue(ISOLatin1String(lenientValue))
+    }
+
     init(name: Name, uncheckedValue: ISOLatin1String) {
         self.name = name
         self.rawValue = uncheckedValue
@@ -159,6 +168,22 @@ public struct HTTPField: Sendable, Hashable {
             }
             let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop { $0 == 0x09 || $0 == 0x20 }
             return ISOLatin1String(unchecked: String(decoding: trimmed, as: UTF8.self))
+        }
+    }
+
+    static func lenientLegalizeValue(_ value: ISOLatin1String) -> ISOLatin1String {
+        if value._storage.utf8.allSatisfy({ $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }) {
+            return value
+        } else {
+            let bytes = value._storage.utf8.lazy.map { byte -> UInt8 in
+                switch byte {
+                case 0x00, 0x0A, 0x0D:
+                    return 0x20
+                default:
+                    return byte
+                }
+            }
+            return ISOLatin1String(unchecked: String(decoding: bytes, as: UTF8.self))
         }
     }
 
