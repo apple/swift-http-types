@@ -38,6 +38,7 @@ final class HTTPTypesTests: XCTestCase {
         XCTAssertEqual(HTTPField(name: .accept, value: " a 😀 \t\n b \t \r ").value, "a 😀 \t  b")
         XCTAssertEqual(HTTPField(name: .accept, value: "").value, "")
         XCTAssertFalse(HTTPField.isValidValue(" "))
+        XCTAssertEqual(HTTPField(name: .accept, lenientValue: "  \r\n\0\t ".utf8).value, "     \t ")
     }
 
     func testRequest() {
