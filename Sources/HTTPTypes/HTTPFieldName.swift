@@ -504,6 +504,6 @@ extension HTTPField.Name {
     static var proxyQUICForwarding: Self { .init(rawName: "Proxy-QUIC-Forwarding", canonicalName: "proxy-quic-forwarding") }
     /// Proxy-Config-Epoch
     static var proxyConfigEpoch: Self { .init(rawName: "Proxy-Config-Epoch", canonicalName: "proxy-config-epoch") }
-    /// Connect-UDP-Listen
-    static var connectUDPListen: Self { .init(rawName: "Connect-UDP-Listen", canonicalName: "connect-udp-listen") }
+    /// Connect-UDP-Bind
+    static var connectUDPBind: Self { .init(rawName: "Connect-UDP-Bind", canonicalName: "connect-udp-bind") }
 }
