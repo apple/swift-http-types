@@ -1,10 +1,10 @@
-import HTTPTypes
 import Benchmark
+import HTTPTypes
 
 let benchmarks = {
     Benchmark(
         "Initialize HTTPFields from Dictionary Literal"
-    ) { benchmark in
+    ) { _ in
         let fiels: HTTPFields = [
             .contentType: "application/json",
             .contentLength: "42",

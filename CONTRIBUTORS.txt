@@ -15,8 +15,10 @@ needs to be listed here.
 - Guoye Zhang <guoye_zhang@apple.com>
 - Gwynne Raskind <gwynne@vapor.codes>
 - Jager-yoo <y73447jh@gmail.com>
+- Joannis Orlandos <joannis@orlandos.nl>
 - Max Desiatov <m_desiatov@apple.com>
 - Sergey Dmitriev <s.dmitriev@safe-tech.ru>
+- Si Beaumont <beaumont@apple.com>
 - Tim Condon <0xTim@users.noreply.github.com>
 - Tomohiro Kumagai <tomo@ez-net.jp>
 
