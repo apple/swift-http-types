@@ -281,6 +281,18 @@ extension HTTPResponse: Codable {
     }
 }
 
+extension HTTPResponse.Status: Codable {
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.code)
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let code = try decoder.singleValueContainer().decode(Int.self)
+        self.init(code: code)
+    }
+}
+
 extension HTTPResponse.Status {
     // MARK: 1xx
 

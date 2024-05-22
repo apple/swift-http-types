@@ -318,6 +318,23 @@ extension HTTPRequest: Codable {
     }
 }
 
+extension HTTPRequest.Method: Codable {
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.rawValue)
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawMethod = try container.decode(String.self)
+        guard let method = HTTPRequest.Method(rawMethod) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(rawMethod)\" is not a valid method")
+        }
+
+        self = method
+    }
+}
+
 extension HTTPRequest.Method {
     /// GET
     ///
