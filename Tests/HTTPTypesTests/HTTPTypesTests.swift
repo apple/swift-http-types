@@ -192,4 +192,40 @@ final class HTTPTypesTests: XCTestCase {
         let decoded = try JSONDecoder().decode(HTTPResponse.self, from: encoded)
         XCTAssertEqual(response, decoded)
     }
+
+    func testRequestParsing() throws {
+        let fields = [
+            HTTPField(name: HTTPField.Name(parsed: ":method")!, lenientValue: "PUT".utf8),
+            HTTPField(name: HTTPField.Name(parsed: ":scheme")!, lenientValue: "https".utf8),
+            HTTPField(name: HTTPField.Name(parsed: ":authority")!, lenientValue: "www.example.com".utf8),
+            HTTPField(name: HTTPField.Name(parsed: ":path")!, lenientValue: "/upload".utf8),
+            HTTPField(name: HTTPField.Name(parsed: "content-length")!, lenientValue: "1024".utf8),
+        ]
+        let request = try HTTPRequest(parsed: fields)
+        XCTAssertEqual(request.method, .put)
+        XCTAssertEqual(request.scheme, "https")
+        XCTAssertEqual(request.authority, "www.example.com")
+        XCTAssertEqual(request.path, "/upload")
+        XCTAssertEqual(request.headerFields[.contentLength], "1024")
+    }
+
+    func testResponseParsing() throws {
+        let fields = [
+            HTTPField(name: HTTPField.Name(parsed: ":status")!, lenientValue: "204".utf8),
+            HTTPField(name: HTTPField.Name(parsed: "server")!, lenientValue: "HTTPServer/1.0".utf8),
+        ]
+        let response = try HTTPResponse(parsed: fields)
+        XCTAssertEqual(response.status, .noContent)
+        XCTAssertEqual(response.headerFields[.server], "HTTPServer/1.0")
+    }
+
+    func testTrailerFieldsParsing() throws {
+        let fields = [
+            HTTPField(name: HTTPField.Name(parsed: "trailer1")!, lenientValue: "value1".utf8),
+            HTTPField(name: HTTPField.Name(parsed: "trailer2")!, lenientValue: "value2".utf8),
+        ]
+        let trailerFields = try HTTPFields(parsedTrailerFields: fields)
+        XCTAssertEqual(trailerFields[HTTPField.Name("trailer1")!], "value1")
+        XCTAssertEqual(trailerFields[HTTPField.Name("trailer2")!], "value2")
+    }
 }
