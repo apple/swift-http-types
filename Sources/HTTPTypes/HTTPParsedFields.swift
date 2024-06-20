@@ -100,7 +100,7 @@ struct HTTPParsedFields {
     }
 
     var request: HTTPRequest {
-        mutating get throws {
+        get throws {
             guard let method = self.method else {
                 throw ParsingError.requestWithoutMethod
             }
@@ -120,7 +120,7 @@ struct HTTPParsedFields {
     }
 
     var response: HTTPResponse {
-        mutating get throws {
+        get throws {
             guard let statusString = self.status?._storage else {
                 throw ParsingError.responseWithoutStatus
             }
@@ -136,7 +136,7 @@ struct HTTPParsedFields {
     }
 
     var trailerFields: HTTPFields {
-        mutating get throws {
+        get throws {
             if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil || self.extendedConnectProtocol != nil || self.status != nil {
                 throw ParsingError.responseWithRequestPseudo
             }
