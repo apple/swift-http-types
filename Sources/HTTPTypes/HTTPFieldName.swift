@@ -48,6 +48,40 @@ extension HTTPField {
             self.canonicalName = name.lowercased()
         }
 
+        /// Create an HTTP field name from a string produced by HPACK or QPACK decoders used in
+        /// modern HTTP versions.
+        ///
+        /// - Warning: Do not use directly with the `HTTPFields` struct which does not allow pseudo
+        ///            header fields.
+        ///
+        /// - Parameter name: The name of the HTTP field or the HTTP pseudo header field. It must
+        ///                   be lowercased.
+        public init?(parsed name: String) {
+            guard !name.isEmpty else {
+                return nil
+            }
+            let token: Substring
+            if name.hasPrefix(":") {
+                token = name.dropFirst()
+            } else {
+                token = Substring(name)
+            }
+            guard token.utf8.allSatisfy({
+                switch $0 {
+                case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
+                    return true
+                case 0x30 ... 0x39, 0x61 ... 0x7A: // DIGHT, ALPHA
+                    return true
+                default:
+                    return false
+                }
+            }) else {
+                return nil
+            }
+            self.rawName = name
+            self.canonicalName = name
+        }
+
         private init(rawName: String, canonicalName: String) {
             self.rawName = rawName
             self.canonicalName = canonicalName
