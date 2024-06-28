@@ -36,7 +36,7 @@ struct HTTPParsedFields {
         case invalidStatus
         case responseWithRequestPseudo
 
-        case trailersWithPseudo
+        case trailerFieldsWithPseudo
 
         case multipleContentLength
         case multipleContentDisposition
@@ -138,7 +138,7 @@ struct HTTPParsedFields {
     var trailerFields: HTTPFields {
         get throws {
             if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil || self.extendedConnectProtocol != nil || self.status != nil {
-                throw ParsingError.responseWithRequestPseudo
+                throw ParsingError.trailerFieldsWithPseudo
             }
             try validateFields()
             return self.fields
