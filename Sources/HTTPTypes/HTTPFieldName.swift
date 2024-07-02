@@ -498,6 +498,11 @@ extension HTTPField.Name {
     /// https://fetch.spec.whatwg.org/
     public static var xContentTypeOptions: Self { .init(rawName: "X-Content-Type-Options", canonicalName: "x-content-type-options") }
 
+    /// Proxy-Status
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9209.html
+    public static var proxyStatus: Self { .init(rawName: "Proxy-Status", canonicalName: "proxy-status") }
+
     // Deprecated
     /// P3P
     static var p3P: Self { .init(rawName: "P3P", canonicalName: "p3p") }
@@ -532,8 +537,6 @@ extension HTTPField.Name {
     static var secCHGeohash: Self { .init(rawName: "Sec-CH-Geohash", canonicalName: "sec-ch-geohash") }
     /// Client-Geohash
     static var clientGeohash: Self { .init(rawName: "Client-Geohash", canonicalName: "client-geohash") }
-    /// Proxy-Status
-    static var proxyStatus: Self { .init(rawName: "Proxy-Status", canonicalName: "proxy-status") }
     /// Proxy-QUIC-Forwarding
     static var proxyQUICForwarding: Self { .init(rawName: "Proxy-QUIC-Forwarding", canonicalName: "proxy-quic-forwarding") }
     /// Proxy-Config-Epoch
