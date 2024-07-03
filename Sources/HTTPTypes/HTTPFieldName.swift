@@ -393,6 +393,11 @@ extension HTTPField.Name {
     /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var proxyAuthorization: Self { .init(rawName: "Proxy-Authorization", canonicalName: "proxy-authorization") }
 
+    /// Proxy-Status
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9209.html
+    public static var proxyStatus: Self { .init(rawName: "Proxy-Status", canonicalName: "proxy-status") }
+
     /// Range
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
@@ -532,8 +537,6 @@ extension HTTPField.Name {
     static var secCHGeohash: Self { .init(rawName: "Sec-CH-Geohash", canonicalName: "sec-ch-geohash") }
     /// Client-Geohash
     static var clientGeohash: Self { .init(rawName: "Client-Geohash", canonicalName: "client-geohash") }
-    /// Proxy-Status
-    static var proxyStatus: Self { .init(rawName: "Proxy-Status", canonicalName: "proxy-status") }
     /// Proxy-QUIC-Forwarding
     static var proxyQUICForwarding: Self { .init(rawName: "Proxy-QUIC-Forwarding", canonicalName: "proxy-quic-forwarding") }
     /// Proxy-Config-Epoch
