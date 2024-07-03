@@ -393,6 +393,11 @@ extension HTTPField.Name {
     /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var proxyAuthorization: Self { .init(rawName: "Proxy-Authorization", canonicalName: "proxy-authorization") }
 
+    /// Proxy-Status
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9209.html
+    public static var proxyStatus: Self { .init(rawName: "Proxy-Status", canonicalName: "proxy-status") }
+
     /// Range
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
@@ -497,11 +502,6 @@ extension HTTPField.Name {
     ///
     /// https://fetch.spec.whatwg.org/
     public static var xContentTypeOptions: Self { .init(rawName: "X-Content-Type-Options", canonicalName: "x-content-type-options") }
-
-    /// Proxy-Status
-    ///
-    /// https://www.rfc-editor.org/rfc/rfc9209.html
-    public static var proxyStatus: Self { .init(rawName: "Proxy-Status", canonicalName: "proxy-status") }
 
     // Deprecated
     /// P3P
