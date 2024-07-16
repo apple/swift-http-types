@@ -133,10 +133,6 @@ extension URLSession {
     #endif
 }
 
-#endif
-
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS) || compiler(>=6)
-
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension URLSession {
     /// Convenience method to load data using an `HTTPRequest`; creates and resumes a `URLSessionDataTask` internally.
