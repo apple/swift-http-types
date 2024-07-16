@@ -114,6 +114,7 @@ extension URLSession {
         return (location, response)
     }
 
+    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS)
     /// Returns a byte stream that conforms to AsyncSequence protocol.
     ///
     /// - Parameter request: The `HTTPRequest` for which to load data.
@@ -129,6 +130,7 @@ extension URLSession {
         }
         return (data, response)
     }
+    #endif
 }
 
 #endif
