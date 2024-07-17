@@ -6,10 +6,10 @@
 .xcode
 /*.xcodeproj
 .xcode
+DerivedData
 
 .swiftpm/
 Package.resolved
 
 # DocC generated files
 .docc-build
-DerivedData
