@@ -110,7 +110,7 @@ struct HTTPParsedFields {
             if self.status != nil {
                 throw ParsingError.requestWithResponsePseudo
             }
-            try validateFields()
+            try self.validateFields()
             var request = HTTPRequest(method: requestMethod, scheme: self.scheme, authority: self.authority, path: self.path, headerFields: self.fields)
             if let extendedConnectProtocol = self.extendedConnectProtocol {
                 request.pseudoHeaderFields.extendedConnectProtocol = HTTPField(name: .protocol, uncheckedValue: extendedConnectProtocol)
@@ -130,7 +130,7 @@ struct HTTPParsedFields {
             if !HTTPResponse.Status.isValidStatus(statusString) {
                 throw ParsingError.invalidStatus
             }
-            try validateFields()
+            try self.validateFields()
             return HTTPResponse(status: .init(code: Int(statusString)!), headerFields: self.fields)
         }
     }
@@ -140,7 +140,7 @@ struct HTTPParsedFields {
             if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil || self.extendedConnectProtocol != nil || self.status != nil {
                 throw ParsingError.trailerFieldsWithPseudo
             }
-            try validateFields()
+            try self.validateFields()
             return self.fields
         }
     }
