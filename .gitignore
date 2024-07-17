@@ -5,7 +5,6 @@
 /Packages
 .xcode
 /*.xcodeproj
-.xcode
 DerivedData
 
 .swiftpm/

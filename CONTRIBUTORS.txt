@@ -11,6 +11,7 @@ needs to be listed here.
 
 ### Contributors
 
+- Eric Rosenberg <eric_rosenberg@apple.com>
 - Franz Busch <f.busch@apple.com>
 - Guoye Zhang <guoye_zhang@apple.com>
 - Gwynne Raskind <gwynne@vapor.codes>
@@ -21,6 +22,7 @@ needs to be listed here.
 - Si Beaumont <beaumont@apple.com>
 - Tim Condon <0xTim@users.noreply.github.com>
 - Tomohiro Kumagai <tomo@ez-net.jp>
+- zunda <47569369+zunda-pixel@users.noreply.github.com>
 
 **Updating this list**
 
