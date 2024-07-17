@@ -6,6 +6,7 @@
 .xcode
 /*.xcodeproj
 .xcode
+DerivedData
 
 .swiftpm/
 Package.resolved

@@ -44,7 +44,7 @@ private enum HTTPTypeConversionError: Error {
 
 #endif
 
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS)
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS) || compiler(>=6)
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension URLSession {
@@ -114,6 +114,7 @@ extension URLSession {
         return (location, response)
     }
 
+    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS)
     /// Returns a byte stream that conforms to AsyncSequence protocol.
     ///
     /// - Parameter request: The `HTTPRequest` for which to load data.
@@ -129,6 +130,7 @@ extension URLSession {
         }
         return (data, response)
     }
+    #endif
 }
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
