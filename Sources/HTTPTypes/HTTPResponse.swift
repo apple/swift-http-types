@@ -18,7 +18,7 @@
 public struct HTTPResponse: Sendable, Hashable {
     /// The response status consisting of a 3-digit status code and a reason phrase. The reason
     /// phrase is ignored by modern HTTP versions.
-    public struct Status: Sendable, Hashable, ExpressibleByIntegerLiteral, CustomStringConvertible {
+    public struct Status: Sendable, Hashable, ExpressibleByIntegerLiteral, CustomStringConvertible, Comparable {
         /// The 3-digit status code.
         public let code: Int
         /// The reason phrase.
@@ -95,6 +95,10 @@ public struct HTTPResponse: Sendable, Hashable {
 
         public var description: String {
             "\(self.code) \(self.reasonPhrase)"
+        }
+
+        public static func < (lhs: Status, rhs: Status) -> Bool {
+            lhs.code < rhs.code
         }
 
         var fieldValue: String {
