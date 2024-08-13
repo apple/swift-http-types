@@ -8,7 +8,6 @@
 DerivedData
 
 .swiftpm/
-Package.resolved
 
 # DocC generated files
 .docc-build
