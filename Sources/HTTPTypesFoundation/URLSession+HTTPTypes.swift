@@ -14,6 +14,7 @@
 
 import Foundation
 import HTTPTypes
+
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -44,7 +45,7 @@ private enum HTTPTypeConversionError: Error {
 
 #endif
 
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS) || compiler(>=6)
+#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || compiler(>=6) || (compiler(>=6) && os(visionOS))
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
 extension URLSession {
@@ -53,7 +54,10 @@ extension URLSession {
     /// - Parameter request: The `HTTPRequest` for which to load data.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data and response.
-    public func data(for request: HTTPRequest, delegate: URLSessionTaskDelegate? = nil) async throws -> (Data, HTTPResponse) {
+    public func data(
+        for request: HTTPRequest,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> (Data, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
@@ -70,7 +74,11 @@ extension URLSession {
     /// - Parameter fileURL: File to upload.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data and response.
-    public func upload(for request: HTTPRequest, fromFile fileURL: URL, delegate: URLSessionTaskDelegate? = nil) async throws -> (Data, HTTPResponse) {
+    public func upload(
+        for request: HTTPRequest,
+        fromFile fileURL: URL,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> (Data, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
@@ -87,7 +95,11 @@ extension URLSession {
     /// - Parameter bodyData: Data to upload.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data and response.
-    public func upload(for request: HTTPRequest, from bodyData: Data, delegate: URLSessionTaskDelegate? = nil) async throws -> (Data, HTTPResponse) {
+    public func upload(
+        for request: HTTPRequest,
+        from bodyData: Data,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> (Data, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
@@ -103,7 +115,10 @@ extension URLSession {
     /// - Parameter request: The `HTTPRequest` for which to download.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Downloaded file URL and response. The file will not be removed automatically.
-    public func download(for request: HTTPRequest, delegate: URLSessionTaskDelegate? = nil) async throws -> (URL, HTTPResponse) {
+    public func download(
+        for request: HTTPRequest,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> (URL, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }
@@ -114,13 +129,16 @@ extension URLSession {
         return (location, response)
     }
 
-    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(visionOS)
+    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || (compiler(>=6) && os(visionOS))
     /// Returns a byte stream that conforms to AsyncSequence protocol.
     ///
     /// - Parameter request: The `HTTPRequest` for which to load data.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data stream and response.
-    public func bytes(for request: HTTPRequest, delegate: URLSessionTaskDelegate? = nil) async throws -> (AsyncBytes, HTTPResponse) {
+    public func bytes(
+        for request: HTTPRequest,
+        delegate: URLSessionTaskDelegate? = nil
+    ) async throws -> (AsyncBytes, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
         }

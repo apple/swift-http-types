@@ -14,6 +14,7 @@
 
 import Foundation
 import HTTPTypes
+
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -42,7 +43,7 @@ extension HTTPURLResponse {
 
     /// Convert the `HTTPURLResponse` into an `HTTPResponse`.
     public var httpResponse: HTTPResponse? {
-        guard (0 ... 999).contains(self.statusCode) else {
+        guard (0...999).contains(self.statusCode) else {
             return nil
         }
         var response = HTTPResponse(status: .init(code: self.statusCode))

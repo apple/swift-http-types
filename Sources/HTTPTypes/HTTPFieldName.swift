@@ -66,16 +66,18 @@ extension HTTPField {
             } else {
                 token = Substring(name)
             }
-            guard token.utf8.allSatisfy({
-                switch $0 {
-                case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
-                    return true
-                case 0x30 ... 0x39, 0x61 ... 0x7A: // DIGHT, ALPHA
-                    return true
-                default:
-                    return false
-                }
-            }) else {
+            guard
+                token.utf8.allSatisfy({
+                    switch $0 {
+                    case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
+                        return true
+                    case 0x30...0x39, 0x61...0x7A:  // DIGHT, ALPHA
+                        return true
+                    default:
+                        return false
+                    }
+                })
+            else {
                 return nil
             }
             self.rawName = name
@@ -126,13 +128,20 @@ extension HTTPField.Name: Codable {
         let nameString = try container.decode(String.self)
         if nameString.hasPrefix(":") {
             guard nameString.lowercased() == nameString,
-                  HTTPField.isValidToken(nameString.dropFirst()) else {
-                throw DecodingError.dataCorruptedError(in: container, debugDescription: "HTTP pseudo field name \"\(nameString)\" contains invalid characters")
+                HTTPField.isValidToken(nameString.dropFirst())
+            else {
+                throw DecodingError.dataCorruptedError(
+                    in: container,
+                    debugDescription: "HTTP pseudo field name \"\(nameString)\" contains invalid characters"
+                )
             }
             self.init(rawName: nameString, canonicalName: nameString)
         } else {
             guard let name = Self(nameString) else {
-                throw DecodingError.dataCorruptedError(in: container, debugDescription: "HTTP field name \"\(nameString)\" contains invalid characters")
+                throw DecodingError.dataCorruptedError(
+                    in: container,
+                    debugDescription: "HTTP field name \"\(nameString)\" contains invalid characters"
+                )
             }
             self = name
         }
@@ -170,42 +179,58 @@ extension HTTPField.Name {
     /// Access-Control-Allow-Credentials
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlAllowCredentials: Self { .init(rawName: "Access-Control-Allow-Credentials", canonicalName: "access-control-allow-credentials") }
+    public static var accessControlAllowCredentials: Self {
+        .init(rawName: "Access-Control-Allow-Credentials", canonicalName: "access-control-allow-credentials")
+    }
 
     /// Access-Control-Allow-Headers
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlAllowHeaders: Self { .init(rawName: "Access-Control-Allow-Headers", canonicalName: "access-control-allow-headers") }
+    public static var accessControlAllowHeaders: Self {
+        .init(rawName: "Access-Control-Allow-Headers", canonicalName: "access-control-allow-headers")
+    }
 
     /// Access-Control-Allow-Methods
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlAllowMethods: Self { .init(rawName: "Access-Control-Allow-Methods", canonicalName: "access-control-allow-methods") }
+    public static var accessControlAllowMethods: Self {
+        .init(rawName: "Access-Control-Allow-Methods", canonicalName: "access-control-allow-methods")
+    }
 
     /// Access-Control-Allow-Origin
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlAllowOrigin: Self { .init(rawName: "Access-Control-Allow-Origin", canonicalName: "access-control-allow-origin") }
+    public static var accessControlAllowOrigin: Self {
+        .init(rawName: "Access-Control-Allow-Origin", canonicalName: "access-control-allow-origin")
+    }
 
     /// Access-Control-Expose-Headers
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlExposeHeaders: Self { .init(rawName: "Access-Control-Expose-Headers", canonicalName: "access-control-expose-headers") }
+    public static var accessControlExposeHeaders: Self {
+        .init(rawName: "Access-Control-Expose-Headers", canonicalName: "access-control-expose-headers")
+    }
 
     /// Access-Control-Max-Age
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlMaxAge: Self { .init(rawName: "Access-Control-Max-Age", canonicalName: "access-control-max-age") }
+    public static var accessControlMaxAge: Self {
+        .init(rawName: "Access-Control-Max-Age", canonicalName: "access-control-max-age")
+    }
 
     /// Access-Control-Request-Headers
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlRequestHeaders: Self { .init(rawName: "Access-Control-Request-Headers", canonicalName: "access-control-request-headers") }
+    public static var accessControlRequestHeaders: Self {
+        .init(rawName: "Access-Control-Request-Headers", canonicalName: "access-control-request-headers")
+    }
 
     /// Access-Control-Request-Method
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var accessControlRequestMethod: Self { .init(rawName: "Access-Control-Request-Method", canonicalName: "access-control-request-method") }
+    public static var accessControlRequestMethod: Self {
+        .init(rawName: "Access-Control-Request-Method", canonicalName: "access-control-request-method")
+    }
 
     /// Age
     ///
@@ -220,7 +245,9 @@ extension HTTPField.Name {
     /// Authentication-Info
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var authenticationInfo: Self { .init(rawName: "Authentication-Info", canonicalName: "authentication-info") }
+    public static var authenticationInfo: Self {
+        .init(rawName: "Authentication-Info", canonicalName: "authentication-info")
+    }
 
     /// Authorization
     ///
@@ -240,7 +267,9 @@ extension HTTPField.Name {
     /// Content-Disposition
     ///
     /// https://www.rfc-editor.org/rfc/rfc6266.html
-    public static var contentDisposition: Self { .init(rawName: "Content-Disposition", canonicalName: "content-disposition") }
+    public static var contentDisposition: Self {
+        .init(rawName: "Content-Disposition", canonicalName: "content-disposition")
+    }
 
     /// Content-Encoding
     ///
@@ -270,12 +299,16 @@ extension HTTPField.Name {
     /// Content-Security-Policy
     ///
     /// https://www.w3.org/TR/CSP/
-    public static var contentSecurityPolicy: Self { .init(rawName: "Content-Security-Policy", canonicalName: "content-security-policy") }
+    public static var contentSecurityPolicy: Self {
+        .init(rawName: "Content-Security-Policy", canonicalName: "content-security-policy")
+    }
 
     /// Content-Security-Policy-Report-Only
     ///
     /// https://www.w3.org/TR/CSP/
-    public static var contentSecurityPolicyReportOnly: Self { .init(rawName: "Content-Security-Policy-Report-Only", canonicalName: "content-security-policy-report-only") }
+    public static var contentSecurityPolicyReportOnly: Self {
+        .init(rawName: "Content-Security-Policy-Report-Only", canonicalName: "content-security-policy-report-only")
+    }
 
     /// Content-Type
     ///
@@ -290,7 +323,9 @@ extension HTTPField.Name {
     /// Cross-Origin-Resource-Policy
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var crossOriginResourcePolicy: Self { .init(rawName: "Cross-Origin-Resource-Policy", canonicalName: "cross-origin-resource-policy") }
+    public static var crossOriginResourcePolicy: Self {
+        .init(rawName: "Cross-Origin-Resource-Policy", canonicalName: "cross-origin-resource-policy")
+    }
 
     /// Date
     ///
@@ -351,7 +386,9 @@ extension HTTPField.Name {
     /// If-Unmodified-Since
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var ifUnmodifiedSince: Self { .init(rawName: "If-Unmodified-Since", canonicalName: "if-unmodified-since") }
+    public static var ifUnmodifiedSince: Self {
+        .init(rawName: "If-Unmodified-Since", canonicalName: "if-unmodified-since")
+    }
 
     /// Last-Modified
     ///
@@ -381,17 +418,23 @@ extension HTTPField.Name {
     /// Proxy-Authenticate
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var proxyAuthenticate: Self { .init(rawName: "Proxy-Authenticate", canonicalName: "proxy-authenticate") }
+    public static var proxyAuthenticate: Self {
+        .init(rawName: "Proxy-Authenticate", canonicalName: "proxy-authenticate")
+    }
 
     /// Proxy-Authentication-Info
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var proxyAuthenticationInfo: Self { .init(rawName: "Proxy-Authentication-Info", canonicalName: "proxy-authentication-info") }
+    public static var proxyAuthenticationInfo: Self {
+        .init(rawName: "Proxy-Authentication-Info", canonicalName: "proxy-authentication-info")
+    }
 
     /// Proxy-Authorization
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var proxyAuthorization: Self { .init(rawName: "Proxy-Authorization", canonicalName: "proxy-authorization") }
+    public static var proxyAuthorization: Self {
+        .init(rawName: "Proxy-Authorization", canonicalName: "proxy-authorization")
+    }
 
     /// Proxy-Status
     ///
@@ -421,12 +464,16 @@ extension HTTPField.Name {
     /// Sec-WebSocket-Accept
     ///
     /// https://www.rfc-editor.org/rfc/rfc6455.html
-    public static var secWebSocketAccept: Self { .init(rawName: "Sec-WebSocket-Accept", canonicalName: "sec-websocket-accept") }
+    public static var secWebSocketAccept: Self {
+        .init(rawName: "Sec-WebSocket-Accept", canonicalName: "sec-websocket-accept")
+    }
 
     /// Sec-WebSocket-Extensions
     ///
     /// https://www.rfc-editor.org/rfc/rfc6455.html
-    public static var secWebSocketExtensions: Self { .init(rawName: "Sec-WebSocket-Extensions", canonicalName: "sec-websocket-extensions") }
+    public static var secWebSocketExtensions: Self {
+        .init(rawName: "Sec-WebSocket-Extensions", canonicalName: "sec-websocket-extensions")
+    }
 
     /// Sec-WebSocket-Key
     ///
@@ -436,12 +483,16 @@ extension HTTPField.Name {
     /// Sec-WebSocket-Protocol
     ///
     /// https://www.rfc-editor.org/rfc/rfc6455.html
-    public static var secWebSocketProtocol: Self { .init(rawName: "Sec-WebSocket-Protocol", canonicalName: "sec-websocket-protocol") }
+    public static var secWebSocketProtocol: Self {
+        .init(rawName: "Sec-WebSocket-Protocol", canonicalName: "sec-websocket-protocol")
+    }
 
     /// Sec-WebSocket-Version
     ///
     /// https://www.rfc-editor.org/rfc/rfc6455.html
-    public static var secWebSocketVersion: Self { .init(rawName: "Sec-WebSocket-Version", canonicalName: "sec-websocket-version") }
+    public static var secWebSocketVersion: Self {
+        .init(rawName: "Sec-WebSocket-Version", canonicalName: "sec-websocket-version")
+    }
 
     /// Server
     ///
@@ -456,7 +507,9 @@ extension HTTPField.Name {
     /// Strict-Transport-Security
     ///
     /// https://www.rfc-editor.org/rfc/rfc6797.html
-    public static var strictTransportSecurity: Self { .init(rawName: "Strict-Transport-Security", canonicalName: "strict-transport-security") }
+    public static var strictTransportSecurity: Self {
+        .init(rawName: "Strict-Transport-Security", canonicalName: "strict-transport-security")
+    }
 
     /// TE
     ///
@@ -501,7 +554,9 @@ extension HTTPField.Name {
     /// X-Content-Type-Options
     ///
     /// https://fetch.spec.whatwg.org/
-    public static var xContentTypeOptions: Self { .init(rawName: "X-Content-Type-Options", canonicalName: "x-content-type-options") }
+    public static var xContentTypeOptions: Self {
+        .init(rawName: "X-Content-Type-Options", canonicalName: "x-content-type-options")
+    }
 
     // Deprecated
     /// P3P
@@ -522,15 +577,21 @@ extension HTTPField.Name {
     /// Proxy-Connection
     static var proxyConnection: Self { .init(rawName: "Proxy-Connection", canonicalName: "proxy-connection") }
     /// Upgrade-Insecure-Requests
-    static var upgradeInsecureRequests: Self { .init(rawName: "Upgrade-Insecure-Requests", canonicalName: "upgrade-insecure-requests") }
+    static var upgradeInsecureRequests: Self {
+        .init(rawName: "Upgrade-Insecure-Requests", canonicalName: "upgrade-insecure-requests")
+    }
     /// Datagram-Flow-Id
     static var datagramFlowId: Self { .init(rawName: "Datagram-Flow-Id", canonicalName: "datagram-flow-id") }
     /// Capsule-Protocol
     static var capsuleProtocol: Self { .init(rawName: "Capsule-Protocol", canonicalName: "capsule-protocol") }
     /// Server-Connection-Id
-    static var serverConnectionId: Self { .init(rawName: "Server-Connection-Id", canonicalName: "server-connection-id") }
+    static var serverConnectionId: Self {
+        .init(rawName: "Server-Connection-Id", canonicalName: "server-connection-id")
+    }
     /// Client-Connection-Id
-    static var clientConnectionId: Self { .init(rawName: "Client-Connection-Id", canonicalName: "client-connection-id") }
+    static var clientConnectionId: Self {
+        .init(rawName: "Client-Connection-Id", canonicalName: "client-connection-id")
+    }
     /// Sec-CH-Background
     static var secCHBackground: Self { .init(rawName: "Sec-CH-Background", canonicalName: "sec-ch-background") }
     /// Sec-CH-Geohash
@@ -538,7 +599,9 @@ extension HTTPField.Name {
     /// Client-Geohash
     static var clientGeohash: Self { .init(rawName: "Client-Geohash", canonicalName: "client-geohash") }
     /// Proxy-QUIC-Forwarding
-    static var proxyQUICForwarding: Self { .init(rawName: "Proxy-QUIC-Forwarding", canonicalName: "proxy-quic-forwarding") }
+    static var proxyQUICForwarding: Self {
+        .init(rawName: "Proxy-QUIC-Forwarding", canonicalName: "proxy-quic-forwarding")
+    }
     /// Proxy-Config-Epoch
     static var proxyConfigEpoch: Self { .init(rawName: "Proxy-Config-Epoch", canonicalName: "proxy-config-epoch") }
     /// Connect-UDP-Bind

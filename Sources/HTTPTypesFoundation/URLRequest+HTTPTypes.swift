@@ -14,6 +14,7 @@
 
 import Foundation
 import HTTPTypes
+
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -49,7 +50,7 @@ extension URLRequest {
     /// Convert the `URLRequest` into an `HTTPRequest`.
     public var httpRequest: HTTPRequest? {
         guard let method = HTTPRequest.Method(self.httpMethod ?? "GET"),
-              let url
+            let url
         else {
             return nil
         }

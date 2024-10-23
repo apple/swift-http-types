@@ -33,7 +33,7 @@ public struct HTTPResponse: Sendable, Hashable {
         ///                   characters not representable in ISO Latin 1 encoding, are converted
         ///                   into space characters.
         public init(code: Int, reasonPhrase: String = "") {
-            precondition((0 ... 999).contains(code), "Invalid status code")
+            precondition((0...999).contains(code), "Invalid status code")
             self.code = code
             self.reasonPhrase = Self.legalizingReasonPhrase(reasonPhrase)
         }
@@ -46,7 +46,7 @@ public struct HTTPResponse: Sendable, Hashable {
         /// Create a custom status from an integer literal.
         /// - Parameter value: The status code.
         public init(integerLiteral value: Int) {
-            precondition((0 ... 999).contains(value), "Invalid status code")
+            precondition((0...999).contains(value), "Invalid status code")
             self.code = value
             self.reasonPhrase = ""
         }
@@ -70,15 +70,15 @@ public struct HTTPResponse: Sendable, Hashable {
         /// The kind of the status code.
         public var kind: Kind {
             switch self.code {
-            case 100 ... 199:
+            case 100...199:
                 return .informational
-            case 200 ... 299:
+            case 200...299:
                 return .successful
-            case 300 ... 399:
+            case 300...399:
                 return .redirection
-            case 400 ... 499:
+            case 400...499:
                 return .clientError
-            case 500 ... 599:
+            case 500...599:
                 return .serverError
             default:
                 return .invalid
@@ -115,7 +115,7 @@ public struct HTTPResponse: Sendable, Hashable {
         }
 
         static func isValidStatus(_ status: String) -> Bool {
-            status.count == 3 && status.utf8.allSatisfy { (0x30 ... 0x39).contains($0) }
+            status.count == 3 && status.utf8.allSatisfy { (0x30...0x39).contains($0) }
         }
 
         static func isValidReasonPhrase(_ reasonPhrase: String) -> Bool {
@@ -123,7 +123,7 @@ public struct HTTPResponse: Sendable, Hashable {
                 switch $0 {
                 case 0x09, 0x20:
                     return true
-                case 0x21 ... 0x7E, 0x80 ... 0xFF:
+                case 0x21...0x7E, 0x80...0xFF:
                     return true
                 default:
                     return false
@@ -139,7 +139,7 @@ public struct HTTPResponse: Sendable, Hashable {
                     switch scala.value {
                     case 0x09, 0x20:
                         return scala
-                    case 0x21 ... 0x7E, 0x80 ... 0xFF:
+                    case 0x21...0x7E, 0x80...0xFF:
                         return scala
                     default:
                         return " "
@@ -159,9 +159,9 @@ public struct HTTPResponse: Sendable, Hashable {
     public var status: Status {
         get {
             var codeIterator = self.pseudoHeaderFields.status.rawValue._storage.utf8.makeIterator()
-            let code = Int(codeIterator.next()! - 48) * 100 +
-                Int(codeIterator.next()! - 48) * 10 +
-                Int(codeIterator.next()! - 48)
+            let code =
+                Int(codeIterator.next()! - 48) * 100 + Int(codeIterator.next()! - 48) * 10
+                + Int(codeIterator.next()! - 48)
             return Status(uncheckedCode: code, reasonPhrase: self.reasonPhrase)
         }
         set {
@@ -232,20 +232,32 @@ extension HTTPResponse.PseudoHeaderFields: Codable {
             switch field.name {
             case .status:
                 guard status == nil else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":status\" pseudo header fields")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Multiple \":status\" pseudo header fields"
+                    )
                 }
                 status = field
             default:
                 guard field.name.rawName.hasPrefix(":") else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(field)\" is not a pseudo header field")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "\"\(field)\" is not a pseudo header field"
+                    )
                 }
             }
         }
         guard let status else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\":status\" pseudo header field is missing")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "\":status\" pseudo header field is missing"
+            )
         }
         guard HTTPResponse.Status.isValidStatus(status.rawValue._storage) else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(status.rawValue._storage)\" is not a valid status code")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "\"\(status.rawValue._storage)\" is not a valid status code"
+            )
         }
         self.init(status: status)
     }
@@ -319,7 +331,9 @@ extension HTTPResponse.Status {
     /// 203 Non-Authoritative Information
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var nonAuthoritativeInformation: Self { .init(uncheckedCode: 203, reasonPhrase: "Non-Authoritative Information") }
+    public static var nonAuthoritativeInformation: Self {
+        .init(uncheckedCode: 203, reasonPhrase: "Non-Authoritative Information")
+    }
 
     /// 204 No Content
     ///
@@ -408,7 +422,9 @@ extension HTTPResponse.Status {
     /// 407 Proxy Authentication Required
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var proxyAuthenticationRequired: Self { .init(uncheckedCode: 407, reasonPhrase: "Proxy Authentication Required") }
+    public static var proxyAuthenticationRequired: Self {
+        .init(uncheckedCode: 407, reasonPhrase: "Proxy Authentication Required")
+    }
 
     /// 408 Request Timeout
     ///
@@ -491,12 +507,16 @@ extension HTTPResponse.Status {
     /// 431 Request Header Fields Too Large
     ///
     /// https://www.rfc-editor.org/rfc/rfc6585.html
-    public static var requestHeaderFieldsTooLarge: Self { .init(uncheckedCode: 431, reasonPhrase: "Request Header Fields Too Large") }
+    public static var requestHeaderFieldsTooLarge: Self {
+        .init(uncheckedCode: 431, reasonPhrase: "Request Header Fields Too Large")
+    }
 
     /// 451 Unavailable For Legal Reasons
     ///
     /// https://www.rfc-editor.org/rfc/rfc7725.html
-    public static var unavailableForLegalReasons: Self { .init(uncheckedCode: 451, reasonPhrase: "Unavailable For Legal Reasons") }
+    public static var unavailableForLegalReasons: Self {
+        .init(uncheckedCode: 451, reasonPhrase: "Unavailable For Legal Reasons")
+    }
 
     // MARK: 5xx
 
@@ -528,10 +548,14 @@ extension HTTPResponse.Status {
     /// 505 HTTP Version Not Supported
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var httpVersionNotSupported: Self { .init(uncheckedCode: 505, reasonPhrase: "HTTP Version Not Supported") }
+    public static var httpVersionNotSupported: Self {
+        .init(uncheckedCode: 505, reasonPhrase: "HTTP Version Not Supported")
+    }
 
     /// 511 Network Authentication Required
     ///
     /// https://www.rfc-editor.org/rfc/rfc6585.html
-    public static var networkAuthenticationRequired: Self { .init(uncheckedCode: 511, reasonPhrase: "Network Authentication Required") }
+    public static var networkAuthenticationRequired: Self {
+        .init(uncheckedCode: 511, reasonPhrase: "Network Authentication Required")
+    }
 }
