@@ -28,7 +28,9 @@ struct ISOLatin1String: Sendable, Hashable {
         return string
     }
 
-    private func withISOLatin1BytesSlowPath<Result>(_ body: (UnsafeBufferPointer<UInt8>) throws -> Result) rethrows -> Result {
+    private func withISOLatin1BytesSlowPath<Result>(
+        _ body: (UnsafeBufferPointer<UInt8>) throws -> Result
+    ) rethrows -> Result {
         try withUnsafeTemporaryAllocation(of: UInt8.self, capacity: self._storage.unicodeScalars.count) { buffer in
             for (index, scalar) in self._storage.unicodeScalars.enumerated() {
                 assert(scalar.value <= UInt8.max)

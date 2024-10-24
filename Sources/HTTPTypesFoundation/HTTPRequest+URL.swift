@@ -22,8 +22,9 @@ extension HTTPRequest {
     public var url: URL? {
         get {
             if let schemeField = self.pseudoHeaderFields.scheme,
-               let authorityField = self.pseudoHeaderFields.authority,
-               let pathField = self.pseudoHeaderFields.path {
+                let authorityField = self.pseudoHeaderFields.authority,
+                let pathField = self.pseudoHeaderFields.path
+            {
                 return schemeField.withUnsafeBytesOfValue { scheme in
                     authorityField.withUnsafeBytesOfValue { authority in
                         pathField.withUnsafeBytesOfValue { path in
@@ -60,7 +61,13 @@ extension HTTPRequest {
         let authorityString = authority.map { String(decoding: $0, as: UTF8.self) }
         let pathString = String(decoding: path, as: UTF8.self)
 
-        self.init(method: method, scheme: schemeString, authority: authorityString, path: pathString, headerFields: headerFields)
+        self.init(
+            method: method,
+            scheme: schemeString,
+            authority: authorityString,
+            path: pathString,
+            headerFields: headerFields
+        )
     }
 }
 
@@ -74,7 +81,14 @@ extension URL {
         buffer.append(contentsOf: path)
 
         if let url = buffer.withUnsafeBytes({ buffer in
-            CFURLCreateAbsoluteURLWithBytes(kCFAllocatorDefault, buffer.baseAddress, buffer.count, CFStringBuiltInEncodings.ASCII.rawValue, nil, false).map { unsafeBitCast($0, to: NSURL.self) as URL }
+            CFURLCreateAbsoluteURLWithBytes(
+                kCFAllocatorDefault,
+                buffer.baseAddress,
+                buffer.count,
+                CFStringBuiltInEncodings.ASCII.rawValue,
+                nil,
+                false
+            ).map { unsafeBitCast($0, to: NSURL.self) as URL }
         }) {
             self = url
         } else {
@@ -96,7 +110,7 @@ extension URL {
             }
 
             func bufferSlice(_ range: CFRange) -> UnsafeMutableBufferPointer<UInt8> {
-                UnsafeMutableBufferPointer(rebasing: buffer[range.location ..< range.location + range.length])
+                UnsafeMutableBufferPointer(rebasing: buffer[range.location..<range.location + range.length])
             }
 
             let schemeRange = CFURLGetByteRangeForComponent(url, .scheme, nil)
@@ -124,7 +138,9 @@ extension URL {
                     let pathBuffer = bufferSlice(requestPathRange)
                     path = [UInt8](unsafeUninitializedCapacity: pathBuffer.count + 1) { buffer, initializedCount in
                         buffer[0] = 0x2F
-                        UnsafeMutableRawBufferPointer(UnsafeMutableBufferPointer(rebasing: buffer[1...])).copyMemory(from: UnsafeRawBufferPointer(pathBuffer))
+                        UnsafeMutableRawBufferPointer(UnsafeMutableBufferPointer(rebasing: buffer[1...])).copyMemory(
+                            from: UnsafeRawBufferPointer(pathBuffer)
+                        )
                         initializedCount = pathBuffer.count + 1
                     }
                 }

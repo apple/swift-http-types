@@ -213,7 +213,12 @@ public struct HTTPRequest: Sendable, Hashable {
         let schemeField = scheme.map { HTTPField(name: .scheme, value: $0) }
         let authorityField = authority.map { HTTPField(name: .authority, value: $0) }
         let pathField = path.map { HTTPField(name: .path, value: $0) }
-        self.pseudoHeaderFields = .init(method: methodField, scheme: schemeField, authority: authorityField, path: pathField)
+        self.pseudoHeaderFields = .init(
+            method: methodField,
+            scheme: schemeField,
+            authority: authorityField,
+            path: pathField
+        )
         self.headerFields = headerFields
     }
 }
@@ -254,40 +259,64 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
             switch field.name {
             case .method:
                 guard method == nil else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":method\" pseudo header fields")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Multiple \":method\" pseudo header fields"
+                    )
                 }
                 method = field
             case .scheme:
                 guard scheme == nil else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":scheme\" pseudo header fields")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Multiple \":scheme\" pseudo header fields"
+                    )
                 }
                 scheme = field
             case .authority:
                 guard authority == nil else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":authority\" pseudo header fields")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Multiple \":authority\" pseudo header fields"
+                    )
                 }
                 authority = field
             case .path:
                 guard path == nil else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":path\" pseudo header fields")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Multiple \":path\" pseudo header fields"
+                    )
                 }
                 path = field
             case .protocol:
                 guard extendedConnectProtocol == nil else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Multiple \":protocol\" pseudo header fields")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "Multiple \":protocol\" pseudo header fields"
+                    )
                 }
                 extendedConnectProtocol = field
             default:
                 guard field.name.rawName.hasPrefix(":") else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(field)\" is not a pseudo header field")
+                    throw DecodingError.dataCorruptedError(
+                        in: container,
+                        debugDescription: "\"\(field)\" is not a pseudo header field"
+                    )
                 }
             }
         }
         guard let method else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\":method\" pseudo header field is missing")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "\":method\" pseudo header field is missing"
+            )
         }
         guard HTTPField.isValidToken(method.rawValue._storage) else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(method.rawValue._storage)\" is not a valid method")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "\"\(method.rawValue._storage)\" is not a valid method"
+            )
         }
         self.init(
             method: method,

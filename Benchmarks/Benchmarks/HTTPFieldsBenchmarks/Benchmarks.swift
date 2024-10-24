@@ -16,8 +16,18 @@ import Benchmark
 import HTTPTypes
 
 let benchmarks = {
+    let defaultMetrics: [BenchmarkMetric] = [
+        .mallocCountTotal
+    ]
+
     Benchmark(
-        "Initialize HTTPFields from Dictionary Literal"
+        "HTTPFields.init(dictionaryLiteral:)",
+        configuration: .init(
+            metrics: defaultMetrics,
+            scalingFactor: .kilo,
+            maxDuration: .seconds(10_000_000),
+            maxIterations: 10
+        )
     ) { _ in
         let fiels: HTTPFields = [
             .contentType: "application/json",

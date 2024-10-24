@@ -25,7 +25,8 @@ extension HTTPField {
         if isoLatin1Value.isASCII {
             self.init(name: name, value: isoLatin1Value)
         } else {
-            self = withUnsafeTemporaryAllocation(of: UInt8.self, capacity: isoLatin1Value.unicodeScalars.count) { buffer in
+            self = withUnsafeTemporaryAllocation(of: UInt8.self, capacity: isoLatin1Value.unicodeScalars.count) {
+                buffer in
                 for (index, scalar) in isoLatin1Value.unicodeScalars.enumerated() {
                     if scalar.value > UInt8.max {
                         buffer[index] = 0x20

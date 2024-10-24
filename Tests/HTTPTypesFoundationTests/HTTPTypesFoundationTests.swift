@@ -15,6 +15,7 @@
 import HTTPTypes
 import HTTPTypesFoundation
 import XCTest
+
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -54,7 +55,10 @@ final class HTTPTypesFoundationTests: XCTestCase {
 
     func testRequestToFoundation() throws {
         let request = HTTPRequest(
-            method: .get, scheme: "https", authority: "www.example.com", path: "/",
+            method: .get,
+            scheme: "https",
+            authority: "www.example.com",
+            path: "/",
             headerFields: [
                 .accept: "*/*",
                 .acceptEncoding: "gzip",
@@ -88,20 +92,24 @@ final class HTTPTypesFoundationTests: XCTestCase {
         let response = HTTPResponse(
             status: .ok,
             headerFields: [
-                .server: "HTTPServer/1.0",
+                .server: "HTTPServer/1.0"
             ]
         )
 
-        let urlResponse = try XCTUnwrap(HTTPURLResponse(httpResponse: response, url: URL(string: "https://www.example.com/")!))
+        let urlResponse = try XCTUnwrap(
+            HTTPURLResponse(httpResponse: response, url: URL(string: "https://www.example.com/")!)
+        )
         XCTAssertEqual(urlResponse.statusCode, 200)
         XCTAssertEqual(urlResponse.value(forHTTPHeaderField: "Server"), "HTTPServer/1.0")
     }
 
     func testResponseFromFoundation() throws {
         let urlResponse = HTTPURLResponse(
-            url: URL(string: "https://www.example.com/")!, statusCode: 204, httpVersion: nil,
+            url: URL(string: "https://www.example.com/")!,
+            statusCode: 204,
+            httpVersion: nil,
             headerFields: [
-                "X-Emoji": "ð",
+                "X-Emoji": "ð"
             ]
         )!
 

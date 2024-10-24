@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "Benchmarks",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v13)
     ],
     dependencies: [
         .package(path: "../"),
@@ -20,8 +20,8 @@ let package = Package(
             ],
             path: "Benchmarks/HTTPFieldsBenchmarks",
             plugins: [
-                .plugin(name: "BenchmarkPlugin", package: "package-benchmark"),
+                .plugin(name: "BenchmarkPlugin", package: "package-benchmark")
             ]
-        ),
+        )
     ]
 )

@@ -111,9 +111,18 @@ struct HTTPParsedFields {
                 throw ParsingError.requestWithResponsePseudo
             }
             try self.validateFields()
-            var request = HTTPRequest(method: requestMethod, scheme: self.scheme, authority: self.authority, path: self.path, headerFields: self.fields)
+            var request = HTTPRequest(
+                method: requestMethod,
+                scheme: self.scheme,
+                authority: self.authority,
+                path: self.path,
+                headerFields: self.fields
+            )
             if let extendedConnectProtocol = self.extendedConnectProtocol {
-                request.pseudoHeaderFields.extendedConnectProtocol = HTTPField(name: .protocol, uncheckedValue: extendedConnectProtocol)
+                request.pseudoHeaderFields.extendedConnectProtocol = HTTPField(
+                    name: .protocol,
+                    uncheckedValue: extendedConnectProtocol
+                )
             }
             return request
         }
@@ -124,7 +133,9 @@ struct HTTPParsedFields {
             guard let statusString = self.status?._storage else {
                 throw ParsingError.responseWithoutStatus
             }
-            if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil || self.extendedConnectProtocol != nil {
+            if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil
+                || self.extendedConnectProtocol != nil
+            {
                 throw ParsingError.responseWithRequestPseudo
             }
             if !HTTPResponse.Status.isValidStatus(statusString) {
@@ -137,7 +148,9 @@ struct HTTPParsedFields {
 
     var trailerFields: HTTPFields {
         get throws {
-            if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil || self.extendedConnectProtocol != nil || self.status != nil {
+            if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil
+                || self.extendedConnectProtocol != nil || self.status != nil
+            {
                 throw ParsingError.trailerFieldsWithPseudo
             }
             try self.validateFields()
@@ -147,12 +160,23 @@ struct HTTPParsedFields {
 }
 
 extension HTTPRequest {
-    fileprivate init(method: Method, scheme: ISOLatin1String?, authority: ISOLatin1String?, path: ISOLatin1String?, headerFields: HTTPFields) {
+    fileprivate init(
+        method: Method,
+        scheme: ISOLatin1String?,
+        authority: ISOLatin1String?,
+        path: ISOLatin1String?,
+        headerFields: HTTPFields
+    ) {
         let methodField = HTTPField(name: .method, uncheckedValue: ISOLatin1String(unchecked: method.rawValue))
         let schemeField = scheme.map { HTTPField(name: .scheme, uncheckedValue: $0) }
         let authorityField = authority.map { HTTPField(name: .authority, uncheckedValue: $0) }
         let pathField = path.map { HTTPField(name: .path, uncheckedValue: $0) }
-        self.pseudoHeaderFields = .init(method: methodField, scheme: schemeField, authority: authorityField, path: pathField)
+        self.pseudoHeaderFields = .init(
+            method: methodField,
+            scheme: schemeField,
+            authority: authorityField,
+            path: pathField
+        )
         self.headerFields = headerFields
     }
 }
