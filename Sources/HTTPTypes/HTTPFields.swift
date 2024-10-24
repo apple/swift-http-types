@@ -12,16 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#if canImport(os.lock)
-import os.lock
-#elseif canImport(Glibc)
-import Glibc
-#elseif canImport(Musl)
-import Musl
-#elseif canImport(WASILibc)
-import WASILibc
-#endif
-
 /// A collection of HTTP fields. It is used in `HTTPRequest` and `HTTPResponse`, and can also be
 /// used as HTTP trailer fields.
 ///
@@ -34,77 +24,33 @@ public struct HTTPFields: Sendable, Hashable {
     private final class _Storage: @unchecked Sendable, Hashable {
         var fields: [(field: HTTPField, next: UInt16)] = []
         var index: [String: (first: UInt16, last: UInt16)]? = [:]
-        #if canImport(os.lock)
-        let lock = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
-        #else
-        let lock = UnsafeMutablePointer<pthread_mutex_t>.allocate(capacity: 1)
-        #endif
-
-        init() {
-            #if canImport(os.lock)
-            self.lock.initialize(to: os_unfair_lock())
-            #else
-            let err = pthread_mutex_init(self.lock, nil)
-            precondition(err == 0, "pthread_mutex_init failed with error \(err)")
-            #endif
-        }
-
-        deinit {
-            #if !canImport(os.lock)
-            let err = pthread_mutex_destroy(self.lock)
-            precondition(err == 0, "pthread_mutex_destroy failed with error \(err)")
-            #endif
-            self.lock.deallocate()
-        }
+        let lock = LockStorage.create(value: ())
 
         var ensureIndex: [String: (first: UInt16, last: UInt16)] {
-            #if canImport(os.lock)
-            os_unfair_lock_lock(self.lock)
-            defer { os_unfair_lock_unlock(self.lock) }
-            #else
-            let err = pthread_mutex_lock(self.lock)
-            precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
-            defer {
-                let err = pthread_mutex_unlock(self.lock)
-                precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
-            }
-            #endif
-            if let index = self.index {
-                return index
-            }
-            var newIndex = [String: (first: UInt16, last: UInt16)]()
-            for index in self.fields.indices {
-                let name = self.fields[index].field.name.canonicalName
-                self.fields[index].next = .max
-                if let lastIndex = newIndex[name]?.last {
-                    self.fields[Int(lastIndex)].next = UInt16(index)
+            self.lock.withLockedValue { _ in
+                if let index = self.index {
+                    return index
                 }
-                newIndex[name, default: (first: UInt16(index), last: 0)].last = UInt16(index)
+                var newIndex = [String: (first: UInt16, last: UInt16)]()
+                for index in self.fields.indices {
+                    let name = self.fields[index].field.name.canonicalName
+                    self.fields[index].next = .max
+                    if let lastIndex = newIndex[name]?.last {
+                        self.fields[Int(lastIndex)].next = UInt16(index)
+                    }
+                    newIndex[name, default: (first: UInt16(index), last: 0)].last = UInt16(index)
+                }
+                self.index = newIndex
+                return newIndex
             }
-            self.index = newIndex
-            return newIndex
         }
 
         func copy() -> _Storage {
             let newStorage = _Storage()
             newStorage.fields = self.fields
-            #if canImport(os.lock)
-            os_unfair_lock_lock(self.lock)
-            #else
-            do {
-                let err = pthread_mutex_lock(self.lock)
-                precondition(err == 0, "pthread_mutex_lock failed with error \(err)")
+            self.lock.withLockedValue { _ in
+                newStorage.index = self.index
             }
-            #endif
-            newStorage.index = self.index
-            #if canImport(os.lock)
-            os_unfair_lock_unlock(self.lock)
-            #else
-            do {
-                let err = pthread_mutex_unlock(self.lock)
-                precondition(err == 0, "pthread_mutex_unlock failed with error \(err)")
-            }
-            #endif
             return newStorage
         }
 
