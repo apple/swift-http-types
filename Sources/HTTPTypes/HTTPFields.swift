@@ -12,6 +12,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#if canImport(Synchronization)
+import Synchronization
+#endif  // canImport(Synchronization)
+
 /// A collection of HTTP fields. It is used in `HTTPRequest` and `HTTPResponse`, and can also be
 /// used as HTTP trailer fields.
 ///
@@ -21,13 +25,19 @@
 /// `HTTPFields` adheres to modern HTTP semantics. In particular, the "Cookie" request header field
 /// is split into separate header fields by default.
 public struct HTTPFields: Sendable, Hashable {
-    private final class _Storage: @unchecked Sendable, Hashable {
+    private class _Storage: @unchecked Sendable, Hashable {
         var fields: [(field: HTTPField, next: UInt16)] = []
         var index: [String: (first: UInt16, last: UInt16)]? = [:]
-        let lock = LockStorage.create(value: ())
+
+        required init() {
+        }
+
+        func withLock<Result>(_ body: () throws -> Result) rethrows -> Result {
+            fatalError()
+        }
 
         var ensureIndex: [String: (first: UInt16, last: UInt16)] {
-            self.lock.withLockedValue { _ in
+            self.withLock {
                 if let index = self.index {
                     return index
                 }
@@ -45,10 +55,10 @@ public struct HTTPFields: Sendable, Hashable {
             }
         }
 
-        func copy() -> _Storage {
-            let newStorage = _Storage()
+        func copy() -> Self {
+            let newStorage = Self()
             newStorage.fields = self.fields
-            self.lock.withLockedValue { _ in
+            self.withLock {
                 newStorage.index = self.index
             }
             return newStorage
@@ -99,7 +109,40 @@ public struct HTTPFields: Sendable, Hashable {
         }
     }
 
-    private var _storage = _Storage()
+    #if canImport(Synchronization)
+    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+    private final class _StorageWithMutex: _Storage, @unchecked Sendable {
+        let mutex = Mutex<Void>(())
+
+        override func withLock<Result>(_ body: () throws -> Result) rethrows -> Result {
+            try self.mutex.withLock { _ in
+                try body()
+            }
+        }
+    }
+    #endif  // canImport(Synchronization)
+
+    private final class _StorageWithNIOLock: _Storage, @unchecked Sendable {
+        let lock = LockStorage.create(value: ())
+
+        override func withLock<Result>(_ body: () throws -> Result) rethrows -> Result {
+            try self.lock.withLockedValue { _ in
+                try body()
+            }
+        }
+    }
+
+    private var _storage = {
+        #if canImport(Synchronization)
+        if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *) {
+            _StorageWithMutex()
+        } else {
+            _StorageWithNIOLock()
+        }
+        #else  // canImport(Synchronization)
+        _StorageWithNIOLock()
+        #endif  // canImport(Synchronization)
+    }()
 
     /// Create an empty list of HTTP fields
     public init() {}
