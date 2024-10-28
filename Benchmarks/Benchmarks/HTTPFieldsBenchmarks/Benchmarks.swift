@@ -21,7 +21,7 @@ let benchmarks = {
     ]
 
     Benchmark(
-        "HTTPFields.init(dictionaryLiteral:)",
+        "HTTPFields.init(dictionaryLiteral)",
         configuration: .init(
             metrics: defaultMetrics,
             scalingFactor: .kilo,
