@@ -112,7 +112,9 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter body: The closure to be invoked with the buffer.
     /// - Returns: Result of the `body` closure.
-    public func withUnsafeBytesOfValue<Result>(_ body: (UnsafeBufferPointer<UInt8>) throws -> Result) rethrows -> Result {
+    public func withUnsafeBytesOfValue<Result>(
+        _ body: (UnsafeBufferPointer<UInt8>) throws -> Result
+    ) rethrows -> Result {
         try self.rawValue.withUnsafeBytes(body)
     }
 
@@ -135,7 +137,7 @@ public struct HTTPField: Sendable, Hashable {
             switch byte {
             case 0x09, 0x20:
                 break
-            case 0x21 ... 0x7E, 0x80 ... 0xFF:
+            case 0x21...0x7E, 0x80...0xFF:
                 break
             default:
                 return false
@@ -161,13 +163,15 @@ public struct HTTPField: Sendable, Hashable {
                 switch byte {
                 case 0x09, 0x20:
                     return byte
-                case 0x21 ... 0x7E, 0x80 ... 0xFF:
+                case 0x21...0x7E, 0x80...0xFF:
                     return byte
                 default:
                     return 0x20
                 }
             }
-            let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop { $0 == 0x09 || $0 == 0x20 }
+            let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop {
+                $0 == 0x09 || $0 == 0x20
+            }
             return ISOLatin1String(unchecked: String(decoding: trimmed, as: UTF8.self))
         }
     }
@@ -242,11 +246,16 @@ extension HTTPField: Codable {
         let name = try container.decode(Name.self, forKey: .name)
         let value = try container.decode(String.self, forKey: .value)
         guard Self.isValidValue(value) else {
-            throw DecodingError.dataCorruptedError(forKey: .value, in: container, debugDescription: "HTTP field value \"\(value)\" contains invalid characters")
+            throw DecodingError.dataCorruptedError(
+                forKey: .value,
+                in: container,
+                debugDescription: "HTTP field value \"\(value)\" contains invalid characters"
+            )
         }
         self.init(name: name, uncheckedValue: ISOLatin1String(unchecked: value))
         if let indexingStrategyValue = try container.decodeIfPresent(UInt8.self, forKey: .indexingStrategy),
-           let indexingStrategy = DynamicTableIndexingStrategy(rawValue: indexingStrategyValue) {
+            let indexingStrategy = DynamicTableIndexingStrategy(rawValue: indexingStrategyValue)
+        {
             self.indexingStrategy = indexingStrategy
         }
     }
@@ -254,15 +263,16 @@ extension HTTPField: Codable {
 
 extension HTTPField {
     static func isValidToken(_ token: some StringProtocol) -> Bool {
-        !token.isEmpty && token.utf8.allSatisfy {
-            switch $0 {
-            case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
-                return true
-            case 0x30 ... 0x39, 0x41 ... 0x5A, 0x61 ... 0x7A: // DIGHT, ALPHA
-                return true
-            default:
-                return false
+        !token.isEmpty
+            && token.utf8.allSatisfy {
+                switch $0 {
+                case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
+                    return true
+                case 0x30...0x39, 0x41...0x5A, 0x61...0x7A:  // DIGHT, ALPHA
+                    return true
+                default:
+                    return false
+                }
             }
-        }
     }
 }

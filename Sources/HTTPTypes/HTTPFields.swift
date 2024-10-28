@@ -133,10 +133,14 @@ public struct HTTPFields: Sendable, Hashable {
         set {
             if let newValue {
                 if #available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *),
-                   name == .cookie {
-                    self.setFields(newValue.split(separator: "; ", omittingEmptySubsequences: false).lazy.map {
-                        HTTPField(name: name, value: String($0))
-                    }, for: name)
+                    name == .cookie
+                {
+                    self.setFields(
+                        newValue.split(separator: "; ", omittingEmptySubsequences: false).lazy.map {
+                            HTTPField(name: name, value: String($0))
+                        },
+                        for: name
+                    )
                 } else {
                     self.setFields(CollectionOfOne(HTTPField(name: name, value: newValue)), for: name)
                 }
@@ -278,7 +282,8 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
         }
     }
 
-    public mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C) where C: Collection, Element == C.Element {
+    public mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C)
+    where C: Collection, Element == C.Element {
         if !isKnownUniquelyReferenced(&self._storage) {
             self._storage = self._storage.copy()
         }
@@ -289,10 +294,13 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
             }
         } else {
             self._storage.index = nil
-            self._storage.fields.replaceSubrange(subrange, with: newElements.lazy.map { field in
-                precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
-                return (field, 0)
-            })
+            self._storage.fields.replaceSubrange(
+                subrange,
+                with: newElements.lazy.map { field in
+                    precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
+                    return (field, 0)
+                }
+            )
             precondition(self.count < UInt16.max, "Too many fields")
         }
     }
@@ -326,7 +334,10 @@ extension HTTPFields: Codable {
         while !container.isAtEnd {
             let field = try container.decode(HTTPField.self)
             guard !field.name.isPseudo else {
-                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Pseudo header field \"\(field)\" disallowed")
+                throw DecodingError.dataCorruptedError(
+                    in: container,
+                    debugDescription: "Pseudo header field \"\(field)\" disallowed"
+                )
             }
             self.append(field)
         }

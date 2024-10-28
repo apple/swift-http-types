@@ -8,27 +8,24 @@ let package = Package(
         .library(name: "HTTPTypes", targets: ["HTTPTypes"]),
         .library(name: "HTTPTypesFoundation", targets: ["HTTPTypesFoundation"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.3.0"),
-    ],
     targets: [
         .target(name: "HTTPTypes"),
         .target(
             name: "HTTPTypesFoundation",
             dependencies: [
-                "HTTPTypes",
+                "HTTPTypes"
             ]
         ),
         .testTarget(
             name: "HTTPTypesTests",
             dependencies: [
-                "HTTPTypes",
+                "HTTPTypes"
             ]
         ),
         .testTarget(
             name: "HTTPTypesFoundationTests",
             dependencies: [
-                "HTTPTypesFoundation",
+                "HTTPTypesFoundation"
             ]
         ),
     ]
