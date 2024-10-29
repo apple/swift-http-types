@@ -16,6 +16,18 @@ let package = Package(
                 "HTTPTypes"
             ]
         ),
+        .target(
+            name: "HTTPClient",
+            dependencies: [
+                .target(name: "HTTPTypes"),
+            ]
+        ),
+        .target(
+            name: "HTTPClientFoundation",
+            dependencies: [
+                .target(name: "HTTPClient"),
+            ]
+        ),
         .testTarget(
             name: "HTTPTypesTests",
             dependencies: [
