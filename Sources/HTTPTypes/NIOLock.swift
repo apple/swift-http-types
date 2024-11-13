@@ -46,21 +46,16 @@ import wasi_pthread
 #endif
 
 #if os(Windows)
-@usableFromInline
 typealias LockPrimitive = SRWLOCK
 #elseif canImport(Darwin)
-@usableFromInline
 typealias LockPrimitive = os_unfair_lock
 #else
-@usableFromInline
 typealias LockPrimitive = pthread_mutex_t
 #endif
 
-@usableFromInline
 enum LockOperations {}
 
 extension LockOperations {
-    @inlinable
     static func create(_ mutex: UnsafeMutablePointer<LockPrimitive>) {
         mutex.assertValidAlignment()
 
@@ -77,7 +72,6 @@ extension LockOperations {
         #endif
     }
 
-    @inlinable
     static func destroy(_ mutex: UnsafeMutablePointer<LockPrimitive>) {
         mutex.assertValidAlignment()
 
@@ -91,7 +85,6 @@ extension LockOperations {
         #endif
     }
 
-    @inlinable
     static func lock(_ mutex: UnsafeMutablePointer<LockPrimitive>) {
         mutex.assertValidAlignment()
 
@@ -105,7 +98,6 @@ extension LockOperations {
         #endif
     }
 
-    @inlinable
     static func unlock(_ mutex: UnsafeMutablePointer<LockPrimitive>) {
         mutex.assertValidAlignment()
 
@@ -148,10 +140,8 @@ extension LockOperations {
 // and future maintainers will be happier that we were cautious.
 //
 // See also: https://github.com/apple/swift/pull/40000
-@usableFromInline
 final class LockStorage<Value>: ManagedBuffer<Value, LockPrimitive> {
 
-    @inlinable
     static func create(value: Value) -> Self {
         let buffer = Self.create(minimumCapacity: 1) { _ in
             value
@@ -168,35 +158,30 @@ final class LockStorage<Value>: ManagedBuffer<Value, LockPrimitive> {
         return storage
     }
 
-    @inlinable
     func lock() {
         self.withUnsafeMutablePointerToElements { lockPtr in
             LockOperations.lock(lockPtr)
         }
     }
 
-    @inlinable
     func unlock() {
         self.withUnsafeMutablePointerToElements { lockPtr in
             LockOperations.unlock(lockPtr)
         }
     }
 
-    @inlinable
     deinit {
         self.withUnsafeMutablePointerToElements { lockPtr in
             LockOperations.destroy(lockPtr)
         }
     }
 
-    @inlinable
     func withLockPrimitive<T>(_ body: (UnsafeMutablePointer<LockPrimitive>) throws -> T) rethrows -> T {
         try self.withUnsafeMutablePointerToElements { lockPtr in
             try body(lockPtr)
         }
     }
 
-    @inlinable
     func withLockedValue<T>(_ mutate: (inout Value) throws -> T) rethrows -> T {
         try self.withUnsafeMutablePointers { valuePtr, lockPtr in
             LockOperations.lock(lockPtr)
@@ -209,7 +194,6 @@ final class LockStorage<Value>: ManagedBuffer<Value, LockPrimitive> {
 extension LockStorage: @unchecked Sendable {}
 
 extension UnsafeMutablePointer {
-    @inlinable
     func assertValidAlignment() {
         assert(UInt(bitPattern: self) % UInt(MemoryLayout<Pointee>.alignment) == 0)
     }
