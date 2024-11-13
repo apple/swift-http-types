@@ -49,8 +49,38 @@ final class HTTPTypesFoundationTests: XCTestCase {
         let request5 = HTTPRequest(url: URL(string: "data:,Hello%2C%20World%21")!)
         XCTAssertEqual(request5.scheme, "data")
         XCTAssertNil(request5.authority)
+        #if canImport(CoreFoundation)
         XCTAssertEqual(request5.path, "/")
+        #else  // canImport(CoreFoundation)
+        XCTAssertEqual(request5.path, ",Hello%2C%20World%21")
+        #endif  // canImport(CoreFoundation)
         XCTAssertNil(request5.url)
+    }
+
+    func testRequestURLAuthorityParsing() {
+        let request1 = HTTPRequest(url: URL(string: "https://[::1]")!)
+        XCTAssertEqual(request1.scheme, "https")
+        XCTAssertEqual(request1.authority, "[::1]")
+        XCTAssertEqual(request1.path, "/")
+        XCTAssertEqual(request1.url?.absoluteString, "https://[::1]/")
+
+        let request2 = HTTPRequest(url: URL(string: "https://[::1]:443")!)
+        XCTAssertEqual(request2.scheme, "https")
+        XCTAssertEqual(request2.authority, "[::1]:443")
+        XCTAssertEqual(request2.path, "/")
+        XCTAssertEqual(request2.url?.absoluteString, "https://[::1]:443/")
+
+        let request3 = HTTPRequest(url: URL(string: "https://127.0.0.1")!)
+        XCTAssertEqual(request3.scheme, "https")
+        XCTAssertEqual(request3.authority, "127.0.0.1")
+        XCTAssertEqual(request3.path, "/")
+        XCTAssertEqual(request3.url?.absoluteString, "https://127.0.0.1/")
+
+        let request4 = HTTPRequest(url: URL(string: "https://127.0.0.1:443")!)
+        XCTAssertEqual(request4.scheme, "https")
+        XCTAssertEqual(request4.authority, "127.0.0.1:443")
+        XCTAssertEqual(request4.path, "/")
+        XCTAssertEqual(request4.url?.absoluteString, "https://127.0.0.1:443/")
     }
 
     func testRequestToFoundation() throws {
