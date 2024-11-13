@@ -12,9 +12,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-import CoreFoundation
 import Foundation
 import HTTPTypes
+
+#if canImport(CoreFoundation)
+import CoreFoundation
+#endif  // canImport(CoreFoundation)
 
 extension HTTPRequest {
     /// The URL of the request synthesized from the scheme, authority, and path pseudo header
@@ -80,6 +83,7 @@ extension URL {
         buffer.append(contentsOf: authority)
         buffer.append(contentsOf: path)
 
+        #if canImport(CoreFoundation)
         if let url = buffer.withUnsafeBytes({ buffer in
             CFURLCreateAbsoluteURLWithBytes(
                 kCFAllocatorDefault,
@@ -94,9 +98,14 @@ extension URL {
         } else {
             return nil
         }
+        #else  // canImport(CoreFoundation)
+        // This initializer does not preserve WHATWG URLs
+        self.init(string: String(decoding: buffer, as: UTF8.self))
+        #endif  // canImport(CoreFoundation)
     }
 
     fileprivate var httpRequestComponents: (scheme: [UInt8], authority: [UInt8]?, path: [UInt8]) {
+        #if canImport(CoreFoundation)
         // CFURL parser based on byte ranges does not unnecessarily percent-encode WHATWG URL
         let url = unsafeBitCast(self.absoluteURL as NSURL, to: CFURL.self)
         let length = CFURLGetBytes(url, nil, 0)
@@ -133,11 +142,11 @@ extension URL {
             let requestPathRange = unionRange(pathRange, queryRange)
             if pathRange.length == 0 {
                 if requestPathRange.length == 0 {
-                    path = Array("/".utf8)
+                    path = [UInt8(ascii: "/")]
                 } else {
                     let pathBuffer = bufferSlice(requestPathRange)
                     path = [UInt8](unsafeUninitializedCapacity: pathBuffer.count + 1) { buffer, initializedCount in
-                        buffer[0] = 0x2F
+                        buffer[0] = UInt8(ascii: "/")
                         UnsafeMutableRawBufferPointer(UnsafeMutableBufferPointer(rebasing: buffer[1...])).copyMemory(
                             from: UnsafeRawBufferPointer(pathBuffer)
                         )
@@ -149,5 +158,52 @@ extension URL {
             }
             return (scheme, authority, path)
         }
+        #else  // canImport(CoreFoundation)
+        guard let components = URLComponents(url: self, resolvingAgainstBaseURL: true),
+            let urlString = components.string
+        else {
+            fatalError("Invalid URL")
+        }
+
+        guard let schemeRange = components.rangeOfScheme else {
+            fatalError("Schemeless URL is not supported")
+        }
+        let scheme = Array(urlString[schemeRange].utf8)
+
+        let authority: [UInt8]?
+        if let hostRange = components.rangeOfHost {
+            let authorityRange =
+                if let portRange = components.rangeOfPort {
+                    hostRange.lowerBound..<portRange.upperBound
+                } else {
+                    hostRange
+                }
+            authority = Array(urlString[authorityRange].utf8)
+        } else {
+            authority = nil
+        }
+
+        let pathRange = components.rangeOfPath
+        let queryRange = components.rangeOfQuery
+        let requestPathRange: Range<String.Index>?
+        if let lowerBound = pathRange?.lowerBound ?? queryRange?.lowerBound,
+            let upperBound = queryRange?.upperBound ?? pathRange?.upperBound
+        {
+            requestPathRange = lowerBound..<upperBound
+        } else {
+            requestPathRange = nil
+        }
+        let path: [UInt8]
+        if let pathRange, !pathRange.isEmpty, let requestPathRange {
+            path = Array(urlString[requestPathRange].utf8)
+        } else {
+            if let requestPathRange, !requestPathRange.isEmpty {
+                path = [UInt8(ascii: "/")] + Array(urlString[requestPathRange].utf8)
+            } else {
+                path = [UInt8(ascii: "/")]
+            }
+        }
+        return (scheme, authority, path)
+        #endif  // canImport(CoreFoundation)
     }
 }
