@@ -21,7 +21,7 @@ let package = Package(
             name: "HTTPTypesFoundationNetworking",
             dependencies: [
                 "HTTPTypes",
-                "HTTPTypesFoundation"
+                "HTTPTypesFoundation",
             ]
         ),
         .testTarget(
@@ -34,14 +34,14 @@ let package = Package(
             name: "HTTPTypesFoundationTests",
             dependencies: [
                 "HTTPTypes",
-                "HTTPTypesFoundation"
+                "HTTPTypesFoundation",
             ]
         ),
         .testTarget(
             name: "HTTPTypesFoundationNetworkingTests",
             dependencies: [
                 "HTTPTypes",
-                "HTTPTypesFoundationNetworking"
+                "HTTPTypesFoundationNetworking",
             ]
         ),
     ]
