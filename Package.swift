@@ -7,6 +7,7 @@ let package = Package(
     products: [
         .library(name: "HTTPTypes", targets: ["HTTPTypes"]),
         .library(name: "HTTPTypesFoundation", targets: ["HTTPTypesFoundation"]),
+        .library(name: "HTTPTypesFoundationNetworking", targets: ["HTTPTypesFoundationNetworking"]),
     ],
     targets: [
         .target(name: "HTTPTypes"),
@@ -14,6 +15,13 @@ let package = Package(
             name: "HTTPTypesFoundation",
             dependencies: [
                 "HTTPTypes"
+            ]
+        ),
+        .target(
+            name: "HTTPTypesFoundationNetworking",
+            dependencies: [
+                "HTTPTypes",
+                "HTTPTypesFoundation"
             ]
         ),
         .testTarget(
@@ -25,7 +33,15 @@ let package = Package(
         .testTarget(
             name: "HTTPTypesFoundationTests",
             dependencies: [
+                "HTTPTypes",
                 "HTTPTypesFoundation"
+            ]
+        ),
+        .testTarget(
+            name: "HTTPTypesFoundationNetworkingTests",
+            dependencies: [
+                "HTTPTypes",
+                "HTTPTypesFoundationNetworking"
             ]
         ),
     ]
