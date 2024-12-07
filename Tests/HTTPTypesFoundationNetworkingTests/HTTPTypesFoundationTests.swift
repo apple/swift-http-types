@@ -16,6 +16,10 @@ import HTTPTypes
 import HTTPTypesFoundationNetworking
 import XCTest
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 final class HTTPTypesFoundationNetworkingTests: XCTestCase {
     func testRequestToFoundation() throws {
         let request = HTTPRequest(
