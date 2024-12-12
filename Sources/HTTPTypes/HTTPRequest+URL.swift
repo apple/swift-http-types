@@ -19,6 +19,7 @@ import Foundation
 #endif
 
 #if canImport(CoreFoundation)
+import Foundation
 import CoreFoundation
 #endif  // canImport(CoreFoundation)
 
