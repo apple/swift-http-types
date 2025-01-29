@@ -83,6 +83,18 @@ final class HTTPTypesFoundationTests: XCTestCase {
         XCTAssertEqual(request4.url?.absoluteString, "https://127.0.0.1:443/")
     }
 
+    func testNilRequestURL() {
+        let request1 = HTTPRequest(
+            method: .connect,
+            scheme: "https",
+            authority: "www.example.com:443",
+            path: "www.example.com:443"
+        )
+        XCTAssertNil(request1.url)
+        let request2 = HTTPRequest(method: .options, scheme: "https", authority: "www.example.com", path: "*")
+        XCTAssertNil(request2.url)
+    }
+
     func testRequestToFoundation() throws {
         let request = HTTPRequest(
             method: .get,
