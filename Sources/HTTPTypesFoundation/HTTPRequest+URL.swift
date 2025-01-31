@@ -24,6 +24,11 @@ extension HTTPRequest {
     /// fields.
     public var url: URL? {
         get {
+            if (self.method == .connect && self.extendedConnectProtocol == nil)
+                || (self.method == .options && self.path == "*")
+            {
+                return nil
+            }
             if let schemeField = self.pseudoHeaderFields.scheme,
                 let authorityField = self.pseudoHeaderFields.authority,
                 let pathField = self.pseudoHeaderFields.path
