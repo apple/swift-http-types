@@ -164,6 +164,7 @@ public struct HTTPRequest: Sendable, Hashable {
                 self.scheme = scheme
                 self.authority = authority
                 self.path = path
+                self.extendedConnectProtocol = extendedConnectProtocol
             }
 
             func copy() -> Self {
