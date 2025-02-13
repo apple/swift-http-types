@@ -153,7 +153,13 @@ public struct HTTPRequest: Sendable, Hashable {
             var path: HTTPField?
             var extendedConnectProtocol: HTTPField?
 
-            init(method: HTTPField, scheme: HTTPField?, authority: HTTPField?, path: HTTPField?, extendedConnectProtocol: HTTPField?) {
+            init(
+                method: HTTPField,
+                scheme: HTTPField?,
+                authority: HTTPField?,
+                path: HTTPField?,
+                extendedConnectProtocol: HTTPField?
+            ) {
                 self.method = method
                 self.scheme = scheme
                 self.authority = authority
@@ -161,7 +167,7 @@ public struct HTTPRequest: Sendable, Hashable {
             }
 
             func copy() -> Self {
-                return .init(
+                .init(
                     method: self.method,
                     scheme: self.scheme,
                     authority: self.authority,
@@ -171,11 +177,8 @@ public struct HTTPRequest: Sendable, Hashable {
             }
 
             static func == (lhs: _Storage, rhs: _Storage) -> Bool {
-                lhs.method == rhs.method &&
-                lhs.scheme == rhs.scheme &&
-                lhs.authority == rhs.authority &&
-                lhs.path == rhs.path &&
-                lhs.extendedConnectProtocol == rhs.extendedConnectProtocol
+                lhs.method == rhs.method && lhs.scheme == rhs.scheme && lhs.authority == rhs.authority
+                    && lhs.path == rhs.path && lhs.extendedConnectProtocol == rhs.extendedConnectProtocol
             }
 
             func hash(into hasher: inout Hasher) {
@@ -277,8 +280,20 @@ public struct HTTPRequest: Sendable, Hashable {
             }
         }
 
-        init(method: HTTPField, scheme: HTTPField?, authority: HTTPField?, path: HTTPField?, extendedConnectProtocol: HTTPField? = nil) {
-            self._storage = .init(method: method, scheme: scheme, authority: authority, path: path, extendedConnectProtocol: extendedConnectProtocol)
+        init(
+            method: HTTPField,
+            scheme: HTTPField?,
+            authority: HTTPField?,
+            path: HTTPField?,
+            extendedConnectProtocol: HTTPField? = nil
+        ) {
+            self._storage = .init(
+                method: method,
+                scheme: scheme,
+                authority: authority,
+                path: path,
+                extendedConnectProtocol: extendedConnectProtocol
+            )
         }
     }
 

@@ -182,7 +182,7 @@ public struct HTTPResponse: Sendable, Hashable {
             }
 
             func copy() -> Self {
-                return .init(
+                .init(
                     status: self.status,
                     reasonPhrase: self.reasonPhrase
                 )
