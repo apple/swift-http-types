@@ -146,52 +146,139 @@ public struct HTTPRequest: Sendable, Hashable {
 
     /// The pseudo header fields of a request.
     public struct PseudoHeaderFields: Sendable, Hashable {
+        private final class _Storage: @unchecked Sendable, Hashable {
+            var method: HTTPField
+            var scheme: HTTPField?
+            var authority: HTTPField?
+            var path: HTTPField?
+            var extendedConnectProtocol: HTTPField?
+
+            init(method: HTTPField, scheme: HTTPField?, authority: HTTPField?, path: HTTPField?, extendedConnectProtocol: HTTPField?) {
+                self.method = method
+                self.scheme = scheme
+                self.authority = authority
+                self.path = path
+            }
+
+            func copy() -> Self {
+                return .init(
+                    method: self.method,
+                    scheme: self.scheme,
+                    authority: self.authority,
+                    path: self.path,
+                    extendedConnectProtocol: self.extendedConnectProtocol
+                )
+            }
+
+            static func == (lhs: _Storage, rhs: _Storage) -> Bool {
+                lhs.method == rhs.method &&
+                lhs.scheme == rhs.scheme &&
+                lhs.authority == rhs.authority &&
+                lhs.path == rhs.path &&
+                lhs.extendedConnectProtocol == rhs.extendedConnectProtocol
+            }
+
+            func hash(into hasher: inout Hasher) {
+                hasher.combine(self.method)
+                hasher.combine(self.scheme)
+                hasher.combine(self.authority)
+                hasher.combine(self.path)
+                hasher.combine(self.extendedConnectProtocol)
+            }
+        }
+
+        private var _storage: _Storage
+
         /// The underlying ":method" pseudo header field.
         ///
         /// The value of this field must be a valid method.
         ///
         /// https://www.rfc-editor.org/rfc/rfc9110.html#name-methods
         public var method: HTTPField {
-            willSet {
+            get {
+                self._storage.method
+            }
+            set {
                 precondition(newValue.name == .method, "Cannot change pseudo-header field name")
                 precondition(HTTPField.isValidToken(newValue.rawValue._storage), "Invalid character in method field")
+
+                if !isKnownUniquelyReferenced(&self._storage) {
+                    self._storage = self._storage.copy()
+                }
+                self._storage.method = newValue
             }
         }
 
         /// The underlying ":scheme" pseudo header field.
         public var scheme: HTTPField? {
-            willSet {
+            get {
+                self._storage.scheme
+            }
+            set {
                 if let name = newValue?.name {
                     precondition(name == .scheme, "Cannot change pseudo-header field name")
                 }
+
+                if !isKnownUniquelyReferenced(&self._storage) {
+                    self._storage = self._storage.copy()
+                }
+                self._storage.scheme = newValue
             }
         }
 
         /// The underlying ":authority" pseudo header field.
         public var authority: HTTPField? {
-            willSet {
+            get {
+                self._storage.authority
+            }
+            set {
                 if let name = newValue?.name {
                     precondition(name == .authority, "Cannot change pseudo-header field name")
                 }
+
+                if !isKnownUniquelyReferenced(&self._storage) {
+                    self._storage = self._storage.copy()
+                }
+                self._storage.authority = newValue
             }
         }
 
         /// The underlying ":path" pseudo header field.
         public var path: HTTPField? {
-            willSet {
+            get {
+                self._storage.path
+            }
+            set {
                 if let name = newValue?.name {
                     precondition(name == .path, "Cannot change pseudo-header field name")
                 }
+
+                if !isKnownUniquelyReferenced(&self._storage) {
+                    self._storage = self._storage.copy()
+                }
+                self._storage.path = newValue
             }
         }
 
         /// The underlying ":protocol" pseudo header field.
         public var extendedConnectProtocol: HTTPField? {
-            willSet {
+            get {
+                self._storage.extendedConnectProtocol
+            }
+            set {
                 if let name = newValue?.name {
                     precondition(name == .protocol, "Cannot change pseudo-header field name")
                 }
+
+                if !isKnownUniquelyReferenced(&self._storage) {
+                    self._storage = self._storage.copy()
+                }
+                self._storage.extendedConnectProtocol = newValue
             }
+        }
+
+        init(method: HTTPField, scheme: HTTPField?, authority: HTTPField?, path: HTTPField?, extendedConnectProtocol: HTTPField? = nil) {
+            self._storage = .init(method: method, scheme: scheme, authority: authority, path: path, extendedConnectProtocol: extendedConnectProtocol)
         }
     }
 
