@@ -61,7 +61,7 @@ extension HTTPField {
                 return nil
             }
             let token: Substring
-            if name.hasPrefix(":") {
+            if name.utf8.first == UInt8(ascii: ":") {
                 token = name.dropFirst()
             } else {
                 token = Substring(name)
@@ -90,7 +90,7 @@ extension HTTPField {
         }
 
         var isPseudo: Bool {
-            self.rawName.hasPrefix(":")
+            self.rawName.utf8.first == UInt8(ascii: ":")
         }
     }
 }
@@ -126,7 +126,7 @@ extension HTTPField.Name: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let nameString = try container.decode(String.self)
-        if nameString.hasPrefix(":") {
+        if nameString.utf8.first == UInt8(ascii: ":") {
             guard nameString.lowercased() == nameString,
                 HTTPField.isValidToken(nameString.dropFirst())
             else {

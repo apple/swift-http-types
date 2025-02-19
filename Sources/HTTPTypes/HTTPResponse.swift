@@ -284,7 +284,7 @@ extension HTTPResponse.PseudoHeaderFields: Codable {
                 }
                 status = field
             default:
-                guard field.name.rawName.hasPrefix(":") else {
+                guard field.name.rawName.utf8.first == UInt8(ascii: ":") else {
                     throw DecodingError.dataCorruptedError(
                         in: container,
                         debugDescription: "\"\(field)\" is not a pseudo header field"
