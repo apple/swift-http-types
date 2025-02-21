@@ -32,6 +32,7 @@ public struct HTTPRequest: Sendable, Hashable {
         /// https://www.rfc-editor.org/rfc/rfc9110.html#name-methods
         ///
         /// - Parameter method: The method string. It can be accessed from the `rawValue` property.
+        @inlinable
         public init?(_ method: String) {
             guard HTTPField.isValidToken(method) else {
                 return nil
@@ -39,14 +40,16 @@ public struct HTTPRequest: Sendable, Hashable {
             self.rawValue = method
         }
 
+        @inlinable
         public init?(rawValue: String) {
             self.init(rawValue)
         }
 
-        fileprivate init(unchecked: String) {
+        /* fileprivate but */ @inlinable init(unchecked: String) {
             self.rawValue = unchecked
         }
 
+        @inlinable
         public var description: String {
             self.rawValue
         }
@@ -55,6 +58,7 @@ public struct HTTPRequest: Sendable, Hashable {
     /// The HTTP request method.
     ///
     /// A convenient way to access the value of the ":method" pseudo header field.
+    @inlinable
     public var method: Method {
         get {
             Method(unchecked: self.pseudoHeaderFields.method.rawValue._storage)
@@ -67,6 +71,7 @@ public struct HTTPRequest: Sendable, Hashable {
     /// A convenient way to access the value of the ":scheme" pseudo header field.
     ///
     /// The scheme is ignored in a legacy HTTP/1 context.
+    @inlinable
     public var scheme: String? {
         get {
             self.pseudoHeaderFields.scheme?.value
@@ -88,6 +93,7 @@ public struct HTTPRequest: Sendable, Hashable {
     /// A convenient way to access the value of the ":authority" pseudo header field.
     ///
     /// The authority is translated into the "Host" header in a legacy HTTP/1 context.
+    @inlinable
     public var authority: String? {
         get {
             self.pseudoHeaderFields.authority?.value
@@ -107,6 +113,7 @@ public struct HTTPRequest: Sendable, Hashable {
     }
 
     /// A convenient way to access the value of the ":path" pseudo header field.
+    @inlinable
     public var path: String? {
         get {
             self.pseudoHeaderFields.path?.value
@@ -126,6 +133,7 @@ public struct HTTPRequest: Sendable, Hashable {
     }
 
     /// A convenient way to access the value of the ":protocol" pseudo header field.
+    @inlinable
     public var extendedConnectProtocol: String? {
         get {
             self.pseudoHeaderFields.extendedConnectProtocol?.value
@@ -193,6 +201,21 @@ public struct HTTPRequest: Sendable, Hashable {
                 }
             }
         }
+
+        @inlinable
+        init(
+            method: HTTPField,
+            scheme: HTTPField? = nil,
+            authority: HTTPField? = nil,
+            path: HTTPField? = nil,
+            extendedConnectProtocol: HTTPField? = nil
+        ) {
+            self.method = method
+            self.scheme = scheme
+            self.authority = authority
+            self.path = path
+            self.extendedConnectProtocol = extendedConnectProtocol
+            }
     }
 
     /// The pseudo header fields.
@@ -208,6 +231,7 @@ public struct HTTPRequest: Sendable, Hashable {
     ///   - authority: The value of the ":authority" pseudo header field.
     ///   - path: The value of the ":path" pseudo header field.
     ///   - headerFields: The request header fields.
+    @inlinable
     public init(method: Method, scheme: String?, authority: String?, path: String?, headerFields: HTTPFields = [:]) {
         let methodField = HTTPField(name: .method, uncheckedValue: ISOLatin1String(unchecked: method.rawValue))
         let schemeField = scheme.map { HTTPField(name: .scheme, value: $0) }
@@ -224,12 +248,14 @@ public struct HTTPRequest: Sendable, Hashable {
 }
 
 extension HTTPRequest: CustomDebugStringConvertible {
+    @inlinable
     public var debugDescription: String {
         "(\(self.pseudoHeaderFields.method.rawValue._storage)) \((self.pseudoHeaderFields.scheme?.value).map { "\($0)://" } ?? "")\(self.pseudoHeaderFields.authority?.value ?? "")\(self.pseudoHeaderFields.path?.value ?? "")"
     }
 }
 
 extension HTTPRequest.PseudoHeaderFields: Codable {
+    @inlinable
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
         try container.encode(self.method)
@@ -247,6 +273,7 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
         }
     }
 
+    @inlinable
     public init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
         var method: HTTPField?
@@ -329,17 +356,20 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
 }
 
 extension HTTPRequest: Codable {
+    @usableFromInline
     enum CodingKeys: String, CodingKey {
         case pseudoHeaderFields
         case headerFields
     }
 
+    @inlinable
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.pseudoHeaderFields, forKey: .pseudoHeaderFields)
         try container.encode(self.headerFields, forKey: .headerFields)
     }
 
+    @inlinable
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.pseudoHeaderFields = try container.decode(PseudoHeaderFields.self, forKey: .pseudoHeaderFields)
@@ -351,47 +381,47 @@ extension HTTPRequest.Method {
     /// GET
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var get: Self { .init(unchecked: "GET") }
+    @inlinable public static var get: Self { .init(unchecked: "GET") }
 
     /// HEAD
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var head: Self { .init(unchecked: "HEAD") }
+    @inlinable public static var head: Self { .init(unchecked: "HEAD") }
 
     /// POST
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var post: Self { .init(unchecked: "POST") }
+    @inlinable public static var post: Self { .init(unchecked: "POST") }
 
     /// PUT
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var put: Self { .init(unchecked: "PUT") }
+    @inlinable public static var put: Self { .init(unchecked: "PUT") }
 
     /// DELETE
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var delete: Self { .init(unchecked: "DELETE") }
+    @inlinable public static var delete: Self { .init(unchecked: "DELETE") }
 
     /// CONNECT
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var connect: Self { .init(unchecked: "CONNECT") }
+    @inlinable public static var connect: Self { .init(unchecked: "CONNECT") }
     /// OPTIONS
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var options: Self { .init(unchecked: "OPTIONS") }
+    @inlinable public static var options: Self { .init(unchecked: "OPTIONS") }
 
     /// TRACE
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
-    public static var trace: Self { .init(unchecked: "TRACE") }
+    @inlinable public static var trace: Self { .init(unchecked: "TRACE") }
 
     /// PATCH
     ///
     /// https://www.rfc-editor.org/rfc/rfc5789.html
-    public static var patch: Self { .init(unchecked: "PATCH") }
+    @inlinable public static var patch: Self { .init(unchecked: "PATCH") }
 
     /// CONNECT-UDP
-    static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
+    @inlinable static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
 }

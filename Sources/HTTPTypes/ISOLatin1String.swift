@@ -13,22 +13,25 @@
 //===----------------------------------------------------------------------===//
 
 extension String {
+    @inlinable
     var isASCII: Bool {
         self.utf8.allSatisfy { $0 & 0x80 == 0 }
     }
 }
 
+@usableFromInline
 struct ISOLatin1String: Sendable, Hashable {
+    @usableFromInline
     let _storage: String
 
-    private static func transcodeSlowPath(from bytes: some Collection<UInt8>) -> String {
+    /* private but */ @inlinable static func transcodeSlowPath(from bytes: some Collection<UInt8>) -> String {
         let scalars = bytes.lazy.map { UnicodeScalar(UInt32($0))! }
         var string = ""
         string.unicodeScalars.append(contentsOf: scalars)
         return string
     }
 
-    private func withISOLatin1BytesSlowPath<Result>(
+    /* private but */ @inlinable func withISOLatin1BytesSlowPath<Result>(
         _ body: (UnsafeBufferPointer<UInt8>) throws -> Result
     ) rethrows -> Result {
         try withUnsafeTemporaryAllocation(of: UInt8.self, capacity: self._storage.unicodeScalars.count) { buffer in
@@ -40,6 +43,7 @@ struct ISOLatin1String: Sendable, Hashable {
         }
     }
 
+    @inlinable
     init(_ string: String) {
         if string.isASCII {
             self._storage = string
@@ -48,6 +52,7 @@ struct ISOLatin1String: Sendable, Hashable {
         }
     }
 
+    @inlinable
     init(_ bytes: some Collection<UInt8>) {
         let ascii = bytes.allSatisfy { $0 & 0x80 == 0 }
         if ascii {
@@ -57,10 +62,12 @@ struct ISOLatin1String: Sendable, Hashable {
         }
     }
 
+    @inlinable
     init(unchecked: String) {
         self._storage = unchecked
     }
 
+    @inlinable
     var string: String {
         if self._storage.isASCII {
             return self._storage
@@ -71,6 +78,7 @@ struct ISOLatin1String: Sendable, Hashable {
         }
     }
 
+    @inlinable
     func withUnsafeBytes<Result>(_ body: (UnsafeBufferPointer<UInt8>) throws -> Result) rethrows -> Result {
         if self._storage.isASCII {
             var string = self._storage

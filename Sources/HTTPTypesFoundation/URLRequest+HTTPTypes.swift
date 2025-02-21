@@ -24,6 +24,7 @@ import FoundationNetworking
 extension URLRequest {
     /// Create a `URLRequest` from an `HTTPRequest`.
     /// - Parameter httpRequest: The HTTP request to convert from.
+    @inlinable
     public init?(httpRequest: HTTPRequest) {
         guard let url = httpRequest.url else {
             return nil
@@ -48,6 +49,7 @@ extension URLRequest {
     }
 
     /// Convert the `URLRequest` into an `HTTPRequest`.
+    @inlinable
     public var httpRequest: HTTPRequest? {
         guard let method = HTTPRequest.Method(self.httpMethod ?? "GET"),
             let url

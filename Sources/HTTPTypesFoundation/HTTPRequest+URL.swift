@@ -22,6 +22,7 @@ import CoreFoundation
 extension HTTPRequest {
     /// The URL of the request synthesized from the scheme, authority, and path pseudo header
     /// fields.
+    @inlinable
     public var url: URL? {
         get {
             if (self.method == .connect && self.extendedConnectProtocol == nil)
@@ -63,6 +64,7 @@ extension HTTPRequest {
     ///   - method: The request method, defaults to GET.
     ///   - url: The URL to populate the scheme, authority, and path pseudo header fields.
     ///   - headerFields: The request header fields.
+    @inlinable
     public init(method: Method = .get, url: URL, headerFields: HTTPFields = [:]) {
         let (scheme, authority, path) = url.httpRequestComponents
         let schemeString = String(decoding: scheme, as: UTF8.self)
@@ -80,7 +82,7 @@ extension HTTPRequest {
 }
 
 extension URL {
-    fileprivate init?(scheme: some Collection<UInt8>, authority: some Collection<UInt8>, path: some Collection<UInt8>) {
+    /* fileprivate but */ @inlinable init?(scheme: some Collection<UInt8>, authority: some Collection<UInt8>, path: some Collection<UInt8>) {
         var buffer = [UInt8]()
         buffer.reserveCapacity(scheme.count + 3 + authority.count + path.count)
         buffer.append(contentsOf: scheme)
@@ -109,7 +111,7 @@ extension URL {
         #endif  // canImport(CoreFoundation)
     }
 
-    fileprivate var httpRequestComponents: (scheme: [UInt8], authority: [UInt8]?, path: [UInt8]) {
+    /* fileprivate but */ @inlinable var httpRequestComponents: (scheme: [UInt8], authority: [UInt8]?, path: [UInt8]) {
         #if canImport(CoreFoundation)
         // CFURL parser based on byte ranges does not unnecessarily percent-encode WHATWG URL
         let url = unsafeBitCast(self.absoluteURL as NSURL, to: CFURL.self)

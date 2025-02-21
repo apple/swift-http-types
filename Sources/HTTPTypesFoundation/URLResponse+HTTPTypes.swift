@@ -25,6 +25,7 @@ extension HTTPURLResponse {
     /// Create an `HTTPURLResponse` from an `HTTPResponse`.
     /// - Parameter httpResponse: The HTTP response to convert from.
     /// - Parameter url: The URL of the response.
+    @inlinable
     public convenience init?(httpResponse: HTTPResponse, url: URL) {
         var combinedFields = [HTTPField.Name: String](minimumCapacity: httpResponse.headerFields.count)
         for field in httpResponse.headerFields {
@@ -42,6 +43,7 @@ extension HTTPURLResponse {
     }
 
     /// Convert the `HTTPURLResponse` into an `HTTPResponse`.
+    @inlinable
     public var httpResponse: HTTPResponse? {
         guard (0...999).contains(self.statusCode) else {
             return nil

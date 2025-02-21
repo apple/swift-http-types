@@ -25,17 +25,20 @@ import Synchronization
 /// `HTTPFields` adheres to modern HTTP semantics. In particular, the "Cookie" request header field
 /// is split into separate header fields by default.
 public struct HTTPFields: Sendable, Hashable {
-    private class _Storage: @unchecked Sendable, Hashable {
-        var fields: [(field: HTTPField, next: UInt16)] = []
-        var index: [String: (first: UInt16, last: UInt16)]? = [:]
+    /* private but */ @usableFromInline class _Storage: @unchecked Sendable, Hashable {
+        @usableFromInline var fields: [(field: HTTPField, next: UInt16)] = []
+        @usableFromInline var index: [String: (first: UInt16, last: UInt16)]? = [:]
 
+        @inlinable
         required init() {
         }
 
+        @inlinable
         func withLock<Result>(_ body: () throws -> Result) rethrows -> Result {
             fatalError()
         }
 
+        @inlinable
         var ensureIndex: [String: (first: UInt16, last: UInt16)] {
             self.withLock {
                 if let index = self.index {
@@ -55,6 +58,7 @@ public struct HTTPFields: Sendable, Hashable {
             }
         }
 
+        @inlinable
         func copy() -> Self {
             let newStorage = Self()
             newStorage.fields = self.fields
@@ -64,12 +68,14 @@ public struct HTTPFields: Sendable, Hashable {
             return newStorage
         }
 
+        @inlinable
         func hash(into hasher: inout Hasher) {
             for (field, _) in self.fields {
                 hasher.combine(field)
             }
         }
 
+        @inlinable
         static func == (lhs: _Storage, rhs: _Storage) -> Bool {
             let leftFieldsIndex = lhs.ensureIndex
             let rightFieldsIndex = rhs.ensureIndex
@@ -96,6 +102,7 @@ public struct HTTPFields: Sendable, Hashable {
             return true
         }
 
+        @inlinable
         func append(field: HTTPField) {
             precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
             let name = field.name.canonicalName
@@ -111,9 +118,10 @@ public struct HTTPFields: Sendable, Hashable {
 
     #if compiler(>=6.0)
     @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    private final class _StorageWithMutex: _Storage, @unchecked Sendable {
-        let mutex = Mutex<Void>(())
+    /* private but */ @usableFromInline final class _StorageWithMutex: _Storage, @unchecked Sendable {
+        @usableFromInline let mutex = Mutex<Void>(())
 
+        @inlinable
         override func withLock<Result>(_ body: () throws -> Result) rethrows -> Result {
             try self.mutex.withLock { _ in
                 try body()
@@ -122,9 +130,10 @@ public struct HTTPFields: Sendable, Hashable {
     }
     #endif  // compiler(>=6.0)
 
-    private final class _StorageWithNIOLock: _Storage, @unchecked Sendable {
-        let lock = LockStorage.create(value: ())
+    /* private but */ @usableFromInline final class _StorageWithNIOLock: _Storage, @unchecked Sendable {
+        @usableFromInline let lock = LockStorage.create(value: ())
 
+        @inlinable
         override func withLock<Result>(_ body: () throws -> Result) rethrows -> Result {
             try self.lock.withLockedValue { _ in
                 try body()
@@ -132,7 +141,7 @@ public struct HTTPFields: Sendable, Hashable {
         }
     }
 
-    private var _storage = {
+    /* private but */ @usableFromInline var _storage = {
         #if compiler(>=6.0)
         if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *) {
             _StorageWithMutex()
@@ -145,6 +154,7 @@ public struct HTTPFields: Sendable, Hashable {
     }()
 
     /// Create an empty list of HTTP fields
+    @inlinable
     public init() {}
 
     /// Access the field value string by name.
@@ -163,6 +173,7 @@ public struct HTTPFields: Sendable, Hashable {
     ///
     /// When setting a "Cookie" header field value, it is split into multiple "Cookie" fields by
     /// semicolon.
+    @inlinable
     public subscript(name: HTTPField.Name) -> String? {
         get {
             let fields = self.fields(for: name)
@@ -194,6 +205,7 @@ public struct HTTPFields: Sendable, Hashable {
     }
 
     /// Access the field values by name as an array of strings. The order of fields is preserved.
+    @inlinable
     public subscript(values name: HTTPField.Name) -> [String] {
         get {
             self.fields(for: name).map(\.value)
@@ -204,6 +216,7 @@ public struct HTTPFields: Sendable, Hashable {
     }
 
     /// Access the fields by name as an array. The order of fields is preserved.
+    @inlinable
     public subscript(fields name: HTTPField.Name) -> [HTTPField] {
         get {
             Array(self.fields(for: name))
@@ -213,14 +226,22 @@ public struct HTTPFields: Sendable, Hashable {
         }
     }
 
-    private struct HTTPFieldSequence: Sequence {
-        let fields: [(field: HTTPField, next: UInt16)]
-        let index: UInt16
+    /* private but */ @usableFromInline struct HTTPFieldSequence: Sequence {
+        @usableFromInline let fields: [(field: HTTPField, next: UInt16)]
+        @usableFromInline let index: UInt16
 
+        @usableFromInline
         struct Iterator: IteratorProtocol {
-            let fields: [(field: HTTPField, next: UInt16)]
-            var index: UInt16
+            @usableFromInline let fields: [(field: HTTPField, next: UInt16)]
+            @usableFromInline var index: UInt16
 
+            @inlinable
+            init(fields: [(field: HTTPField, next: UInt16)], index: UInt16) {
+                self.fields = fields
+                self.index = index
+            }
+
+            @inlinable
             mutating func next() -> HTTPField? {
                 if self.index == .max {
                     return nil
@@ -231,17 +252,24 @@ public struct HTTPFields: Sendable, Hashable {
             }
         }
 
+        @inlinable
+        init(fields: [(field: HTTPField, next: UInt16)], index: UInt16) {
+            self.fields = fields
+            self.index = index
+        }
+
+        @inlinable
         func makeIterator() -> Iterator {
             Iterator(fields: self.fields, index: self.index)
         }
     }
 
-    private func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
+    /* private but */ @inlinable func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
         let index = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
         return HTTPFieldSequence(fields: self._storage.fields, index: index)
     }
 
-    private mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
+    /* private but */ @inlinable mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
         if !isKnownUniquelyReferenced(&self._storage) {
             self._storage = self._storage.copy()
         }
@@ -268,12 +296,14 @@ public struct HTTPFields: Sendable, Hashable {
     /// Whether one or more field with this name exists in the fields.
     /// - Parameter name: The field name.
     /// - Returns: Whether a field exists.
+    @inlinable
     public func contains(_ name: HTTPField.Name) -> Bool {
         self._storage.ensureIndex[name.canonicalName] != nil
     }
 }
 
 extension HTTPFields: ExpressibleByDictionaryLiteral {
+    @inlinable
     public init(dictionaryLiteral elements: (HTTPField.Name, String)...) {
         self.reserveCapacity(elements.count)
         for (name, value) in elements {
@@ -288,18 +318,22 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
     public typealias Element = HTTPField
     public typealias Index = Int
 
+    @inlinable
     public var startIndex: Int {
         self._storage.fields.startIndex
     }
 
+    @inlinable
     public var endIndex: Int {
         self._storage.fields.endIndex
     }
 
+    @inlinable
     public var isEmpty: Bool {
         self._storage.fields.isEmpty
     }
 
+    @inlinable
     public subscript(position: Int) -> HTTPField {
         get {
             guard position >= self.startIndex, position < self.endIndex else {
@@ -325,6 +359,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
         }
     }
 
+    @inlinable
     public mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C)
     where C: Collection, Element == C.Element {
         if !isKnownUniquelyReferenced(&self._storage) {
@@ -348,6 +383,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
         }
     }
 
+    @inlinable
     public mutating func reserveCapacity(_ capacity: Int) {
         if !isKnownUniquelyReferenced(&self._storage) {
             self._storage = self._storage.copy()
@@ -358,17 +394,20 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
 }
 
 extension HTTPFields: CustomDebugStringConvertible {
+    @inlinable
     public var debugDescription: String {
         self._storage.fields.description
     }
 }
 
 extension HTTPFields: Codable {
+    @inlinable
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
         try container.encode(contentsOf: self)
     }
 
+    @inlinable
     public init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
         if let count = container.count {
@@ -389,6 +428,7 @@ extension HTTPFields: Codable {
 
 extension Array {
     // `removalIndices` must be ordered.
+    @inlinable
     mutating func remove(at removalIndices: some Sequence<Index>) {
         var offset = 0
         var iterator = removalIndices.makeIterator()

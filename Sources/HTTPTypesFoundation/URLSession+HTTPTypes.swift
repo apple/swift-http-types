@@ -23,22 +23,25 @@ import FoundationNetworking
 
 extension URLSessionTask {
     /// The original HTTP request this task was created with.
+    @inlinable
     public var originalHTTPRequest: HTTPRequest? {
         self.originalRequest?.httpRequest
     }
 
     /// The current HTTP request -- may differ from the `originalHTTPRequest` due to HTTP redirection.
+    @inlinable
     public var currentHTTPRequest: HTTPRequest? {
         self.currentRequest?.httpRequest
     }
 
     /// The HTTP response received from the server.
+    @inlinable
     public var httpResponse: HTTPResponse? {
         (self.response as? HTTPURLResponse)?.httpResponse
     }
 }
 
-private enum HTTPTypeConversionError: Error {
+/* private but */ @usableFromInline enum HTTPTypeConversionError: Error {
     case failedToConvertHTTPRequestToURLRequest
     case failedToConvertURLResponseToHTTPResponse
 }
@@ -54,6 +57,7 @@ extension URLSession {
     /// - Parameter request: The `HTTPRequest` for which to load data.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data and response.
+    @inlinable
     public func data(
         for request: HTTPRequest,
         delegate: URLSessionTaskDelegate? = nil
@@ -74,6 +78,7 @@ extension URLSession {
     /// - Parameter fileURL: File to upload.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data and response.
+    @inlinable
     public func upload(
         for request: HTTPRequest,
         fromFile fileURL: URL,
@@ -95,6 +100,7 @@ extension URLSession {
     /// - Parameter bodyData: Data to upload.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data and response.
+    @inlinable
     public func upload(
         for request: HTTPRequest,
         from bodyData: Data,
@@ -115,6 +121,7 @@ extension URLSession {
     /// - Parameter request: The `HTTPRequest` for which to download.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Downloaded file URL and response. The file will not be removed automatically.
+    @inlinable
     public func download(
         for request: HTTPRequest,
         delegate: URLSessionTaskDelegate? = nil
@@ -135,6 +142,7 @@ extension URLSession {
     /// - Parameter request: The `HTTPRequest` for which to load data.
     /// - Parameter delegate: Task-specific delegate.
     /// - Returns: Data stream and response.
+    @inlinable
     public func bytes(
         for request: HTTPRequest,
         delegate: URLSessionTaskDelegate? = nil
@@ -157,6 +165,7 @@ extension URLSession {
     ///
     /// - Parameter request: The `HTTPRequest` for which to load data.
     /// - Returns: Data and response.
+    @inlinable
     public func data(for request: HTTPRequest) async throws -> (Data, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
@@ -173,6 +182,7 @@ extension URLSession {
     /// - Parameter request: The `HTTPRequest` for which to upload data.
     /// - Parameter fileURL: File to upload.
     /// - Returns: Data and response.
+    @inlinable
     public func upload(for request: HTTPRequest, fromFile fileURL: URL) async throws -> (Data, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest
@@ -189,6 +199,7 @@ extension URLSession {
     /// - Parameter request: The `HTTPRequest` for which to upload data.
     /// - Parameter bodyData: Data to upload.
     /// - Returns: Data and response.
+    @inlinable
     public func upload(for request: HTTPRequest, from bodyData: Data) async throws -> (Data, HTTPResponse) {
         guard let urlRequest = URLRequest(httpRequest: request) else {
             throw HTTPTypeConversionError.failedToConvertHTTPRequestToURLRequest

@@ -15,12 +15,14 @@
 import HTTPTypes
 
 extension String {
+    @inlinable
     var isASCII: Bool {
         self.utf8.allSatisfy { $0 & 0x80 == 0 }
     }
 }
 
 extension HTTPField {
+    @inlinable
     init(name: Name, isoLatin1Value: String) {
         if isoLatin1Value.isASCII {
             self.init(name: name, value: isoLatin1Value)
@@ -39,6 +41,7 @@ extension HTTPField {
         }
     }
 
+    @inlinable
     var isoLatin1Value: String {
         if self.value.isASCII {
             return self.value
