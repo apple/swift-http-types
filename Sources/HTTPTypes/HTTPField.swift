@@ -20,28 +20,32 @@ public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
     public struct DynamicTableIndexingStrategy: Sendable, Hashable {
         /// Default strategy.
+        @inlinable
         public static var automatic: Self { .init(uncheckedValue: 0) }
 
         /// Always put this field in the dynamic table if possible.
+        @inlinable
         public static var prefer: Self { .init(uncheckedValue: 1) }
 
         /// Don't put this field in the dynamic table.
+        @inlinable
         public static var avoid: Self { .init(uncheckedValue: 2) }
 
         /// Don't put this field in the dynamic table, and set a flag to disallow intermediaries to
         /// index this field.
+        @inlinable
         public static var disallow: Self { .init(uncheckedValue: 3) }
 
-        fileprivate let rawValue: UInt8
+        /* fileprivate but */ @usableFromInline let rawValue: UInt8
 
-        private static let maxRawValue: UInt8 = 3
+        /* private but */ @usableFromInline static let maxRawValue: UInt8 = 3
 
-        private init(uncheckedValue: UInt8) {
+        /* private but */ @inlinable init(uncheckedValue: UInt8) {
             assert(uncheckedValue <= Self.maxRawValue)
             self.rawValue = uncheckedValue
         }
 
-        fileprivate init?(rawValue: UInt8) {
+        /* fileprivate but */ @inlinable init?(rawValue: UInt8) {
             if rawValue > Self.maxRawValue {
                 return nil
             }
@@ -54,6 +58,7 @@ public struct HTTPField: Sendable, Hashable {
     ///   - name: The HTTP field name.
     ///   - value: The HTTP field value is initialized from the UTF-8 encoded bytes of the string.
     ///            Invalid bytes are converted into space characters.
+    @inlinable
     public init(name: Name, value: String) {
         self.name = name
         self.rawValue = Self.legalizeValue(ISOLatin1String(value))
@@ -63,6 +68,7 @@ public struct HTTPField: Sendable, Hashable {
     /// - Parameters:
     ///   - name: The HTTP field name.
     ///   - value: The HTTP field value. Invalid bytes are converted into space characters.
+    @inlinable
     public init(name: Name, value: some Collection<UInt8>) {
         self.name = name
         self.rawValue = Self.legalizeValue(ISOLatin1String(value))
@@ -73,11 +79,13 @@ public struct HTTPField: Sendable, Hashable {
     ///   - name: The HTTP field name.
     ///   - lenientValue: The HTTP field value. Newlines and NULs are converted into space
     ///                   characters.
+    @inlinable
     public init(name: Name, lenientValue: some Collection<UInt8>) {
         self.name = name
         self.rawValue = Self.lenientLegalizeValue(ISOLatin1String(lenientValue))
     }
 
+    @inlinable
     init(name: Name, uncheckedValue: ISOLatin1String) {
         self.name = name
         self.rawValue = uncheckedValue
@@ -94,6 +102,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// If the field is not UTF-8 encoded, `withUnsafeBytesOfValue` can be used to access the
     /// underlying bytes of the field value.
+    @inlinable
     public var value: String {
         get {
             self.rawValue.string
@@ -112,6 +121,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter body: The closure to be invoked with the buffer.
     /// - Returns: Result of the `body` closure.
+    @inlinable
     public func withUnsafeBytesOfValue<Result>(
         _ body: (UnsafeBufferPointer<UInt8>) throws -> Result
     ) rethrows -> Result {
@@ -121,9 +131,10 @@ public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
     public var indexingStrategy: DynamicTableIndexingStrategy = .automatic
 
+    @usableFromInline
     var rawValue: ISOLatin1String
 
-    private static func _isValidValue(_ bytes: some Sequence<UInt8>) -> Bool {
+    /* private but */ @inlinable static func _isValidValue(_ bytes: some Sequence<UInt8>) -> Bool {
         var iterator = bytes.makeIterator()
         guard var byte = iterator.next() else {
             // Empty string is allowed.
@@ -155,6 +166,7 @@ public struct HTTPField: Sendable, Hashable {
         return true
     }
 
+    @inlinable
     static func legalizeValue(_ value: ISOLatin1String) -> ISOLatin1String {
         if self._isValidValue(value._storage.utf8) {
             return value
@@ -176,6 +188,7 @@ public struct HTTPField: Sendable, Hashable {
         }
     }
 
+    @inlinable
     static func lenientLegalizeValue(_ value: ISOLatin1String) -> ISOLatin1String {
         if value._storage.utf8.allSatisfy({ $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }) {
             return value
@@ -198,6 +211,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter value: The string to validate.
     /// - Returns: Whether the string is valid.
+    @inlinable
     public static func isValidValue(_ value: String) -> Bool {
         self._isValidValue(value.utf8)
     }
@@ -208,30 +222,35 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter value: The byte collection to validate.
     /// - Returns: Whether the byte collection is valid.
+    @inlinable
     public static func isValidValue(_ value: some Collection<UInt8>) -> Bool {
         self._isValidValue(value)
     }
 }
 
 extension HTTPField: CustomStringConvertible {
+    @inlinable
     public var description: String {
         "\(self.name): \(self.value)"
     }
 }
 
 extension HTTPField: CustomPlaygroundDisplayConvertible {
+    @inlinable
     public var playgroundDescription: Any {
         self.description
     }
 }
 
 extension HTTPField: Codable {
+    @usableFromInline
     enum CodingKeys: String, CodingKey {
         case name
         case value
         case indexingStrategy
     }
 
+    @inlinable
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.name, forKey: .name)
@@ -241,6 +260,7 @@ extension HTTPField: Codable {
         }
     }
 
+    @inlinable
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(Name.self, forKey: .name)
@@ -262,6 +282,7 @@ extension HTTPField: Codable {
 }
 
 extension HTTPField {
+    @inlinable
     static func isValidToken(_ token: some StringProtocol) -> Bool {
         !token.isEmpty
             && token.utf8.allSatisfy {

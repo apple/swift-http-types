@@ -12,15 +12,17 @@
 //
 //===----------------------------------------------------------------------===//
 
+@usableFromInline
 struct HTTPParsedFields {
-    private var method: ISOLatin1String?
-    private var scheme: ISOLatin1String?
-    private var authority: ISOLatin1String?
-    private var path: ISOLatin1String?
-    private var extendedConnectProtocol: ISOLatin1String?
-    private var status: ISOLatin1String?
-    private var fields: HTTPFields = .init()
+    /* private but */ @usableFromInline var method: ISOLatin1String?
+    /* private but */ @usableFromInline var scheme: ISOLatin1String?
+    /* private but */ @usableFromInline var authority: ISOLatin1String?
+    /* private but */ @usableFromInline var path: ISOLatin1String?
+    /* private but */ @usableFromInline var extendedConnectProtocol: ISOLatin1String?
+    /* private but */ @usableFromInline var status: ISOLatin1String?
+    /* private but */ @usableFromInline var fields: HTTPFields = .init()
 
+    @usableFromInline
     enum ParsingError: Error {
         case invalidName
         case invalidPseudoName
@@ -43,6 +45,26 @@ struct HTTPParsedFields {
         case multipleLocation
     }
 
+    @inlinable
+    internal init(
+        method: ISOLatin1String? = nil,
+        scheme: ISOLatin1String? = nil,
+        authority: ISOLatin1String? = nil,
+        path: ISOLatin1String? = nil,
+        extendedConnectProtocol: ISOLatin1String? = nil,
+        status: ISOLatin1String? = nil,
+        fields: HTTPFields = .init()
+    ) {
+        self.method = method
+        self.scheme = scheme
+        self.authority = authority
+        self.path = path
+        self.extendedConnectProtocol = extendedConnectProtocol
+        self.status = status
+        self.fields = fields
+    }
+
+    @inlinable
     mutating func add(field: HTTPField) throws {
         if field.name.isPseudo {
             if !self.fields.isEmpty {
@@ -87,7 +109,7 @@ struct HTTPParsedFields {
         }
     }
 
-    private func validateFields() throws {
+    /* private but */ @inlinable func validateFields() throws {
         guard self.fields[values: .contentLength].allElementsSame else {
             throw ParsingError.multipleContentLength
         }
@@ -99,6 +121,7 @@ struct HTTPParsedFields {
         }
     }
 
+    @inlinable
     var request: HTTPRequest {
         get throws {
             guard let method = self.method else {
@@ -128,6 +151,7 @@ struct HTTPParsedFields {
         }
     }
 
+    @inlinable
     var response: HTTPResponse {
         get throws {
             guard let statusString = self.status?._storage else {
@@ -146,6 +170,7 @@ struct HTTPParsedFields {
         }
     }
 
+    @inlinable
     var trailerFields: HTTPFields {
         get throws {
             if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil
@@ -160,7 +185,7 @@ struct HTTPParsedFields {
 }
 
 extension HTTPRequest {
-    fileprivate init(
+    /* fileprivate but */ @inlinable init(
         method: Method,
         scheme: ISOLatin1String?,
         authority: ISOLatin1String?,
@@ -182,7 +207,7 @@ extension HTTPRequest {
 }
 
 extension Array where Element: Equatable {
-    fileprivate var allElementsSame: Bool {
+    /* fileprivate but */ @inlinable var allElementsSame: Bool {
         guard let first = self.first else {
             return true
         }
@@ -196,6 +221,7 @@ extension HTTPRequest {
     ///
     /// - Parameter fields: The array of parsed `HTTPField` produced by HPACK or QPACK decoders
     ///                     used in modern HTTP versions.
+    @inlinable
     public init(parsed fields: [HTTPField]) throws {
         var parsedFields = HTTPParsedFields()
         for field in fields {
@@ -211,6 +237,7 @@ extension HTTPResponse {
     ///
     /// - Parameter fields: The array of parsed `HTTPField` produced by HPACK or QPACK decoders
     ///                     used in modern HTTP versions.
+    @inlinable
     public init(parsed fields: [HTTPField]) throws {
         var parsedFields = HTTPParsedFields()
         for field in fields {
@@ -226,6 +253,7 @@ extension HTTPFields {
     ///
     /// - Parameter fields: The array of parsed `HTTPField` produced by HPACK or QPACK decoders
     ///                     used in modern HTTP versions.
+    @inlinable
     public init(parsedTrailerFields fields: [HTTPField]) throws {
         var parsedFields = HTTPParsedFields()
         for field in fields {
