@@ -248,4 +248,10 @@ final class HTTPTypesTests: XCTestCase {
         XCTAssertEqual(trailerFields[HTTPField.Name("trailer1")!], "value1")
         XCTAssertEqual(trailerFields[HTTPField.Name("trailer2")!], "value2")
     }
+
+    func testTypeLayoutSize() {
+        XCTAssertEqual(MemoryLayout<HTTPRequest>.size, MemoryLayout<AnyObject>.size * 2)
+        XCTAssertEqual(MemoryLayout<HTTPResponse>.size, MemoryLayout<AnyObject>.size * 2)
+        XCTAssertEqual(MemoryLayout<HTTPFields>.size, MemoryLayout<AnyObject>.size)
+    }
 }

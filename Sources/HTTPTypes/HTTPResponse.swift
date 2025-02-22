@@ -162,31 +162,87 @@ public struct HTTPResponse: Sendable, Hashable {
             let code =
                 Int(codeIterator.next()! - 48) * 100 + Int(codeIterator.next()! - 48) * 10
                 + Int(codeIterator.next()! - 48)
-            return Status(uncheckedCode: code, reasonPhrase: self.reasonPhrase)
+            return Status(uncheckedCode: code, reasonPhrase: self.pseudoHeaderFields.reasonPhrase)
         }
         set {
             self.pseudoHeaderFields.status.rawValue = ISOLatin1String(unchecked: newValue.fieldValue)
-            self.reasonPhrase = newValue.reasonPhrase
+            self.pseudoHeaderFields.reasonPhrase = newValue.reasonPhrase
         }
     }
 
     /// The pseudo header fields of a response.
     public struct PseudoHeaderFields: Sendable, Hashable {
+        private final class _Storage: @unchecked Sendable, Hashable {
+            var status: HTTPField
+            var reasonPhrase: String
+
+            init(status: HTTPField, reasonPhrase: String) {
+                self.status = status
+                self.reasonPhrase = reasonPhrase
+            }
+
+            func copy() -> Self {
+                .init(
+                    status: self.status,
+                    reasonPhrase: self.reasonPhrase
+                )
+            }
+
+            static func == (lhs: _Storage, rhs: _Storage) -> Bool {
+                lhs.status == rhs.status
+            }
+
+            func hash(into hasher: inout Hasher) {
+                hasher.combine(self.status)
+            }
+        }
+
+        private var _storage: _Storage
+
         /// The underlying ":status" pseudo header field.
         ///
         /// The value of this field must be 3 ASCII decimal digits.
         public var status: HTTPField {
-            willSet {
+            get {
+                self._storage.status
+            }
+            set {
                 precondition(newValue.name == .status, "Cannot change pseudo-header field name")
                 precondition(Status.isValidStatus(newValue.rawValue._storage), "Invalid status code")
+
+                if !isKnownUniquelyReferenced(&self._storage) {
+                    self._storage = self._storage.copy()
+                }
+                self._storage.status = newValue
             }
+        }
+
+        var reasonPhrase: String {
+            get {
+                self._storage.reasonPhrase
+            }
+            set {
+                if !isKnownUniquelyReferenced(&self._storage) {
+                    self._storage = self._storage.copy()
+                }
+                self._storage.reasonPhrase = newValue
+            }
+        }
+
+        private init(status: HTTPField) {
+            self._storage = .init(status: status, reasonPhrase: "")
+        }
+
+        init(status: Status) {
+            self._storage = .init(
+                status: HTTPField(name: .status, uncheckedValue: ISOLatin1String(unchecked: status.fieldValue)),
+                reasonPhrase: status.reasonPhrase
+            )
         }
     }
 
     /// The pseudo header fields.
     public var pseudoHeaderFields: PseudoHeaderFields
-
-    private var reasonPhrase: String
 
     /// The response header fields.
     public var headerFields: HTTPFields
@@ -196,19 +252,8 @@ public struct HTTPResponse: Sendable, Hashable {
     ///   - status: The status code and an optional reason phrase.
     ///   - headerFields: The response header fields.
     public init(status: Status, headerFields: HTTPFields = [:]) {
-        let statusField = HTTPField(name: .status, uncheckedValue: ISOLatin1String(unchecked: status.fieldValue))
-        self.pseudoHeaderFields = .init(status: statusField)
-        self.reasonPhrase = status.reasonPhrase
+        self.pseudoHeaderFields = .init(status: status)
         self.headerFields = headerFields
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.pseudoHeaderFields)
-        hasher.combine(self.headerFields)
-    }
-
-    public static func == (lhs: HTTPResponse, rhs: HTTPResponse) -> Bool {
-        lhs.pseudoHeaderFields == rhs.pseudoHeaderFields && lhs.headerFields == rhs.headerFields
     }
 }
 
@@ -273,7 +318,7 @@ extension HTTPResponse: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.pseudoHeaderFields, forKey: .pseudoHeaderFields)
-        try container.encode(self.reasonPhrase, forKey: .reasonPhrase)
+        try container.encode(self.pseudoHeaderFields.reasonPhrase, forKey: .reasonPhrase)
         try container.encode(self.headerFields, forKey: .headerFields)
     }
 
@@ -288,7 +333,7 @@ extension HTTPResponse: Codable {
         guard Status.isValidReasonPhrase(reasonPhrase) else {
             throw DecodingError.invalidReasonPhrase(reasonPhrase)
         }
-        self.reasonPhrase = reasonPhrase
+        self.pseudoHeaderFields.reasonPhrase = reasonPhrase
         self.headerFields = try container.decode(HTTPFields.self, forKey: .headerFields)
     }
 }
