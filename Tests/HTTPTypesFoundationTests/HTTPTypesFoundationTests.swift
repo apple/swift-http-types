@@ -143,6 +143,22 @@ final class HTTPTypesFoundationTests: XCTestCase {
         XCTAssertEqual(request.headerFields[.init("x-foo")!], "Bar")
     }
 
+    func testWebSocketRequest() throws {
+        let urlRequest = URLRequest(url: URL(string: "wss://www.example.com/")!)
+
+        let request = try XCTUnwrap(urlRequest.httpRequest)
+        XCTAssertEqual(request.method, .connect)
+        XCTAssertEqual(request.scheme, "https")
+        XCTAssertEqual(request.authority, "www.example.com")
+        XCTAssertEqual(request.path, "/")
+        XCTAssertEqual(request.extendedConnectProtocol, "websocket")
+
+        let urlRequestConverted = try XCTUnwrap(URLRequest(httpRequest: request))
+        XCTAssertEqual(urlRequestConverted.httpMethod, "GET")
+        XCTAssertEqual(urlRequestConverted.url, URL(string: "wss://www.example.com/"))
+        XCTAssertEqual(urlRequest, urlRequestConverted)
+    }
+
     func testResponseToFoundation() throws {
         let response = HTTPResponse(
             status: .ok,

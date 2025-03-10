@@ -25,6 +25,23 @@ extension URLRequest {
     /// Create a `URLRequest` from an `HTTPRequest`.
     /// - Parameter httpRequest: The HTTP request to convert from.
     public init?(httpRequest: HTTPRequest) {
+        // Translate an extended-CONNECT WebSocket request to the legacy form
+        if httpRequest.method == .connect && httpRequest.extendedConnectProtocol == "websocket" {
+            var legacyRequest = httpRequest
+            legacyRequest.method = .get
+            switch httpRequest.scheme?.lowercased() {
+            case "https":
+                legacyRequest.scheme = "wss"
+            case "http":
+                legacyRequest.scheme = "ws"
+            default:
+                break
+            }
+            legacyRequest.extendedConnectProtocol = nil
+            self.init(httpRequest: legacyRequest)
+            return
+        }
+
         guard let url = httpRequest.url else {
             return nil
         }
@@ -63,6 +80,27 @@ extension URLRequest {
                 }
             }
         }
+
+        // Translate a legacy WebSocket request to the extended-CONNECT form
+        if method == .get, let scheme = request.scheme {
+            switch scheme.utf8.count {
+            case 3:
+                if scheme.lowercased() == "wss" {
+                    request.method = .connect
+                    request.scheme = "https"
+                    request.extendedConnectProtocol = "websocket"
+                }
+            case 2:
+                if scheme.lowercased() == "ws" {
+                    request.method = .connect
+                    request.scheme = "http"
+                    request.extendedConnectProtocol = "websocket"
+                }
+            default:
+                break
+            }
+        }
+
         return request
     }
 }
