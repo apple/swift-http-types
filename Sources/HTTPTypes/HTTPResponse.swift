@@ -521,6 +521,11 @@ extension HTTPResponse.Status {
     /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var expectationFailed: Self { .init(uncheckedCode: 417, reasonPhrase: "Expectation Failed") }
 
+    /// 418 I'm a teapot
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.19
+    public static var imATeapot: Self { .init(uncheckedCode: 418, reasonPhrase: "I'm a teapot") }
+    
     /// 421 Misdirected Request
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
