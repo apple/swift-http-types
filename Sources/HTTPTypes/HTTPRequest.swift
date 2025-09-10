@@ -495,6 +495,15 @@ extension HTTPRequest.Method {
     /// https://www.rfc-editor.org/rfc/rfc5789.html
     public static var patch: Self { .init(unchecked: "PATCH") }
 
+    /// QUERY
+    ///
+    /// https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
+    static var query: Self { .init(unchecked: "QUERY") }
+
     /// CONNECT-UDP
     static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
+
+    var isSafe: Bool {
+        self == .get || self == .head || self == .options || self == .query
+    }
 }
