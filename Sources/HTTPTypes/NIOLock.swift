@@ -191,8 +191,6 @@ final class LockStorage<Value>: ManagedBuffer<Value, LockPrimitive> {
     }
 }
 
-extension LockStorage: @unchecked Sendable {}
-
 extension UnsafeMutablePointer {
     func assertValidAlignment() {
         assert(UInt(bitPattern: self) % UInt(MemoryLayout<Pointee>.alignment) == 0)
