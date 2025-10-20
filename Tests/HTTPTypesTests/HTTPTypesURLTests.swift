@@ -50,11 +50,11 @@ final class HTTPTypesURLTests: XCTestCase {
         let request5 = HTTPRequest(url: URL(string: "data:,Hello%2C%20World%21")!)
         XCTAssertEqual(request5.scheme, "data")
         XCTAssertNil(request5.authority)
-        #if canImport(CoreFoundation)
+        #if !canImport(FoundationEssentials)
         XCTAssertEqual(request5.path, "/")
-        #else  // canImport(CoreFoundation)
+        #else  // !canImport(FoundationEssentials)
         XCTAssertEqual(request5.path, ",Hello%2C%20World%21")
-        #endif  // canImport(CoreFoundation)
+        #endif  // !canImport(FoundationEssentials)
         XCTAssertNil(request5.url)
     }
 
