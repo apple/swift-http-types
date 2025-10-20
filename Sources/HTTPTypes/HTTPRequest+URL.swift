@@ -14,14 +14,12 @@
 
 #if canImport(FoundationEssentials)
 import FoundationEssentials
-#else
+#else  // canImport(FoundationEssentials)
 import Foundation
-#endif
-
 #if canImport(CoreFoundation)
-import Foundation
 import CoreFoundation
 #endif  // canImport(CoreFoundation)
+#endif  // canImport(FoundationEssentials)
 
 extension HTTPRequest {
     /// The URL of the request synthesized from the scheme, authority, and path pseudo header
@@ -92,7 +90,7 @@ extension URL {
         buffer.append(contentsOf: authority)
         buffer.append(contentsOf: path)
 
-        #if canImport(CoreFoundation)
+        #if !canImport(FoundationEssentials) && canImport(CoreFoundation)
         if let url = buffer.withUnsafeBytes({ buffer in
             CFURLCreateAbsoluteURLWithBytes(
                 kCFAllocatorDefault,
@@ -107,14 +105,14 @@ extension URL {
         } else {
             return nil
         }
-        #else  // canImport(CoreFoundation)
+        #else  // !canImport(FoundationEssentials) && canImport(CoreFoundation)
         // This initializer does not preserve WHATWG URLs
         self.init(string: String(decoding: buffer, as: UTF8.self))
-        #endif  // canImport(CoreFoundation)
+        #endif  // !canImport(FoundationEssentials) && canImport(CoreFoundation)
     }
 
     fileprivate var httpRequestComponents: (scheme: [UInt8], authority: [UInt8]?, path: [UInt8]) {
-        #if canImport(CoreFoundation)
+        #if !canImport(FoundationEssentials) && canImport(CoreFoundation)
         // CFURL parser based on byte ranges does not unnecessarily percent-encode WHATWG URL
         let url = unsafeBitCast(self.absoluteURL as NSURL, to: CFURL.self)
         let length = CFURLGetBytes(url, nil, 0)
@@ -167,7 +165,7 @@ extension URL {
             }
             return (scheme, authority, path)
         }
-        #else  // canImport(CoreFoundation)
+        #else  // !canImport(FoundationEssentials) && canImport(CoreFoundation)
         guard let components = URLComponents(url: self, resolvingAgainstBaseURL: true),
             let urlString = components.string
         else {
@@ -213,6 +211,6 @@ extension URL {
             }
         }
         return (scheme, authority, path)
-        #endif  // canImport(CoreFoundation)
+        #endif  // !canImport(FoundationEssentials) && canImport(CoreFoundation)
     }
 }
