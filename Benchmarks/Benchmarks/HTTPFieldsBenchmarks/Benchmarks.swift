@@ -15,7 +15,7 @@
 import Benchmark
 import HTTPTypes
 
-let benchmarks = {
+let benchmarks: @Sendable () -> Void = {
     let defaultMetrics: [BenchmarkMetric] = [
         .mallocCountTotal
     ]
