@@ -12,11 +12,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Foundation
-import HTTPTypes
+public import Foundation
 
 #if canImport(FoundationNetworking)
-import FoundationNetworking
+public import FoundationNetworking
 #endif
 
 #if !os(WASI)
