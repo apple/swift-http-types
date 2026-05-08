@@ -12,10 +12,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-public import Foundation
-
 #if canImport(FoundationNetworking)
 public import FoundationNetworking
+#else
+public import Foundation
 #endif
 
 #if !os(WASI)
