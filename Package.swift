@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "HTTPTypesFoundation", targets: ["HTTPTypesFoundation"]),
     ],
     traits: [
-        "FoundationURL",
+        .trait(name: "FoundationURL", description: "Enable HTTPRequest conveniences with Foundation URL"),
         .default(enabledTraits: ["FoundationURL"]),
     ],
     targets: [
