@@ -557,4 +557,15 @@ extension HTTPField.Name {
     public static var xContentTypeOptions: Self {
         .init(rawName: "X-Content-Type-Options", canonicalName: "x-content-type-options")
     }
+
+    /// Available-Dictionary
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9842.html
+    public static var availableDictionary: Self { .init(rawName: "Available-Dictionary", canonicalName: "available-dictionary") }
+
+    /// Dictionary-ID
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9842.html
+    public static var dictionaryId: Self { .init(rawName: "Dictionary-ID", canonicalName: "dictionary-id") }
+
 }
