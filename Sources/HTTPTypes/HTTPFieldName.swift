@@ -257,7 +257,9 @@ extension HTTPField.Name {
     /// Available-Dictionary
     ///
     /// https://www.rfc-editor.org/rfc/rfc9842.html
-    public static var availableDictionary: Self { .init(rawName: "Available-Dictionary", canonicalName: "available-dictionary") }
+    public static var availableDictionary: Self {
+        .init(rawName: "Available-Dictionary", canonicalName: "available-dictionary")
+    }
 
     /// Cache-Control
     ///
