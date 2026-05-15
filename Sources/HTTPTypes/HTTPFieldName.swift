@@ -342,7 +342,7 @@ extension HTTPField.Name {
     /// Dictionary-ID
     ///
     /// https://www.rfc-editor.org/rfc/rfc9842.html
-    public static var dictionaryId: Self { .init(rawName: "Dictionary-ID", canonicalName: "dictionary-id") }
+    public static var dictionaryID: Self { .init(rawName: "Dictionary-ID", canonicalName: "dictionary-id") }
 
     /// Early-Data
     ///
