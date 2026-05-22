@@ -8,6 +8,10 @@ let package = Package(
         .library(name: "HTTPTypes", targets: ["HTTPTypes"]),
         .library(name: "HTTPTypesFoundation", targets: ["HTTPTypesFoundation"]),
     ],
+    traits: [
+        .trait(name: "FoundationURL", description: "Enable HTTPRequest conveniences with Foundation URL"),
+        .default(enabledTraits: ["FoundationURL"]),
+    ],
     targets: [
         .target(name: "HTTPTypes"),
         .target(
@@ -33,7 +37,7 @@ let package = Package(
 
 for target in package.targets {
     var settings = target.swiftSettings ?? []
-    settings.append(.enableExperimentalFeature("StrictConcurrency=complete"))
+    settings.append(.enableUpcomingFeature("InternalImportsByDefault"))
     target.swiftSettings = settings
 }
 
