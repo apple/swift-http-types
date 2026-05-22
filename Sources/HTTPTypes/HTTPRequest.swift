@@ -332,6 +332,8 @@ extension HTTPRequest: CustomDebugStringConvertible {
     }
 }
 
+#if !hasFeature(Embedded)
+
 extension HTTPRequest.PseudoHeaderFields: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
@@ -449,6 +451,8 @@ extension HTTPRequest: Codable {
         self.headerFields = try container.decode(HTTPFields.self, forKey: .headerFields)
     }
 }
+
+#endif
 
 extension HTTPRequest.Method {
     /// GET

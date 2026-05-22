@@ -112,9 +112,9 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter body: The closure to be invoked with the buffer.
     /// - Returns: Result of the `body` closure.
-    public func withUnsafeBytesOfValue<Result>(
-        _ body: (UnsafeBufferPointer<UInt8>) throws -> Result
-    ) rethrows -> Result {
+    public func withUnsafeBytesOfValue<Result, Failure: Error>(
+        _ body: (UnsafeBufferPointer<UInt8>) throws(Failure) -> Result
+    ) throws(Failure) -> Result {
         try self.rawValue.withUnsafeBytes(body)
     }
 
@@ -219,6 +219,8 @@ extension HTTPField: CustomStringConvertible {
     }
 }
 
+#if !hasFeature(Embedded)
+
 extension HTTPField: CustomPlaygroundDisplayConvertible {
     public var playgroundDescription: Any {
         self.description
@@ -260,6 +262,8 @@ extension HTTPField: Codable {
         }
     }
 }
+
+#endif
 
 extension HTTPField {
     static func isValidToken(_ token: some StringProtocol) -> Bool {

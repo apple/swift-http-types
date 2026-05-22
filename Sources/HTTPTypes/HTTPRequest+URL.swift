@@ -12,6 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#if !hasFeature(Embedded)
+
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else  // canImport(FoundationEssentials)
@@ -214,3 +216,5 @@ extension URL {
         #endif  // !canImport(FoundationEssentials) && canImport(CoreFoundation)
     }
 }
+
+#endif
