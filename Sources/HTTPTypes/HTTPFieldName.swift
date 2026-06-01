@@ -528,6 +528,16 @@ extension HTTPField.Name {
     /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var te: Self { .init(rawName: "TE", canonicalName: "te") }
 
+    /// Traceparent
+    ///
+    /// https://www.w3.org/TR/trace-context/
+    public static var traceparent: Self { .init(rawName: "Traceparent", canonicalName: "traceparent") }
+
+    /// Tracestate
+    ///
+    /// https://www.w3.org/TR/trace-context/
+    public static var tracestate: Self { .init(rawName: "Tracestate", canonicalName: "tracestate") }
+
     /// Trailer
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
