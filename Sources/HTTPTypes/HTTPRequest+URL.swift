@@ -12,10 +12,12 @@
 //
 //===----------------------------------------------------------------------===//
 
+#if FoundationURL
+
 #if canImport(FoundationEssentials)
-import FoundationEssentials
+public import FoundationEssentials
 #else  // canImport(FoundationEssentials)
-import Foundation
+public import Foundation
 #if canImport(CoreFoundation)
 import CoreFoundation
 #endif  // canImport(CoreFoundation)
@@ -214,3 +216,5 @@ extension URL {
         #endif  // !canImport(FoundationEssentials) && canImport(CoreFoundation)
     }
 }
+
+#endif
