@@ -12,12 +12,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#if !hasFeature(Embedded)
+#if FoundationURL && !hasFeature(Embedded)
 
 #if canImport(FoundationEssentials)
-import FoundationEssentials
+public import FoundationEssentials
 #else  // canImport(FoundationEssentials)
-import Foundation
+public import Foundation
 #if canImport(CoreFoundation)
 import CoreFoundation
 #endif  // canImport(CoreFoundation)

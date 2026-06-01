@@ -49,6 +49,8 @@ import wasi_pthread
 typealias LockPrimitive = SRWLOCK
 #elseif canImport(Darwin)
 typealias LockPrimitive = os_unfair_lock
+#elseif os(FreeBSD) || os(OpenBSD)
+typealias LockPrimitive = pthread_mutex_t?
 #else
 typealias LockPrimitive = pthread_mutex_t
 #endif
@@ -64,7 +66,11 @@ extension LockOperations {
         #elseif canImport(Darwin)
         mutex.initialize(to: .init())
         #elseif (compiler(<6.1) && !os(WASI)) || (compiler(>=6.1) && _runtime(_multithreaded))
+        #if os(FreeBSD) || os(OpenBSD)
+        var attr = pthread_mutexattr_t(bitPattern: 0)
+        #else
         var attr = pthread_mutexattr_t()
+        #endif
         pthread_mutexattr_init(&attr)
 
         let err = pthread_mutex_init(mutex, &attr)
