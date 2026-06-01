@@ -254,6 +254,13 @@ extension HTTPField.Name {
     /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var authorization: Self { .init(rawName: "Authorization", canonicalName: "authorization") }
 
+    /// Available-Dictionary
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9842.html
+    public static var availableDictionary: Self {
+        .init(rawName: "Available-Dictionary", canonicalName: "available-dictionary")
+    }
+
     /// Cache-Control
     ///
     /// https://www.rfc-editor.org/rfc/rfc9111.html
@@ -331,6 +338,11 @@ extension HTTPField.Name {
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var date: Self { .init(rawName: "Date", canonicalName: "date") }
+
+    /// Dictionary-ID
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9842.html
+    public static var dictionaryID: Self { .init(rawName: "Dictionary-ID", canonicalName: "dictionary-id") }
 
     /// Early-Data
     ///
@@ -530,6 +542,11 @@ extension HTTPField.Name {
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
     public static var upgrade: Self { .init(rawName: "Upgrade", canonicalName: "upgrade") }
+
+    /// Use-As-Dictionary
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9842.html
+    public static var useAsDictionary: Self { .init(rawName: "Use-As-Dictionary", canonicalName: "use-as-dictionary") }
 
     /// User-Agent
     ///
