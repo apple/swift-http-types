@@ -78,6 +78,51 @@ public struct HTTPField: Sendable, Hashable {
         self.rawValue = Self.lenientLegalizeValue(ISOLatin1String(lenientValue))
     }
 
+    /// Create an HTTP field from a name and a value, skipping the validation of the value.
+    ///
+    /// This is useful when the field value is already known to be valid, for example because it
+    /// was produced by an HTTP parser that has already validated it, and the cost of validating it
+    /// again is not desirable.
+    ///
+    /// - Warning: The caller must ensure that the value only contains the bytes allowed in RFC
+    ///            9110, otherwise the behavior is undefined. The validity is checked with a debug
+    ///            assertion only. Prefer the validating `init(name:value:)` initializer if the
+    ///            value comes from an untrusted source.
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-values
+    ///
+    /// - Parameters:
+    ///   - name: The HTTP field name.
+    ///   - uncheckedValue: The HTTP field value, assumed to be valid. It is initialized from the
+    ///                     UTF-8 encoded bytes of the string.
+    public init(name: Name, uncheckedValue: String) {
+        assert(Self.isValidValue(uncheckedValue), "Invalid HTTP field value: \(uncheckedValue)")
+        self.name = name
+        self.rawValue = ISOLatin1String(uncheckedValue)
+    }
+
+    /// Create an HTTP field from a name and a value, skipping the validation of the value.
+    ///
+    /// This is useful when the field value is already known to be valid, for example because it
+    /// was produced by an HTTP parser that has already validated it, and the cost of validating it
+    /// again is not desirable.
+    ///
+    /// - Warning: The caller must ensure that the value only contains the bytes allowed in RFC
+    ///            9110, otherwise the behavior is undefined. The validity is checked with a debug
+    ///            assertion only. Prefer the validating `init(name:value:)` initializer if the
+    ///            value comes from an untrusted source.
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-values
+    ///
+    /// - Parameters:
+    ///   - name: The HTTP field name.
+    ///   - uncheckedValue: The HTTP field value, assumed to be valid.
+    public init(name: Name, uncheckedValue: some Collection<UInt8>) {
+        assert(Self.isValidValue(uncheckedValue), "Invalid HTTP field value")
+        self.name = name
+        self.rawValue = ISOLatin1String(uncheckedValue)
+    }
+
     init(name: Name, uncheckedValue: ISOLatin1String) {
         self.name = name
         self.rawValue = uncheckedValue

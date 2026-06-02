@@ -84,6 +84,27 @@ extension HTTPField {
             self.canonicalName = name
         }
 
+        /// Create an HTTP field name from a string, skipping the validation of the characters.
+        ///
+        /// This is useful when the field name is already known to be valid, for example because it
+        /// was produced by an HTTP parser that has already validated it, and the cost of validating
+        /// it again is not desirable.
+        ///
+        /// - Warning: The caller must ensure that the name only contains the characters allowed in
+        ///            RFC 9110, otherwise the behavior is undefined. The validity is checked with a
+        ///            debug assertion only. Prefer ``init(_:)`` if the name comes from an untrusted
+        ///            source.
+        ///
+        /// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names
+        ///
+        /// - Parameter name: The name of the HTTP field. It can be accessed from the `rawName`
+        ///                   property. It must not be empty and must only contain valid characters.
+        public init(unchecked name: String) {
+            assert(HTTPField.isValidToken(name), "Invalid HTTP field name: \(name)")
+            self.rawName = name
+            self.canonicalName = name.lowercased()
+        }
+
         private init(rawName: String, canonicalName: String) {
             self.rawName = rawName
             self.canonicalName = canonicalName
