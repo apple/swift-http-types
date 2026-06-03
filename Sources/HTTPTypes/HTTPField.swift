@@ -247,7 +247,7 @@ extension HTTPField: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(Name.self, forKey: .name)
         let value = try container.decode(String.self, forKey: .value)
-        guard Self.isValidValue(value) else {
+        guard value.unicodeScalars.allSatisfy({ $0.value <= UInt8.max }) && Self.isValidValue(value) else {
             throw DecodingError.dataCorruptedError(
                 forKey: .value,
                 in: container,
