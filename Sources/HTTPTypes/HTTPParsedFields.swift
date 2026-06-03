@@ -12,8 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#if !hasFeature(Embedded)
-
 struct HTTPParsedFields {
     private var method: ISOLatin1String?
     private var scheme: ISOLatin1String?
@@ -236,5 +234,3 @@ extension HTTPFields {
         self = try parsedFields.trailerFields
     }
 }
-
-#endif
