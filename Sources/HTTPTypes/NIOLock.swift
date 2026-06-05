@@ -182,14 +182,14 @@ final class LockStorage<Value>: ManagedBuffer<Value, LockPrimitive> {
         }
     }
 
-    func withLockPrimitive<T>(_ body: (UnsafeMutablePointer<LockPrimitive>) throws -> T) rethrows -> T {
-        try self.withUnsafeMutablePointerToElements { lockPtr in
+    func withLockPrimitive<T, E: Error>(_ body: (UnsafeMutablePointer<LockPrimitive>) throws(E) -> T) throws(E) -> T {
+        try self.withUnsafeMutablePointerToElements { lockPtr throws(E) in
             try body(lockPtr)
         }
     }
 
-    func withLockedValue<T>(_ mutate: (inout Value) throws -> T) rethrows -> T {
-        try self.withUnsafeMutablePointers { valuePtr, lockPtr in
+    func withLockedValue<T, E: Error>(_ mutate: (inout Value) throws(E) -> T) throws(E) -> T {
+        try self.withUnsafeMutablePointers { valuePtr, lockPtr throws(E) in
             LockOperations.lock(lockPtr)
             defer { LockOperations.unlock(lockPtr) }
             return try mutate(&valuePtr.pointee)

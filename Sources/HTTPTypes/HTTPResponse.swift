@@ -263,6 +263,8 @@ extension HTTPResponse: CustomDebugStringConvertible {
     }
 }
 
+#if !hasFeature(Embedded)
+
 extension HTTPResponse.PseudoHeaderFields: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
@@ -337,6 +339,8 @@ extension HTTPResponse: Codable {
         self.headerFields = try container.decode(HTTPFields.self, forKey: .headerFields)
     }
 }
+
+#endif
 
 extension HTTPResponse.Status {
     // MARK: 1xx

@@ -111,6 +111,8 @@ extension HTTPField.Name: LosslessStringConvertible {
     }
 }
 
+#if !hasFeature(Embedded)
+
 extension HTTPField.Name: CustomPlaygroundDisplayConvertible {
     public var playgroundDescription: Any {
         self.description
@@ -147,6 +149,8 @@ extension HTTPField.Name: Codable {
         }
     }
 }
+
+#endif
 
 extension HTTPField.Name {
     static var method: Self { .init(rawName: ":method", canonicalName: ":method") }

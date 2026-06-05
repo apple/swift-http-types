@@ -58,6 +58,17 @@ jobs:
       runner_pool: general
       build_scheme: swift-http-types-Package
 
+  embedded-swift:
+    name: Build with Embedded Swift
+    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@0.0.11
+    with:
+      enable_linux_checks: false
+      enable_macos_checks: false
+      enable_windows_checks: false
+      enable_wasm_sdk_build: true
+      enable_embedded_wasm_sdk_build: true
+      swift_flags: --target HTTPTypes
+
   release-builds:
     name: Release builds
     uses: apple/swift-nio/.github/workflows/release_builds.yml@main

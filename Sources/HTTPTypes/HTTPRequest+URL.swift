@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#if FoundationURL
+#if FoundationURL && !hasFeature(Embedded)
 
 #if canImport(FoundationEssentials)
 public import FoundationEssentials
