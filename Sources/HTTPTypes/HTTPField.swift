@@ -16,6 +16,7 @@
 ///
 /// The field name is a case-insensitive but case-preserving ASCII string; the field value is a
 /// collection of bytes.
+@available(HTTPTypes 1.0, *)
 public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
     public struct DynamicTableIndexingStrategy: Sendable, Hashable {
@@ -73,6 +74,7 @@ public struct HTTPField: Sendable, Hashable {
     ///   - name: The HTTP field name.
     ///   - lenientValue: The HTTP field value. Newlines and NULs are converted into space
     ///                   characters.
+    @available(HTTPTypes 1.1, *)
     public init(name: Name, lenientValue: some Collection<UInt8>) {
         self.name = name
         self.rawValue = Self.lenientLegalizeValue(ISOLatin1String(lenientValue))
@@ -213,6 +215,7 @@ public struct HTTPField: Sendable, Hashable {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField: CustomStringConvertible {
     public var description: String {
         "\(self.name): \(self.value)"
@@ -221,12 +224,14 @@ extension HTTPField: CustomStringConvertible {
 
 #if !hasFeature(Embedded)
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField: CustomPlaygroundDisplayConvertible {
     public var playgroundDescription: Any {
         self.description
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField: Codable {
     enum CodingKeys: String, CodingKey {
         case name
@@ -265,6 +270,7 @@ extension HTTPField: Codable {
 
 #endif
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField {
     static func isValidToken(_ token: some StringProtocol) -> Bool {
         !token.isEmpty

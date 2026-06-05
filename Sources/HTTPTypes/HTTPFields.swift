@@ -22,6 +22,7 @@ import Synchronization
 ///
 /// `HTTPFields` adheres to modern HTTP semantics. In particular, the "Cookie" request header field
 /// is split into separate header fields by default.
+@available(HTTPTypes 1.0, *)
 public struct HTTPFields: Sendable, Hashable {
     private class _Storage: @unchecked Sendable, Hashable {
         var fields: [(field: HTTPField, next: UInt16)] = []
@@ -290,6 +291,7 @@ public struct HTTPFields: Sendable, Hashable {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPFields: ExpressibleByDictionaryLiteral {
     public init(dictionaryLiteral elements: (HTTPField.Name, String)...) {
         self.reserveCapacity(elements.count)
@@ -301,6 +303,7 @@ extension HTTPFields: ExpressibleByDictionaryLiteral {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, MutableCollection {
     public typealias Element = HTTPField
     public typealias Index = Int
@@ -376,12 +379,14 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
 
 #if !hasFeature(Embedded)
 
+@available(HTTPTypes 1.0, *)
 extension HTTPFields: CustomDebugStringConvertible {
     public var debugDescription: String {
         self._storage.fields.description
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPFields: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
