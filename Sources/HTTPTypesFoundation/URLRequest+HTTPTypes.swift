@@ -20,6 +20,7 @@ public import Foundation
 
 #if !os(WASI)
 
+@available(HTTPTypes 1.0, *)
 extension URLRequest {
     /// Create a `URLRequest` from an `HTTPRequest`.
     /// - Parameter httpRequest: The HTTP request to convert from.

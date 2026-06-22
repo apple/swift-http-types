@@ -15,6 +15,7 @@
 /// An HTTP response message consisting of the ":status" pseudo header field and header fields.
 ///
 /// Conveniences are provided to access the status code and its reason phrase.
+@available(HTTPTypes 1.0, *)
 public struct HTTPResponse: Sendable, Hashable {
     /// The response status consisting of a 3-digit status code and a reason phrase. The reason
     /// phrase is ignored by modern HTTP versions.
@@ -257,6 +258,7 @@ public struct HTTPResponse: Sendable, Hashable {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPResponse: CustomDebugStringConvertible {
     public var debugDescription: String {
         "\(self.status)"
@@ -265,6 +267,7 @@ extension HTTPResponse: CustomDebugStringConvertible {
 
 #if !hasFeature(Embedded)
 
+@available(HTTPTypes 1.0, *)
 extension HTTPResponse.PseudoHeaderFields: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
@@ -310,6 +313,7 @@ extension HTTPResponse.PseudoHeaderFields: Codable {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPResponse: Codable {
     enum CodingKeys: String, CodingKey {
         case pseudoHeaderFields
@@ -342,6 +346,7 @@ extension HTTPResponse: Codable {
 
 #endif
 
+@available(HTTPTypes 1.0, *)
 extension HTTPResponse.Status {
     // MARK: 1xx
 

@@ -192,6 +192,7 @@ extension Array where Element: Equatable {
     }
 }
 
+@available(HTTPTypes 1.2, *)
 extension HTTPRequest {
     /// Create an HTTP request with an array of parsed `HTTPField`. The fields must include the
     /// necessary request pseudo header fields.
@@ -207,6 +208,7 @@ extension HTTPRequest {
     }
 }
 
+@available(HTTPTypes 1.2, *)
 extension HTTPResponse {
     /// Create an HTTP response with an array of parsed `HTTPField`. The fields must include the
     /// necessary response pseudo header fields.
@@ -222,6 +224,7 @@ extension HTTPResponse {
     }
 }
 
+@available(HTTPTypes 1.2, *)
 extension HTTPFields {
     /// Create an HTTP trailer fields with an array of parsed `HTTPField`. The fields must not
     /// include any pseudo header fields.

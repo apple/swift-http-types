@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField {
     /// A case-insensitive but case-preserving ASCII string with an allowed character set defined
     /// in RFC 9110.
@@ -56,6 +57,7 @@ extension HTTPField {
         ///
         /// - Parameter name: The name of the HTTP field or the HTTP pseudo header field. It must
         ///                   be lowercased.
+        @available(HTTPTypes 1.2, *)
         public init?(parsed name: String) {
             guard !name.isEmpty else {
                 return nil
@@ -95,6 +97,7 @@ extension HTTPField {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField.Name: Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.canonicalName)
@@ -105,6 +108,7 @@ extension HTTPField.Name: Hashable {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField.Name: LosslessStringConvertible {
     public var description: String {
         self.rawName
@@ -113,12 +117,14 @@ extension HTTPField.Name: LosslessStringConvertible {
 
 #if !hasFeature(Embedded)
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField.Name: CustomPlaygroundDisplayConvertible {
     public var playgroundDescription: Any {
         self.description
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField.Name: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
@@ -152,6 +158,7 @@ extension HTTPField.Name: Codable {
 
 #endif
 
+@available(HTTPTypes 1.0, *)
 extension HTTPField.Name {
     static var method: Self { .init(rawName: ":method", canonicalName: ":method") }
     static var scheme: Self { .init(rawName: ":scheme", canonicalName: ":scheme") }
@@ -261,6 +268,7 @@ extension HTTPField.Name {
     /// Available-Dictionary
     ///
     /// https://www.rfc-editor.org/rfc/rfc9842.html
+    @available(HTTPTypes 1.6, *)
     public static var availableDictionary: Self {
         .init(rawName: "Available-Dictionary", canonicalName: "available-dictionary")
     }
@@ -346,6 +354,7 @@ extension HTTPField.Name {
     /// Dictionary-ID
     ///
     /// https://www.rfc-editor.org/rfc/rfc9842.html
+    @available(HTTPTypes 1.6, *)
     public static var dictionaryID: Self { .init(rawName: "Dictionary-ID", canonicalName: "dictionary-id") }
 
     /// Early-Data
@@ -455,6 +464,7 @@ extension HTTPField.Name {
     /// Proxy-Status
     ///
     /// https://www.rfc-editor.org/rfc/rfc9209.html
+    @available(HTTPTypes 1.3, *)
     public static var proxyStatus: Self { .init(rawName: "Proxy-Status", canonicalName: "proxy-status") }
 
     /// Range
@@ -535,11 +545,13 @@ extension HTTPField.Name {
     /// Traceparent
     ///
     /// https://www.w3.org/TR/trace-context/
+    @available(HTTPTypes 1.6, *)
     public static var traceparent: Self { .init(rawName: "Traceparent", canonicalName: "traceparent") }
 
     /// Tracestate
     ///
     /// https://www.w3.org/TR/trace-context/
+    @available(HTTPTypes 1.6, *)
     public static var tracestate: Self { .init(rawName: "Tracestate", canonicalName: "tracestate") }
 
     /// Trailer
@@ -560,6 +572,7 @@ extension HTTPField.Name {
     /// Use-As-Dictionary
     ///
     /// https://www.rfc-editor.org/rfc/rfc9842.html
+    @available(HTTPTypes 1.6, *)
     public static var useAsDictionary: Self { .init(rawName: "Use-As-Dictionary", canonicalName: "use-as-dictionary") }
 
     /// User-Agent

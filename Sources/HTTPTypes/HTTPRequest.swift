@@ -20,6 +20,7 @@
 ///
 /// In a legacy HTTP/1 context, the ":scheme" is ignored and the ":authority" is translated into
 /// the "Host" header.
+@available(HTTPTypes 1.0, *)
 public struct HTTPRequest: Sendable, Hashable {
     /// The HTTP request method
     public struct Method: Sendable, Hashable, RawRepresentable, LosslessStringConvertible {
@@ -326,6 +327,7 @@ public struct HTTPRequest: Sendable, Hashable {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPRequest: CustomDebugStringConvertible {
     public var debugDescription: String {
         "(\(self.pseudoHeaderFields.method.rawValue._storage)) \((self.pseudoHeaderFields.scheme?.value).map { "\($0)://" } ?? "")\(self.pseudoHeaderFields.authority?.value ?? "")\(self.pseudoHeaderFields.path?.value ?? "")"
@@ -334,6 +336,7 @@ extension HTTPRequest: CustomDebugStringConvertible {
 
 #if !hasFeature(Embedded)
 
+@available(HTTPTypes 1.0, *)
 extension HTTPRequest.PseudoHeaderFields: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.unkeyedContainer()
@@ -433,6 +436,7 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
     }
 }
 
+@available(HTTPTypes 1.0, *)
 extension HTTPRequest: Codable {
     enum CodingKeys: String, CodingKey {
         case pseudoHeaderFields
@@ -454,6 +458,7 @@ extension HTTPRequest: Codable {
 
 #endif
 
+@available(HTTPTypes 1.0, *)
 extension HTTPRequest.Method {
     /// GET
     ///

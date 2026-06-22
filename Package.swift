@@ -35,9 +35,20 @@ let package = Package(
     ]
 )
 
+let availabilityMacros: KeyValuePairs<String, String> = [
+    "HTTPTypes 1.0": "macOS 10.0",
+    "HTTPTypes 1.1": "macOS 10.0",
+    "HTTPTypes 1.2": "macOS 10.0",
+    "HTTPTypes 1.3": "macOS 10.0",
+    "HTTPTypes 1.6": "macOS 10.0",
+]
+
 for target in package.targets {
     var settings = target.swiftSettings ?? []
     settings.append(.enableUpcomingFeature("InternalImportsByDefault"))
+    settings += availabilityMacros.map { name, value in
+        .enableExperimentalFeature("AvailabilityMacro=\(name): \(value)")
+    }
     target.swiftSettings = settings
 }
 
