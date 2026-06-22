@@ -41,6 +41,7 @@ let availabilityMacros: KeyValuePairs<String, String> = [
     "HTTPTypes 1.2": "macOS 10.0",
     "HTTPTypes 1.3": "macOS 10.0",
     "HTTPTypes 1.6": "macOS 10.0",
+    "HTTPTypes 1.7": "macOS 10.0",
 ]
 
 for target in package.targets {

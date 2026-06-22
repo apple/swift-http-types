@@ -506,8 +506,9 @@ extension HTTPRequest.Method {
 
     /// QUERY
     ///
-    /// https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
-    static var query: Self { .init(unchecked: "QUERY") }
+    /// https://www.rfc-editor.org/rfc/rfc10008.html
+    @available(HTTPTypes 1.7, *)
+    public static var query: Self { .init(unchecked: "QUERY") }
 
     /// CONNECT-UDP
     static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
