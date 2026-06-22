@@ -20,6 +20,7 @@ public import FoundationNetworking
 
 #if !os(WASI)
 
+@available(HTTPTypes 1.0, *)
 extension HTTPURLResponse {
     /// Create an `HTTPURLResponse` from an `HTTPResponse`.
     /// - Parameter httpResponse: The HTTP response to convert from.

@@ -20,6 +20,7 @@ public import FoundationNetworking
 
 #if !os(WASI)
 
+@available(HTTPTypes 1.0, *)
 extension URLSessionTask {
     /// The original HTTP request this task was created with.
     public var originalHTTPRequest: HTTPRequest? {
@@ -45,6 +46,7 @@ private enum HTTPTypeConversionError: Error {
 #endif
 
 @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
+@available(HTTPTypes 1.0, *)
 extension URLSession {
     /// Convenience method to load data using an `HTTPRequest`; creates and resumes a `URLSessionDataTask` internally.
     ///
@@ -149,6 +151,7 @@ extension URLSession {
 }
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+@available(HTTPTypes 1.0, *)
 extension URLSession {
     /// Convenience method to load data using an `HTTPRequest`; creates and resumes a `URLSessionDataTask` internally.
     ///

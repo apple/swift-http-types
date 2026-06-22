@@ -23,6 +23,7 @@ import CoreFoundation
 #endif  // canImport(CoreFoundation)
 #endif  // canImport(FoundationEssentials)
 
+@available(HTTPTypes 1.0, *)
 extension HTTPRequest {
     /// The URL of the request synthesized from the scheme, authority, and path pseudo header
     /// fields.
