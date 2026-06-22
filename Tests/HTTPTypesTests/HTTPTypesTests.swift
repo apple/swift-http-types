@@ -249,6 +249,31 @@ final class HTTPTypesTests: XCTestCase {
         XCTAssertEqual(trailerFields[HTTPField.Name("trailer2")!], "value2")
     }
 
+    func testMethodSafety() {
+        for method in [HTTPRequest.Method.get, .head, .options, .trace] {
+            XCTAssertTrue(method.isSafe, "\(method) should be safe")
+            XCTAssertTrue(method.isIdempotent, "safe method \(method) should be idempotent")
+        }
+        for method in [HTTPRequest.Method.put, .delete] {
+            XCTAssertFalse(method.isSafe, "\(method) should not be safe")
+            XCTAssertTrue(method.isIdempotent, "\(method) should be idempotent")
+        }
+        for method in [HTTPRequest.Method.post, .connect, .patch] {
+            XCTAssertFalse(method.isSafe, "\(method) should not be safe")
+            XCTAssertFalse(method.isIdempotent, "\(method) should not be idempotent")
+        }
+    }
+
+    func testMethodSafetyFromString() {
+        // Semantics are derived from the method token, not just the static members.
+        XCTAssertTrue(HTTPRequest.Method("GET")!.isSafe)
+        XCTAssertTrue(HTTPRequest.Method("DELETE")!.isIdempotent)
+        XCTAssertFalse(HTTPRequest.Method("POST")!.isIdempotent)
+        // Unknown methods are conservatively treated as neither safe nor idempotent.
+        XCTAssertFalse(HTTPRequest.Method("FROBNICATE")!.isSafe)
+        XCTAssertFalse(HTTPRequest.Method("FROBNICATE")!.isIdempotent)
+    }
+
     func testTypeLayoutSize() {
         XCTAssertEqual(MemoryLayout<HTTPRequest>.size, MemoryLayout<AnyObject>.size * 2)
         XCTAssertEqual(MemoryLayout<HTTPResponse>.size, MemoryLayout<AnyObject>.size * 2)

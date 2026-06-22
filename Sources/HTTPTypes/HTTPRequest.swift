@@ -512,8 +512,43 @@ extension HTTPRequest.Method {
 
     /// CONNECT-UDP
     static var connectUDP: Self { .init(unchecked: "CONNECT-UDP") }
+}
 
-    var isSafe: Bool {
-        self == .get || self == .head || self == .options || self == .query
+extension HTTPRequest.Method {
+    /// Whether the request method is "safe" as defined by RFC 9110.
+    ///
+    /// A request method is "safe" if its defined semantics are essentially read-only; the client
+    /// does not request, and does not expect, any state change on the origin server as a result of
+    /// applying a safe method to a target resource. Of the methods defined by RFC 9110, `GET`,
+    /// `HEAD`, `OPTIONS`, and `TRACE` are safe.
+    ///
+    /// All safe methods are also ``isIdempotent``.
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html#name-safe-methods
+    public var isSafe: Bool {
+        switch self {
+        case .get, .head, .options, .trace, .query:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Whether the request method is "idempotent" as defined by RFC 9110.
+    ///
+    /// A request method is "idempotent" if the intended effect on the server of multiple identical
+    /// requests with that method is the same as the effect for a single such request. Of the
+    /// methods defined by RFC 9110, `PUT` and `DELETE`, along with every ``isSafe`` method, are
+    /// idempotent. Idempotency is useful for deciding whether a failed request may be retried
+    /// automatically.
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9110.html#name-idempotent-methods
+    public var isIdempotent: Bool {
+        switch self {
+        case .put, .delete:
+            return true
+        default:
+            return self.isSafe
+        }
     }
 }
