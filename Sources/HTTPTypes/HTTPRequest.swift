@@ -507,6 +507,7 @@ extension HTTPRequest.Method {
     /// QUERY
     ///
     /// https://www.rfc-editor.org/rfc/rfc10008.html
+    @available(HTTPTypes 1.7, *)
     public static var query: Self { .init(unchecked: "QUERY") }
 
     /// CONNECT-UDP
