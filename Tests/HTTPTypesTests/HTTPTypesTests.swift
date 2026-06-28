@@ -249,6 +249,41 @@ final class HTTPTypesTests: XCTestCase {
         XCTAssertEqual(trailerFields[HTTPField.Name("trailer2")!], "value2")
     }
 
+    func testUncheckedFieldName() {
+        let unchecked = HTTPField.Name(unchecked: "Accept-Encoding")
+        // Skips validation but still produces the same name as the validated initializer.
+        XCTAssertEqual(unchecked, HTTPField.Name("Accept-Encoding")!)
+        XCTAssertEqual(unchecked, .acceptEncoding)
+        XCTAssertEqual(unchecked.rawName, "Accept-Encoding")
+        // The canonical name is lowercased so hashing and comparison stay case-insensitive.
+        XCTAssertEqual(unchecked.canonicalName, "accept-encoding")
+        XCTAssertEqual(HTTPField.Name(unchecked: "ACCEPT-ENCODING"), unchecked)
+        XCTAssertEqual(HTTPField.Name(unchecked: "X-Custom").rawName, "X-Custom")
+    }
+
+    func testUncheckedFieldValue() {
+        let fromString = HTTPField(name: .accept, uncheckedValue: "text/html")
+        XCTAssertEqual(fromString, HTTPField(name: .accept, value: "text/html"))
+        XCTAssertEqual(fromString.value, "text/html")
+
+        let fromBytes = HTTPField(name: .accept, uncheckedValue: "text/html".utf8)
+        XCTAssertEqual(fromBytes, fromString)
+        XCTAssertEqual(fromBytes.value, "text/html")
+
+        // Unlike the validating initializer, the unchecked one performs no legalization, so a
+        // value that is already valid is stored verbatim.
+        let field = HTTPField(name: .accept, uncheckedValue: "a 😀 b")
+        XCTAssertEqual(field.value, "a 😀 b")
+    }
+
+    func testUncheckedFieldInRequest() {
+        var request = HTTPRequest(method: .get, scheme: "https", authority: "www.example.com", path: "/")
+        request.headerFields.append(
+            HTTPField(name: HTTPField.Name(unchecked: "X-Trace-ID"), uncheckedValue: "abc123")
+        )
+        XCTAssertEqual(request.headerFields[HTTPField.Name("x-trace-id")!], "abc123")
+    }
+
     func testTypeLayoutSize() {
         XCTAssertEqual(MemoryLayout<HTTPRequest>.size, MemoryLayout<AnyObject>.size * 2)
         XCTAssertEqual(MemoryLayout<HTTPResponse>.size, MemoryLayout<AnyObject>.size * 2)
