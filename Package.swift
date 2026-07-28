@@ -2,11 +2,18 @@
 
 import PackageDescription
 
+// Build the library products as dynamic libraries when
+// SWIFT_HTTP_TYPES_DYNAMIC_LIBRARY is set in the environment. This is used by
+// distributions that ship the modules as shared libraries in a common
+// location; the default (automatic) linkage is unchanged.
+let libraryType: Product.Library.LibraryType? =
+    Context.environment["SWIFT_HTTP_TYPES_DYNAMIC_LIBRARY"] != nil ? .dynamic : nil
+
 let package = Package(
     name: "swift-http-types",
     products: [
-        .library(name: "HTTPTypes", targets: ["HTTPTypes"]),
-        .library(name: "HTTPTypesFoundation", targets: ["HTTPTypesFoundation"]),
+        .library(name: "HTTPTypes", type: libraryType, targets: ["HTTPTypes"]),
+        .library(name: "HTTPTypesFoundation", type: libraryType, targets: ["HTTPTypesFoundation"]),
     ],
     traits: [
         .trait(name: "FoundationURL", description: "Enable HTTPRequest conveniences with Foundation URL"),
