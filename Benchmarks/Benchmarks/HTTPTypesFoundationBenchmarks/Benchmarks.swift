@@ -23,7 +23,7 @@ import FoundationNetworking
 
 let defaultMetrics: [BenchmarkMetric] = [
     .mallocCountTotal,
-    .instructions
+    .instructions,
 ]
 
 var defaultConfiguration: Benchmark.Configuration {
@@ -96,7 +96,10 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
-    Benchmark("HTTPURLResponse(httpResponse:url:) - HTTPResponse to HTTPURLResponse", configuration: defaultConfiguration) {
+    Benchmark(
+        "HTTPURLResponse(httpResponse:url:) - HTTPResponse to HTTPURLResponse",
+        configuration: defaultConfiguration
+    ) {
         benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(HTTPURLResponse(httpResponse: sampleHTTPResponse, url: sampleURL))

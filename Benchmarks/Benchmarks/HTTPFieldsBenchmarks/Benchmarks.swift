@@ -149,7 +149,8 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
-    Benchmark("HTTPResponse(parsed:) - decode response header block", configuration: defaultConfiguration) { benchmark in
+    Benchmark("HTTPResponse(parsed:) - decode response header block", configuration: defaultConfiguration) {
+        benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(try HTTPResponse(parsed: parsedResponseFields))
         }
