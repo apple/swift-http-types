@@ -29,7 +29,7 @@ let defaultMetrics: [BenchmarkMetric] = [
 var defaultConfiguration: Benchmark.Configuration {
     .init(
         metrics: defaultMetrics,
-        scalingFactor: .kilo,
+        scalingFactor: .one,
         maxDuration: .seconds(10),
         maxIterations: 10_000
     )
@@ -82,7 +82,7 @@ let sampleHTTPURLResponse = HTTPURLResponse(httpResponse: sampleHTTPResponse, ur
 
 let benchmarks: @Sendable () -> Void = {
 
-    Benchmark("URLRequest(httpRequest:) - HTTPRequest to URLRequest", configuration: defaultConfiguration) {
+    Benchmark("URLRequest(httpRequest) - HTTPRequest to URLRequest", configuration: defaultConfiguration) {
         benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(URLRequest(httpRequest: sampleHTTPRequest))
@@ -97,7 +97,7 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "HTTPURLResponse(httpResponse:url:) - HTTPResponse to HTTPURLResponse",
+        "HTTPURLResponse(httpResponse, url) - HTTPResponse to HTTPURLResponse",
         configuration: defaultConfiguration
     ) {
         benchmark in

@@ -28,7 +28,7 @@ let defaultMetrics: [BenchmarkMetric] = [
 var defaultConfiguration: Benchmark.Configuration {
     .init(
         metrics: defaultMetrics,
-        scalingFactor: .kilo,
+        scalingFactor: .one,
         maxDuration: .seconds(10),
         maxIterations: 10_000
     )
@@ -143,20 +143,20 @@ let benchmarks: @Sendable () -> Void = {
 
     // MARK: Decoding — the HTTP/2 & HTTP/3 receive path
 
-    Benchmark("HTTPRequest(parsed:) - decode request header block", configuration: defaultConfiguration) { benchmark in
+    Benchmark("HTTPRequest(parsed) - decode request header block", configuration: defaultConfiguration) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(try HTTPRequest(parsed: parsedRequestFields))
         }
     }
 
-    Benchmark("HTTPResponse(parsed:) - decode response header block", configuration: defaultConfiguration) {
+    Benchmark("HTTPResponse(parsed) - decode response header block", configuration: defaultConfiguration) {
         benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(try HTTPResponse(parsed: parsedResponseFields))
         }
     }
 
-    Benchmark("HTTPFields(parsedTrailerFields:) - decode trailers", configuration: defaultConfiguration) { benchmark in
+    Benchmark("HTTPFields(parsedTrailerFields) - decode trailers", configuration: defaultConfiguration) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(try HTTPFields(parsedTrailerFields: parsedTrailerFieldList))
         }
@@ -251,7 +251,7 @@ let benchmarks: @Sendable () -> Void = {
 
     // MARK: URL conversion
 
-    Benchmark("HTTPRequest(method:url:) - request from URL", configuration: defaultConfiguration) { benchmark in
+    Benchmark("HTTPRequest(method, url) - request from URL", configuration: defaultConfiguration) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(HTTPRequest(method: .get, url: sampleURL, headerFields: sampleRequestFields))
         }
