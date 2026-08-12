@@ -116,10 +116,14 @@ public struct HTTPFields: Sendable, Hashable {
             precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
             let name = field.name.canonicalName
             let location = UInt16(self.fields.count)
-            if let index = self.index?[name] {
-                self.fields[Int(index.last)].next = location
+            if self.index != nil {
+                if let entry = self.index![name] {
+                    self.fields[Int(entry.last)].next = location
+                    self.index![name] = (first: entry.first, last: location)
+                } else {
+                    self.index![name] = (first: location, last: location)
+                }
             }
-            self.index?[name, default: (first: location, last: 0)].last = location
             self.fields.append((field, .max))
             precondition(self.fields.count < UInt16.max, "Too many fields")
         }
