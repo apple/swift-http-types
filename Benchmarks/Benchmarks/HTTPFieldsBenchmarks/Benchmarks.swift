@@ -23,14 +23,21 @@ import HTTPTypes
 let defaultMetrics: [BenchmarkMetric] = [
     .mallocCountTotal,
     .instructions,
+    .cpuUser,
+    .wallClock
 ]
 
-var defaultConfiguration: Benchmark.Configuration {
-    .init(
-        metrics: defaultMetrics,
-        scalingFactor: .one,
-        maxDuration: .seconds(10),
-        maxIterations: 10_000
+func makeDefaultConfiguration(
+    metrics: [BenchmarkMetric] = defaultMetrics,
+    scalingFactor: BenchmarkScalingFactor = .one,
+    maxDuration: Duration = .seconds(3),
+    maxIterations: Int = 10_000
+) -> Benchmark.Configuration {
+    Benchmark.Configuration(
+        metrics: metrics,
+        scalingFactor: scalingFactor,
+        maxDuration: maxDuration,
+        maxIterations: maxIterations
     )
 }
 
@@ -115,115 +122,12 @@ extension HTTPField.Name {
 // MARK: - Benchmarks
 
 let benchmarks: @Sendable () -> Void = {
-
-    // MARK: Construction
-
-    Benchmark("HTTPFields.init(dictionaryLiteral)", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            let fields: HTTPFields = [
-                .contentType: "application/json",
-                .contentLength: "42",
-                .connection: "keep-alive",
-                .accept: "application/json",
-                .acceptEncoding: "gzip, deflate, br",
-            ]
-            blackHole(fields)
-        }
-    }
-
-    Benchmark("HTTPFields.append - full response header set", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            var fields = HTTPFields()
-            for field in parsedResponseFields where !field.name.isPseudoName {
-                fields.append(field)
-            }
-            blackHole(fields)
-        }
-    }
-
-    // MARK: Decoding — the HTTP/2 & HTTP/3 receive path
-
-    Benchmark("HTTPRequest(parsed) - decode request header block", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            blackHole(try HTTPRequest(parsed: parsedRequestFields))
-        }
-    }
-
-    Benchmark("HTTPResponse(parsed) - decode response header block", configuration: defaultConfiguration) {
-        benchmark in
-        for _ in benchmark.scaledIterations {
-            blackHole(try HTTPResponse(parsed: parsedResponseFields))
-        }
-    }
-
-    Benchmark("HTTPFields(parsedTrailerFields) - decode trailers", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            blackHole(try HTTPFields(parsedTrailerFields: parsedTrailerFieldList))
-        }
-    }
-
-    // MARK: Encoding — the send path, i.e. reading every field back out
-
-    Benchmark("HTTPFields - iterate all fields (serialize)", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            for field in sampleResponseFields {
-                blackHole(field.name.canonicalName)
-                blackHole(field.value)
-            }
-        }
-    }
-
-    // MARK: Lookup
-
-    Benchmark("HTTPFields - lookup single-valued fields by name", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            blackHole(sampleResponseFields[.contentType])
-            blackHole(sampleResponseFields[.contentLength])
-            blackHole(sampleResponseFields[.cacheControl])
-            blackHole(sampleResponseFields[.eTag])
-            blackHole(sampleResponseFields[.location])
-        }
-    }
-
-    Benchmark("HTTPFields - lookup multi-valued field by name", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            blackHole(sampleResponseFields[.setCookie])
-            blackHole(sampleResponseFields[values: .setCookie])
-            blackHole(sampleResponseFields[fields: .setCookie])
-        }
-    }
-
-    Benchmark("HTTPFields.contains", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            blackHole(sampleResponseFields.contains(.contentType))
-            blackHole(sampleResponseFields.contains(.transferEncoding))
-        }
-    }
-
-    // MARK: Mutation
-
-    Benchmark("HTTPFields - set and overwrite field values", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            var fields = sampleResponseFields
-            fields[.contentLength] = "512"
-            fields[.contentType] = "text/plain"
-            fields[.location] = "https://www.example.com/moved"
-            blackHole(fields)
-        }
-    }
-
-    Benchmark("HTTPFields - cookie round trip", configuration: defaultConfiguration) { benchmark in
-        for _ in benchmark.scaledIterations {
-            var fields = HTTPFields()
-            fields[.cookie] = "session=abc123; theme=dark; locale=en_US; consent=1"
-            blackHole(fields[.cookie])
-            blackHole(fields)
-        }
-    }
-
     // MARK: Field names
 
-    Benchmark("HTTPField.Name.init - mixed case names", configuration: defaultConfiguration) { benchmark in
+    Benchmark(
+        "HTTPField.Name.init - mixed case names",
+        configuration: makeDefaultConfiguration(scalingFactor: .kilo)
+    ) { benchmark in
         for _ in benchmark.scaledIterations {
             for name in rawFieldNames {
                 blackHole(HTTPField.Name(name))
@@ -231,7 +135,10 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
-    Benchmark("HTTPField.Name.init - already lowercase names", configuration: defaultConfiguration) { benchmark in
+    Benchmark(
+        "HTTPField.Name.init - already lowercase names",
+        configuration: makeDefaultConfiguration(scalingFactor: .kilo)
+    ) { benchmark in
         for _ in benchmark.scaledIterations {
             for name in lowercaseFieldNames {
                 blackHole(HTTPField.Name(name))
@@ -241,7 +148,7 @@ let benchmarks: @Sendable () -> Void = {
 
     // MARK: ISO-Latin-1 values
 
-    Benchmark("HTTPField - non-ASCII value round trip", configuration: defaultConfiguration) { benchmark in
+    Benchmark("HTTPField - non-ASCII value round trip", configuration: makeDefaultConfiguration()) { benchmark in
         for _ in benchmark.scaledIterations {
             let field = HTTPField(name: .contentDisposition, value: latin1FieldValue)
             blackHole(field.value)
@@ -251,16 +158,22 @@ let benchmarks: @Sendable () -> Void = {
 
     // MARK: URL conversion
 
-    Benchmark("HTTPRequest(method, url) - request from URL", configuration: defaultConfiguration) { benchmark in
+    Benchmark("HTTPRequest(method, url) - request from URL", configuration: makeDefaultConfiguration()) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(HTTPRequest(method: .get, url: sampleURL, headerFields: sampleRequestFields))
         }
     }
 
-    Benchmark("HTTPRequest.url - synthesize URL from pseudo fields", configuration: defaultConfiguration) {
+    Benchmark("HTTPRequest.url - synthesize URL from pseudo fields", configuration: makeDefaultConfiguration()) {
         benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(sampleRequest.url)
         }
     }
+
+    // MARK: Scaling
+
+    // The same operations over field lists of 8, 16, 32, 64 and 128 fields. See
+    // `HTTPFieldsScalingBenchmarks.swift`.
+    registerHTTPFieldsScalingBenchmarks()
 }
