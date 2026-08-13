@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import HTTPTypes
-import XCTest
+import Testing
 
 #if canImport(FoundationEssentials)
 import FoundationEssentials
@@ -21,77 +21,77 @@ import FoundationEssentials
 import Foundation
 #endif
 
-final class HTTPTypesURLTests: XCTestCase {
-    func testRequestURLParsing() {
+@Suite struct HTTPTypesURLTests {
+    @Test func requestURLParsing() {
         let request1 = HTTPRequest(url: URL(string: "h://a")!)
-        XCTAssertEqual(request1.scheme, "h")
-        XCTAssertEqual(request1.authority, "a")
-        XCTAssertEqual(request1.path, "/")
-        XCTAssertEqual(request1.url?.absoluteString, "h://a/")
+        #expect(request1.scheme == "h")
+        #expect(request1.authority == "a")
+        #expect(request1.path == "/")
+        #expect(request1.url?.absoluteString == "h://a/")
 
         let request2 = HTTPRequest(url: URL(string: "h://a:4?")!)
-        XCTAssertEqual(request2.scheme, "h")
-        XCTAssertEqual(request2.authority, "a:4")
-        XCTAssertEqual(request2.path, "/?")
-        XCTAssertEqual(request2.url?.absoluteString, "h://a:4/?")
+        #expect(request2.scheme == "h")
+        #expect(request2.authority == "a:4")
+        #expect(request2.path == "/?")
+        #expect(request2.url?.absoluteString == "h://a:4/?")
 
         let request3 = HTTPRequest(url: URL(string: "h://a/")!)
-        XCTAssertEqual(request3.scheme, "h")
-        XCTAssertEqual(request3.authority, "a")
-        XCTAssertEqual(request3.path, "/")
-        XCTAssertEqual(request3.url?.absoluteString, "h://a/")
+        #expect(request3.scheme == "h")
+        #expect(request3.authority == "a")
+        #expect(request3.path == "/")
+        #expect(request3.url?.absoluteString == "h://a/")
 
         let request4 = HTTPRequest(url: URL(string: "h://a/p?q#1")!)
-        XCTAssertEqual(request4.scheme, "h")
-        XCTAssertEqual(request4.authority, "a")
-        XCTAssertEqual(request4.path, "/p?q")
-        XCTAssertEqual(request4.url?.absoluteString, "h://a/p?q")
+        #expect(request4.scheme == "h")
+        #expect(request4.authority == "a")
+        #expect(request4.path == "/p?q")
+        #expect(request4.url?.absoluteString == "h://a/p?q")
 
         let request5 = HTTPRequest(url: URL(string: "data:,Hello%2C%20World%21")!)
-        XCTAssertEqual(request5.scheme, "data")
-        XCTAssertNil(request5.authority)
+        #expect(request5.scheme == "data")
+        #expect(request5.authority == nil)
         #if !canImport(FoundationEssentials)
-        XCTAssertEqual(request5.path, "/")
+        #expect(request5.path == "/")
         #else  // !canImport(FoundationEssentials)
-        XCTAssertEqual(request5.path, ",Hello%2C%20World%21")
+        #expect(request5.path == ",Hello%2C%20World%21")
         #endif  // !canImport(FoundationEssentials)
-        XCTAssertNil(request5.url)
+        #expect(request5.url == nil)
     }
 
-    func testRequestURLAuthorityParsing() {
+    @Test func requestURLAuthorityParsing() {
         let request1 = HTTPRequest(url: URL(string: "https://[::1]")!)
-        XCTAssertEqual(request1.scheme, "https")
-        XCTAssertEqual(request1.authority, "[::1]")
-        XCTAssertEqual(request1.path, "/")
-        XCTAssertEqual(request1.url?.absoluteString, "https://[::1]/")
+        #expect(request1.scheme == "https")
+        #expect(request1.authority == "[::1]")
+        #expect(request1.path == "/")
+        #expect(request1.url?.absoluteString == "https://[::1]/")
 
         let request2 = HTTPRequest(url: URL(string: "https://[::1]:443")!)
-        XCTAssertEqual(request2.scheme, "https")
-        XCTAssertEqual(request2.authority, "[::1]:443")
-        XCTAssertEqual(request2.path, "/")
-        XCTAssertEqual(request2.url?.absoluteString, "https://[::1]:443/")
+        #expect(request2.scheme == "https")
+        #expect(request2.authority == "[::1]:443")
+        #expect(request2.path == "/")
+        #expect(request2.url?.absoluteString == "https://[::1]:443/")
 
         let request3 = HTTPRequest(url: URL(string: "https://127.0.0.1")!)
-        XCTAssertEqual(request3.scheme, "https")
-        XCTAssertEqual(request3.authority, "127.0.0.1")
-        XCTAssertEqual(request3.path, "/")
-        XCTAssertEqual(request3.url?.absoluteString, "https://127.0.0.1/")
+        #expect(request3.scheme == "https")
+        #expect(request3.authority == "127.0.0.1")
+        #expect(request3.path == "/")
+        #expect(request3.url?.absoluteString == "https://127.0.0.1/")
 
         let request4 = HTTPRequest(url: URL(string: "https://127.0.0.1:443")!)
-        XCTAssertEqual(request4.scheme, "https")
-        XCTAssertEqual(request4.authority, "127.0.0.1:443")
-        XCTAssertEqual(request4.path, "/")
-        XCTAssertEqual(request4.url?.absoluteString, "https://127.0.0.1:443/")
+        #expect(request4.scheme == "https")
+        #expect(request4.authority == "127.0.0.1:443")
+        #expect(request4.path == "/")
+        #expect(request4.url?.absoluteString == "https://127.0.0.1:443/")
     }
 
-    func testNilRequestURL() {
+    @Test func nilRequestURL() {
         let request1 = HTTPRequest(
             method: .connect,
             scheme: "https",
             authority: "www.example.com:443",
             path: "www.example.com:443"
         )
-        XCTAssertNil(request1.url)
+        #expect(request1.url == nil)
 
         var request2 = HTTPRequest(
             method: .connect,
@@ -100,12 +100,12 @@ final class HTTPTypesURLTests: XCTestCase {
             path: "/"
         )
         request2.extendedConnectProtocol = "websocket"
-        XCTAssertEqual(request2.url?.absoluteString, "https://www.example.com/")
+        #expect(request2.url?.absoluteString == "https://www.example.com/")
 
         let request3 = HTTPRequest(method: .options, scheme: "https", authority: "www.example.com", path: "*")
-        XCTAssertNil(request3.url)
+        #expect(request3.url == nil)
 
         let request4 = HTTPRequest(method: .options, scheme: "https", authority: "www.example.com", path: "/")
-        XCTAssertEqual(request4.url?.absoluteString, "https://www.example.com/")
+        #expect(request4.url?.absoluteString == "https://www.example.com/")
     }
 }

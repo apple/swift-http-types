@@ -12,15 +12,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
 import HTTPTypesFoundation
-import XCTest
+import Testing
 
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
 
-final class HTTPTypesFoundationTests: XCTestCase {
-    func testRequestToFoundation() throws {
+@Suite struct HTTPTypesFoundationTests {
+    @Test func requestToFoundation() throws {
         let request = HTTPRequest(
             method: .get,
             scheme: "https",
@@ -35,43 +36,43 @@ final class HTTPTypesFoundationTests: XCTestCase {
             ]
         )
 
-        let urlRequest = try XCTUnwrap(URLRequest(httpRequest: request))
-        XCTAssertEqual(urlRequest.url, URL(string: "https://www.example.com/")!)
-        XCTAssertEqual(urlRequest.value(forHTTPHeaderField: "aCcEpT"), "*/*")
-        XCTAssertEqual(urlRequest.value(forHTTPHeaderField: "Accept-Encoding"), "gzip, br")
-        XCTAssertEqual(urlRequest.value(forHTTPHeaderField: "cookie"), "a=b; c=d")
+        let urlRequest = try #require(URLRequest(httpRequest: request))
+        #expect(urlRequest.url == URL(string: "https://www.example.com/")!)
+        #expect(urlRequest.value(forHTTPHeaderField: "aCcEpT") == "*/*")
+        #expect(urlRequest.value(forHTTPHeaderField: "Accept-Encoding") == "gzip, br")
+        #expect(urlRequest.value(forHTTPHeaderField: "cookie") == "a=b; c=d")
     }
 
-    func testRequestFromFoundation() throws {
+    @Test func requestFromFoundation() throws {
         var urlRequest = URLRequest(url: URL(string: "https://www.example.com/")!)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("Bar", forHTTPHeaderField: "X-Foo")
 
-        let request = try XCTUnwrap(urlRequest.httpRequest)
-        XCTAssertEqual(request.method, .post)
-        XCTAssertEqual(request.scheme, "https")
-        XCTAssertEqual(request.authority, "www.example.com")
-        XCTAssertEqual(request.path, "/")
-        XCTAssertEqual(request.headerFields[.init("x-foo")!], "Bar")
+        let request = try #require(urlRequest.httpRequest)
+        #expect(request.method == .post)
+        #expect(request.scheme == "https")
+        #expect(request.authority == "www.example.com")
+        #expect(request.path == "/")
+        #expect(request.headerFields[.init("x-foo")!] == "Bar")
     }
 
-    func testWebSocketRequest() throws {
+    @Test func webSocketRequest() throws {
         let urlRequest = URLRequest(url: URL(string: "wss://www.example.com/")!)
 
-        let request = try XCTUnwrap(urlRequest.httpRequest)
-        XCTAssertEqual(request.method, .connect)
-        XCTAssertEqual(request.scheme, "https")
-        XCTAssertEqual(request.authority, "www.example.com")
-        XCTAssertEqual(request.path, "/")
-        XCTAssertEqual(request.extendedConnectProtocol, "websocket")
+        let request = try #require(urlRequest.httpRequest)
+        #expect(request.method == .connect)
+        #expect(request.scheme == "https")
+        #expect(request.authority == "www.example.com")
+        #expect(request.path == "/")
+        #expect(request.extendedConnectProtocol == "websocket")
 
-        let urlRequestConverted = try XCTUnwrap(URLRequest(httpRequest: request))
-        XCTAssertEqual(urlRequestConverted.httpMethod, "GET")
-        XCTAssertEqual(urlRequestConverted.url, URL(string: "wss://www.example.com/"))
-        XCTAssertEqual(urlRequest, urlRequestConverted)
+        let urlRequestConverted = try #require(URLRequest(httpRequest: request))
+        #expect(urlRequestConverted.httpMethod == "GET")
+        #expect(urlRequestConverted.url == URL(string: "wss://www.example.com/"))
+        #expect(urlRequest == urlRequestConverted)
     }
 
-    func testResponseToFoundation() throws {
+    @Test func responseToFoundation() throws {
         let response = HTTPResponse(
             status: .ok,
             headerFields: [
@@ -79,14 +80,14 @@ final class HTTPTypesFoundationTests: XCTestCase {
             ]
         )
 
-        let urlResponse = try XCTUnwrap(
+        let urlResponse = try #require(
             HTTPURLResponse(httpResponse: response, url: URL(string: "https://www.example.com/")!)
         )
-        XCTAssertEqual(urlResponse.statusCode, 200)
-        XCTAssertEqual(urlResponse.value(forHTTPHeaderField: "Server"), "HTTPServer/1.0")
+        #expect(urlResponse.statusCode == 200)
+        #expect(urlResponse.value(forHTTPHeaderField: "Server") == "HTTPServer/1.0")
     }
 
-    func testResponseFromFoundation() throws {
+    @Test func responseFromFoundation() throws {
         let urlResponse = HTTPURLResponse(
             url: URL(string: "https://www.example.com/")!,
             statusCode: 204,
@@ -96,8 +97,8 @@ final class HTTPTypesFoundationTests: XCTestCase {
             ]
         )!
 
-        let response = try XCTUnwrap(urlResponse.httpResponse)
-        XCTAssertEqual(response.status, .noContent)
-        XCTAssertEqual(response.headerFields[.init("X-EMOJI")!], "😀")
+        let response = try #require(urlResponse.httpResponse)
+        #expect(response.status == .noContent)
+        #expect(response.headerFields[.init("X-EMOJI")!] == "😀")
     }
 }
