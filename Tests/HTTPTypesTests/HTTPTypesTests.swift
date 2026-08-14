@@ -123,6 +123,44 @@ extension HTTPField.Name {
         #expect(fields1 != fields6)
     }
 
+    @Test func hashMatchesEqualityForSameOrder() {
+        let fields1: HTTPFields = [
+            .acceptEncoding: "br",
+            .acceptEncoding: "gzip",
+            .accept: "*/*",
+        ]
+
+        let fields2: HTTPFields = [
+            .acceptEncoding: "br",
+            .acceptEncoding: "gzip",
+            .accept: "*/*",
+        ]
+        #expect(fields1 == fields2)
+        #expect(fields1.hashValue == fields2.hashValue)
+    }
+
+    @Test func hashMatchesEqualityForDifferentOrder() {
+        let fields1: HTTPFields = [
+            .acceptEncoding: "br",
+            .acceptEncoding: "gzip",
+            .accept: "*/*",
+        ]
+
+        // Fields with differently named fields in a different order are equal, since the
+        // relative order of same-named fields is preserved.
+        let fields2: HTTPFields = [
+            .acceptEncoding: "br",
+            .accept: "*/*",
+            .acceptEncoding: "gzip",
+        ]
+        #expect(fields1 == fields2)
+
+        // Equal values must therefore hash equally.
+        withKnownIssue("HTTPFields.hash(into:) is order sensitive while == is not") {
+            #expect(fields1.hashValue == fields2.hashValue)
+        }
+    }
+
     @Test func sendable() {
         func isSendable(_ value: some Sendable) -> Bool { true }
         func isSendable(_ value: Any) -> Bool { false }
