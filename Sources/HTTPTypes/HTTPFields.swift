@@ -23,17 +23,6 @@
 @available(HTTPTypes 1.0, *)
 public struct HTTPFields: Sendable {
     /// The fields, in the order they were added.
-    ///
-    /// Nothing is derived from the fields lazily, so there is no state a reader would have to
-    /// mutate and nothing a boxed storage class would add: `Array` is already copy-on-write, so
-    /// holding it directly saves a heap allocation per `HTTPFields`, the retain/release traffic and
-    /// the indirection on every access.
-    ///
-    /// Lookups by name are linear scans over `fields`, comparing canonical names. Real HTTP
-    /// messages carry few fields, and canonical names are ASCII and usually short enough to be
-    /// stored inline in the `String`, so comparing them outright is cheaper than maintaining a name
-    /// index — which would cost a heap allocation, its growth reallocations, and a hash of every
-    /// canonical name.
     private var fields: [HTTPField] = []
 
     /// Create an empty list of HTTP fields
@@ -41,7 +30,7 @@ public struct HTTPFields: Sendable {
 
     /// The position of the first field at or after `start` whose canonical name is `name`, or
     /// `nil` if there is none.
-    private func firstIndex(ofCanonicalName name: String, from start: Int = 0) -> Int? {
+    private func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
         var position = start
         while position < self.fields.count {
             if self.fields[position].name.canonicalName == name {
