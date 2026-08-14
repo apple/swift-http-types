@@ -12,8 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Synchronization
-
 /// A collection of HTTP fields. It is used in `HTTPRequest` and `HTTPResponse`, and can also be
 /// used as HTTP trailer fields.
 ///
@@ -23,149 +21,42 @@ import Synchronization
 /// `HTTPFields` adheres to modern HTTP semantics. In particular, the "Cookie" request header field
 /// is split into separate header fields by default.
 @available(HTTPTypes 1.0, *)
-public struct HTTPFields: Sendable, Hashable {
-    private class _Storage: @unchecked Sendable, Hashable {
-        var fields: [(field: HTTPField, next: UInt16)] = []
-        var index: [String: (first: UInt16, last: UInt16)]? = [:]
-
-        required init() {
-        }
-
-        #if canImport(Darwin) && !hasFeature(Embedded)
-        func withLock<Result, Failure: Error>(_ body: () throws(Failure) -> Result) throws(Failure) -> Result {
-            fatalError()
-        }
-        #else
-        #if !hasFeature(Embedded) || (os(WASI) && compiler(>=6.4))
-        let mutex = Mutex<Void>(())
-        #endif
-
-        final func withLock<Result, Failure: Error>(_ body: () throws(Failure) -> Result) throws(Failure) -> Result {
-            #if !hasFeature(Embedded) || (os(WASI) && compiler(>=6.4))
-            try self.mutex.withLock { _ throws(Failure) in
-                try body()
-            }
-            #else
-            // Mutex not available
-            try body()
-            #endif
-        }
-        #endif
-
-        var ensureIndex: [String: (first: UInt16, last: UInt16)] {
-            self.withLock {
-                if let index = self.index {
-                    return index
-                }
-                var newIndex = [String: (first: UInt16, last: UInt16)]()
-                for index in self.fields.indices {
-                    let name = self.fields[index].field.name.canonicalName
-                    self.fields[index].next = .max
-                    if let lastIndex = newIndex[name]?.last {
-                        self.fields[Int(lastIndex)].next = UInt16(index)
-                    }
-                    newIndex[name, default: (first: UInt16(index), last: 0)].last = UInt16(index)
-                }
-                self.index = newIndex
-                return newIndex
-            }
-        }
-
-        func copy() -> Self {
-            let newStorage = Self()
-            newStorage.fields = self.fields
-            self.withLock {
-                newStorage.index = self.index
-            }
-            return newStorage
-        }
-
-        func hash(into hasher: inout Hasher) {
-            for (field, _) in self.fields {
-                hasher.combine(field)
-            }
-        }
-
-        static func == (lhs: _Storage, rhs: _Storage) -> Bool {
-            let leftFieldsIndex = lhs.ensureIndex
-            let rightFieldsIndex = rhs.ensureIndex
-            if leftFieldsIndex.count != rightFieldsIndex.count {
-                return false
-            }
-            for (name, (var leftIndex, _)) in leftFieldsIndex {
-                guard var rightIndex = rightFieldsIndex[name]?.first else {
-                    return false
-                }
-                while leftIndex != .max && rightIndex != .max {
-                    let (leftField, leftNext) = lhs.fields[Int(leftIndex)]
-                    let (rightField, rightNext) = rhs.fields[Int(rightIndex)]
-                    if leftField != rightField {
-                        return false
-                    }
-                    leftIndex = leftNext
-                    rightIndex = rightNext
-                }
-                if leftIndex != rightIndex {
-                    return false
-                }
-            }
-            return true
-        }
-
-        func append(field: HTTPField) {
-            precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
-            let name = field.name.canonicalName
-            let location = UInt16(self.fields.count)
-            if self.index != nil {
-                if let entry = self.index![name] {
-                    self.fields[Int(entry.last)].next = location
-                    self.index![name] = (first: entry.first, last: location)
-                } else {
-                    self.index![name] = (first: location, last: location)
-                }
-            }
-            self.fields.append((field, .max))
-            precondition(self.fields.count < UInt16.max, "Too many fields")
-        }
-    }
-
-    #if canImport(Darwin) && !hasFeature(Embedded)
-    @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
-    private final class _StorageWithMutex: _Storage, @unchecked Sendable {
-        let mutex = Mutex<Void>(())
-
-        override func withLock<Result, Failure: Error>(_ body: () throws(Failure) -> Result) throws(Failure) -> Result {
-            try self.mutex.withLock { _ throws(Failure) in
-                try body()
-            }
-        }
-    }
-
-    private final class _StorageWithNIOLock: _Storage, @unchecked Sendable {
-        let lock = LockStorage.create(value: ())
-
-        override func withLock<Result, Failure: Error>(_ body: () throws(Failure) -> Result) throws(Failure) -> Result {
-            try self.lock.withLockedValue { _ throws(Failure) in
-                try body()
-            }
-        }
-    }
-    #endif
-
-    private var _storage = {
-        #if canImport(Darwin) && !hasFeature(Embedded)
-        if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *) {
-            _StorageWithMutex()
-        } else {
-            _StorageWithNIOLock()
-        }
-        #else
-        _Storage()
-        #endif
-    }()
+public struct HTTPFields: Sendable {
+    /// The fields, in the order they were added.
+    ///
+    /// Nothing is derived from the fields lazily, so there is no state a reader would have to
+    /// mutate and nothing a boxed storage class would add: `Array` is already copy-on-write, so
+    /// holding it directly saves a heap allocation per `HTTPFields`, the retain/release traffic and
+    /// the indirection on every access.
+    ///
+    /// Lookups by name are linear scans over `fields`, comparing canonical names. Real HTTP
+    /// messages carry few fields, and canonical names are ASCII and usually short enough to be
+    /// stored inline in the `String`, so comparing them outright is cheaper than maintaining a name
+    /// index — which would cost a heap allocation, its growth reallocations, and a hash of every
+    /// canonical name.
+    private var fields: [HTTPField] = []
 
     /// Create an empty list of HTTP fields
     public init() {}
+
+    /// The position of the first field at or after `start` whose canonical name is `name`, or
+    /// `nil` if there is none.
+    private func firstIndex(ofCanonicalName name: String, from start: Int = 0) -> Int? {
+        var position = start
+        while position < self.fields.count {
+            if self.fields[position].name.canonicalName == name {
+                return position
+            }
+            position += 1
+        }
+        return nil
+    }
+
+    private mutating func append(field: HTTPField) {
+        precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
+        self.fields.append(field)
+        precondition(self.fields.count < UInt16.max, "Too many fields")
+    }
 
     /// Access the field value string by name.
     ///
@@ -236,54 +127,57 @@ public struct HTTPFields: Sendable, Hashable {
     }
 
     private struct HTTPFieldSequence: Sequence {
-        let fields: [(field: HTTPField, next: UInt16)]
-        let index: UInt16
+        let fields: [HTTPField]
+        let canonicalName: String
 
         struct Iterator: IteratorProtocol {
-            let fields: [(field: HTTPField, next: UInt16)]
-            var index: UInt16
+            let fields: [HTTPField]
+            let canonicalName: String
+            /// The position to resume scanning at. Keeping it in the iterator makes reading all
+            /// the fields with one name a single pass over `fields`.
+            var position: Int
 
             mutating func next() -> HTTPField? {
-                if self.index == .max {
-                    return nil
+                while self.position < self.fields.count {
+                    let field = self.fields[self.position]
+                    self.position += 1
+                    if field.name.canonicalName == self.canonicalName {
+                        return field
+                    }
                 }
-                let (field, next) = self.fields[Int(self.index)]
-                self.index = next
-                return field
+                return nil
             }
         }
 
         func makeIterator() -> Iterator {
-            Iterator(fields: self.fields, index: self.index)
+            Iterator(fields: self.fields, canonicalName: self.canonicalName, position: 0)
         }
     }
 
     private func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
-        let index = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
-        return HTTPFieldSequence(fields: self._storage.fields, index: index)
+        HTTPFieldSequence(fields: self.fields, canonicalName: name.canonicalName)
     }
 
     private mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
-        if !isKnownUniquelyReferenced(&self._storage) {
-            self._storage = self._storage.copy()
-        }
-        var existingIndex = self._storage.ensureIndex[name.canonicalName]?.first ?? .max
+        let canonicalName = name.canonicalName
+        var existingIndex = self.firstIndex(ofCanonicalName: canonicalName)
         var newFieldIterator = fieldSequence.makeIterator()
         var toDelete = [Int]()
-        while existingIndex != .max {
+        // A single pass over the fields: the existing fields with this name are overwritten in
+        // place while new fields last, and the leftovers are collected for removal.
+        while let index = existingIndex {
             if let field = newFieldIterator.next() {
-                self._storage.fields[Int(existingIndex)].field = field
+                self.fields[index] = field
             } else {
-                toDelete.append(Int(existingIndex))
+                toDelete.append(index)
             }
-            existingIndex = self._storage.fields[Int(existingIndex)].next
+            existingIndex = self.firstIndex(ofCanonicalName: canonicalName, from: index + 1)
         }
         if !toDelete.isEmpty {
-            self._storage.fields.remove(at: toDelete)
-            self._storage.index = nil
+            self.fields.remove(at: toDelete)
         }
         while let field = newFieldIterator.next() {
-            self._storage.append(field: field)
+            self.append(field: field)
         }
     }
 
@@ -291,7 +185,47 @@ public struct HTTPFields: Sendable, Hashable {
     /// - Parameter name: The field name.
     /// - Returns: Whether a field exists.
     public func contains(_ name: HTTPField.Name) -> Bool {
-        self._storage.ensureIndex[name.canonicalName] != nil
+        self.firstIndex(ofCanonicalName: name.canonicalName) != nil
+    }
+}
+
+extension HTTPFields: Equatable {
+    public static func == (lhs: HTTPFields, rhs: HTTPFields) -> Bool {
+        // Two field lists are equal when, for every name, they hold the same fields in the
+        // same order. That implies an equal total field count, so checking it up front also
+        // proves that matching every name run of `lhs` leaves no unmatched field in `rhs`.
+        if lhs.fields.count != rhs.fields.count {
+            return false
+        }
+        for position in lhs.fields.indices {
+            let name = lhs.fields[position].name.canonicalName
+            if lhs.firstIndex(ofCanonicalName: name) != position {
+                // Not the first field with this name; its run was compared already.
+                continue
+            }
+            var leftIndex: Int? = position
+            var rightIndex = rhs.firstIndex(ofCanonicalName: name)
+            while let left = leftIndex, let right = rightIndex {
+                if lhs.fields[left] != rhs.fields[right] {
+                    return false
+                }
+                leftIndex = lhs.firstIndex(ofCanonicalName: name, from: left + 1)
+                rightIndex = rhs.firstIndex(ofCanonicalName: name, from: right + 1)
+            }
+            if (leftIndex == nil) != (rightIndex == nil) {
+                // One of the two runs of this name is longer than the other.
+                return false
+            }
+        }
+        return true
+    }
+}
+
+extension HTTPFields: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        for field in self.fields {
+            hasher.combine(field)
+        }
     }
 }
 
@@ -301,7 +235,7 @@ extension HTTPFields: ExpressibleByDictionaryLiteral {
         self.reserveCapacity(elements.count)
         for (name, value) in elements {
             precondition(!name.isPseudo, "Pseudo header field \"\(name)\" disallowed")
-            self._storage.append(field: HTTPField(name: name, value: value))
+            self.append(field: HTTPField(name: name, value: value))
         }
         precondition(self.count < UInt16.max, "Too many fields")
     }
@@ -313,15 +247,15 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
     public typealias Index = Int
 
     public var startIndex: Int {
-        self._storage.fields.startIndex
+        self.fields.startIndex
     }
 
     public var endIndex: Int {
-        self._storage.fields.endIndex
+        self.fields.endIndex
     }
 
     public var isEmpty: Bool {
-        self._storage.fields.isEmpty
+        self.fields.isEmpty
     }
 
     public subscript(position: Int) -> HTTPField {
@@ -329,43 +263,35 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
             guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("getter position: \(position) out of range in HTTPFields")
             }
-            return self._storage.fields[position].field
+            return self.fields[position]
         }
         set {
             guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("setter position: \(position) out of range in HTTPFields")
             }
-            if self._storage.fields[position].field == newValue {
+            if self.fields[position] == newValue {
                 return
             }
-            if !isKnownUniquelyReferenced(&self._storage) {
-                self._storage = self._storage.copy()
-            }
-            if newValue.name != self._storage.fields[position].field.name {
+            if newValue.name != self.fields[position].name {
                 precondition(!newValue.name.isPseudo, "Pseudo header field \"\(newValue.name)\" disallowed")
-                self._storage.index = nil
             }
-            self._storage.fields[position].field = newValue
+            self.fields[position] = newValue
         }
     }
 
     public mutating func replaceSubrange<C>(_ subrange: Range<Int>, with newElements: C)
     where C: Collection, Element == C.Element {
-        if !isKnownUniquelyReferenced(&self._storage) {
-            self._storage = self._storage.copy()
-        }
         if subrange.startIndex == self.count {
             for field in newElements {
                 precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
-                self._storage.append(field: field)
+                self.append(field: field)
             }
         } else {
-            self._storage.index = nil
-            self._storage.fields.replaceSubrange(
+            self.fields.replaceSubrange(
                 subrange,
                 with: newElements.lazy.map { field in
                     precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
-                    return (field, 0)
+                    return field
                 }
             )
             precondition(self.count < UInt16.max, "Too many fields")
@@ -373,11 +299,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
     }
 
     public mutating func reserveCapacity(_ capacity: Int) {
-        if !isKnownUniquelyReferenced(&self._storage) {
-            self._storage = self._storage.copy()
-        }
-        self._storage.index?.reserveCapacity(capacity)
-        self._storage.fields.reserveCapacity(capacity)
+        self.fields.reserveCapacity(capacity)
     }
 }
 
@@ -386,7 +308,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
 @available(HTTPTypes 1.0, *)
 extension HTTPFields: CustomDebugStringConvertible {
     public var debugDescription: String {
-        self._storage.fields.description
+        self.fields.description
     }
 }
 
