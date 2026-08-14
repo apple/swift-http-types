@@ -82,31 +82,28 @@ let sampleHTTPURLResponse = HTTPURLResponse(httpResponse: sampleHTTPResponse, ur
 
 let benchmarks: @Sendable () -> Void = {
 
-    Benchmark("URLRequest(httpRequest) - HTTPRequest to URLRequest", configuration: defaultConfiguration) {
-        benchmark in
+    Benchmark("URLRequest(httpRequest)-HTTPRequestToURLRequest", configuration: defaultConfiguration) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(URLRequest(httpRequest: sampleHTTPRequest))
         }
     }
 
-    Benchmark("URLRequest.httpRequest - URLRequest to HTTPRequest", configuration: defaultConfiguration) {
-        benchmark in
+    Benchmark("URLRequest.httpRequest-URLRequestToHTTPRequest", configuration: defaultConfiguration) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(sampleURLRequest.httpRequest)
         }
     }
 
     Benchmark(
-        "HTTPURLResponse(httpResponse, url) - HTTPResponse to HTTPURLResponse",
+        "HTTPURLResponse(httpResponse,url)-HTTPResponseToHTTPURLResponse",
         configuration: defaultConfiguration
-    ) {
-        benchmark in
+    ) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(HTTPURLResponse(httpResponse: sampleHTTPResponse, url: sampleURL))
         }
     }
 
-    Benchmark("HTTPURLResponse.httpResponse - HTTPURLResponse to HTTPResponse", configuration: defaultConfiguration) {
+    Benchmark("HTTPURLResponse.httpResponse-HTTPURLResponseToHTTPResponse", configuration: defaultConfiguration) {
         benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(sampleHTTPURLResponse.httpResponse)
