@@ -39,7 +39,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         // the measurement overhead. Note that package-benchmark divides the reported numbers by the
         // scaling factor, so they stay comparable to the benchmarks below.
         Benchmark(
-            "HTTPFields.contains - hit - N=\(n)",
+            "HTTPFields.contains-hit-N=\(n)",
             configuration: makeDefaultConfiguration(scalingFactor: .kilo)
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -48,7 +48,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         }
 
         Benchmark(
-            "HTTPFields.contains - miss - N=\(n)",
+            "HTTPFields.contains-miss-N=\(n)",
             configuration: makeDefaultConfiguration(scalingFactor: .kilo)
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -60,7 +60,7 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         // Exactly one field carries this name at every size.
         Benchmark(
-            "HTTPFields[name] - single-valued field - N=\(n)",
+            "HTTPFields[name]-singleValuedField-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -69,7 +69,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         }
 
         Benchmark(
-            "HTTPFields[name] - miss - N=\(n)",
+            "HTTPFields[name]-miss-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -82,7 +82,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         // because they return different things — one joined string, the values, the fields — and a
         // combined number would not say which of them scales.
         Benchmark(
-            "HTTPFields[name] - all cookie fields joined - N=\(n)",
+            "HTTPFields[name]-allCookieFieldsJoined-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -91,7 +91,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         }
 
         Benchmark(
-            "HTTPFields[values] - all cookie fields - N=\(n)",
+            "HTTPFields[values]-allCookieFields-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -100,7 +100,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         }
 
         Benchmark(
-            "HTTPFields[fields] - all cookie fields - N=\(n)",
+            "HTTPFields[fields]-allCookieFields-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -114,7 +114,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         // equality always has to do the real comparison.
         let equalSameOrder = scalingCase.equalSameOrder
         Benchmark(
-            "HTTPFields.== - equal, same order - N=\(n)",
+            "HTTPFields.==-equal-sameOrder-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -124,7 +124,7 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         let equalDifferentOrder = scalingCase.equalDifferentOrder
         Benchmark(
-            "HTTPFields.== - equal, different order - N=\(n)",
+            "HTTPFields.==-equal-differentOrder-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -134,7 +134,7 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         let mismatchSameOrder = scalingCase.mismatchSameOrder
         Benchmark(
-            "HTTPFields.== - differs at 80%, same order - N=\(n)",
+            "HTTPFields.==-differsAt80%-sameOrder-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -144,7 +144,7 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         let mismatchDifferentOrder = scalingCase.mismatchDifferentOrder
         Benchmark(
-            "HTTPFields.== - differs at 80%, different order - N=\(n)",
+            "HTTPFields.==-differsAt80%-differentOrder-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -156,7 +156,7 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         let sourceFields = scalingCase.fields
         Benchmark(
-            "HTTPFields.append - build from N fields - N=\(n)",
+            "HTTPFields.append-buildFromNFields-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -169,7 +169,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         }
 
         Benchmark(
-            "HTTPFields(parsedTrailerFields) - decode N fields - N=\(n)",
+            "HTTPFields(parsedTrailerFields)-decodeNFields-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -183,7 +183,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         // header does. Both of these pay for whatever the copy costs; they differ in whether the
         // write then replaces an existing field or adds a new one.
         Benchmark(
-            "HTTPFields - copy then overwrite existing field - N=\(n)",
+            "HTTPFields-copyThenOverwriteExistingField-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
@@ -194,7 +194,7 @@ func registerHTTPFieldsScalingBenchmarks() {
         }
 
         Benchmark(
-            "HTTPFields - copy then insert new field - N=\(n)",
+            "HTTPFields-copyThenInsertNewField-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {

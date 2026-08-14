@@ -123,7 +123,7 @@ let benchmarks: @Sendable () -> Void = {
     // MARK: Field names
 
     Benchmark(
-        "HTTPField.Name.init - mixed case names",
+        "HTTPField.Name.init-mixedCaseNames",
         configuration: makeDefaultConfiguration(scalingFactor: .kilo)
     ) { benchmark in
         for _ in benchmark.scaledIterations {
@@ -134,7 +134,7 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "HTTPField.Name.init - already lowercase names",
+        "HTTPField.Name.init-alreadyLowercaseNames",
         configuration: makeDefaultConfiguration(scalingFactor: .kilo)
     ) { benchmark in
         for _ in benchmark.scaledIterations {
@@ -146,7 +146,7 @@ let benchmarks: @Sendable () -> Void = {
 
     // MARK: ISO-Latin-1 values
 
-    Benchmark("HTTPField - non-ASCII value round trip", configuration: makeDefaultConfiguration()) { benchmark in
+    Benchmark("HTTPField-nonASCIIValueRoundTrip", configuration: makeDefaultConfiguration()) { benchmark in
         for _ in benchmark.scaledIterations {
             let field = HTTPField(name: .contentDisposition, value: latin1FieldValue)
             blackHole(field.value)
@@ -156,13 +156,13 @@ let benchmarks: @Sendable () -> Void = {
 
     // MARK: URL conversion
 
-    Benchmark("HTTPRequest(method, url) - request from URL", configuration: makeDefaultConfiguration()) { benchmark in
+    Benchmark("HTTPRequest(method,url)-requestFromURL", configuration: makeDefaultConfiguration()) { benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(HTTPRequest(method: .get, url: sampleURL, headerFields: sampleRequestFields))
         }
     }
 
-    Benchmark("HTTPRequest.url - synthesize URL from pseudo fields", configuration: makeDefaultConfiguration()) {
+    Benchmark("HTTPRequest.url-synthesizeURLFromPseudoFields", configuration: makeDefaultConfiguration()) {
         benchmark in
         for _ in benchmark.scaledIterations {
             blackHole(sampleRequest.url)
