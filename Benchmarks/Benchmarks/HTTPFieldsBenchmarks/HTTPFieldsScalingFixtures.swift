@@ -19,14 +19,10 @@ import HTTPTypes
 /// Field lists of increasing size, used to measure how `HTTPFields` operations scale.
 ///
 /// The lists are nested: every list is a prefix of the next larger one, so a difference between two
-/// sizes is only ever caused by the fields that were added, never by the fields that were already
-/// there.
+/// sizes is only ever caused by the fields that were added.
 ///
 /// Real field lists grow past ~16 fields almost exclusively because of cookies, so that is how these
-/// grow too: the ordinary headers stop at 16 and everything beyond that is a `Cookie` field. The two
-/// sizes therefore vary independently — the total number of fields keeps growing while the number of
-/// distinct names does not — and comparing the small sizes against the large ones shows which of the
-/// two a given operation is sensitive to.
+/// grow too: the ordinary headers stop at 16 and everything beyond that is a `Cookie` field.
 
 /// `Cookie` fields with distinct values, so that no two fields in a list compare equal.
 private func cookieFields(_ range: Range<Int>) -> [HTTPField] {
@@ -77,19 +73,14 @@ let scalingFields128: [HTTPField] = scalingFields64 + cookieFields(48..<112)
 
 // MARK: - Building
 
-/// Builds an `HTTPFields` by appending, which is how one is built on a receive path.
-///
-/// Fixtures that are compared against each other are always built by two separate calls to this
-/// function, never by copying one into the other, so that the two values are genuinely distinct and
-/// equality cannot take a shortcut for two copies of the same value.
-private func makeFields(_ fields: [HTTPField]) -> HTTPFields {
+/// Create a ``HTTPFields`` from an ``[HTTPField]`` array. We ensure that the resulting
+/// ``HTTPFields`` is backed by an array that is not a copied referenced to the input array.
+private func makeFieldsByRebuild(_ fields: [HTTPField]) -> HTTPFields {
     var result = HTTPFields()
+    result.reserveCapacity(fields.count)
     for field in fields {
         result.append(field)
     }
-    // Read the value once before handing it out, so that any work `HTTPFields` defers until its
-    // first read is not charged to whichever benchmark happens to run first.
-    precondition(result.contains(scalingPresentName))
     return result
 }
 
@@ -108,6 +99,18 @@ struct FieldsPair: Sendable {
 private func reorderingUniqueNames(_ fields: [HTTPField]) -> [HTTPField] {
     var reversed = fields.filter { $0.name != .cookie }.reversed().makeIterator()
     return fields.map { $0.name == .cookie ? $0 : reversed.next()! }
+}
+
+/// How far a locally displaced field moves.
+private let localDisplacementDistance = 3
+
+/// Moves the first field a few slots later, leaving every other field where it was.
+private func displacingOneField(_ fields: [HTTPField]) -> [HTTPField] {
+    precondition(fields.count > localDisplacementDistance, "list too short to displace a field within")
+    var fields = fields
+    let field = fields.removeFirst()
+    fields.insert(field, at: localDisplacementDistance)
+    return fields
 }
 
 /// The position of the one field that differs between the two sides of a "late mismatch" pair: 80%
@@ -143,6 +146,8 @@ struct ScalingCase: Sendable {
     let equalSameOrder: FieldsPair
     /// Equal, but with the uniquely named fields appended in the opposite order.
     let equalDifferentOrder: FieldsPair
+    /// Equal, but with one field appended a few slots away from where the other side has it.
+    let equalLocallyDisplaced: FieldsPair
     /// Unequal: the leading 80% is identical and in the same order, the field at 80% differs.
     ///
     /// Note what this does and does not pin down. It guarantees the shape — two field lists that
@@ -159,18 +164,22 @@ struct ScalingCase: Sendable {
         self.n = fields.count
         self.cookieCount = fields.filter { $0.name == .cookie }.count
         self.fields = fields
-        self.readFields = makeFields(fields)
+        self.readFields = makeFieldsByRebuild(fields)
 
         let mismatched = withLateMismatch(fields)
-        self.equalSameOrder = FieldsPair(lhs: makeFields(fields), rhs: makeFields(fields))
+        self.equalSameOrder = FieldsPair(lhs: makeFieldsByRebuild(fields), rhs: makeFieldsByRebuild(fields))
         self.equalDifferentOrder = FieldsPair(
-            lhs: makeFields(fields),
-            rhs: makeFields(reorderingUniqueNames(fields))
+            lhs: makeFieldsByRebuild(fields),
+            rhs: makeFieldsByRebuild(reorderingUniqueNames(fields))
         )
-        self.mismatchSameOrder = FieldsPair(lhs: makeFields(fields), rhs: makeFields(mismatched))
+        self.equalLocallyDisplaced = FieldsPair(
+            lhs: makeFieldsByRebuild(fields),
+            rhs: makeFieldsByRebuild(displacingOneField(fields))
+        )
+        self.mismatchSameOrder = FieldsPair(lhs: makeFieldsByRebuild(fields), rhs: makeFieldsByRebuild(mismatched))
         self.mismatchDifferentOrder = FieldsPair(
-            lhs: makeFields(fields),
-            rhs: makeFields(reorderingUniqueNames(mismatched))
+            lhs: makeFieldsByRebuild(fields),
+            rhs: makeFieldsByRebuild(reorderingUniqueNames(mismatched))
         )
     }
 }
@@ -182,6 +191,34 @@ let scalingCases: [ScalingCase] = [
     ScalingCase(scalingFields64),
     ScalingCase(scalingFields128),
 ]
+
+// MARK: - All distinct names
+
+/// A field list of `count` fields whose names are all distinct: `n1` through `n<count>`.
+private func distinctNameFields(_ count: Int) -> [HTTPField] {
+    (1...count).map { HTTPField(name: name("n\($0)"), value: "value\($0)-aBcDeF0123456789") }
+}
+
+/// Distinctly named fields against the same fields in the opposite order.
+struct DistinctNameCase: Sendable {
+    /// The number of fields, which is also the number of distinct names.
+    let n: Int
+    /// One list ordered by name against the same fields reversed.
+    let sortedAgainstReversed: FieldsPair
+
+    init(_ count: Int) {
+        let fields = distinctNameFields(count)
+        self.n = count
+        self.sortedAgainstReversed = FieldsPair(
+            lhs: makeFieldsByRebuild(fields),
+            rhs: makeFieldsByRebuild(fields.reversed())
+        )
+    }
+}
+
+/// The sizes go past the 128 the other lists stop at, because the whole point of this shape is the
+/// regime where a lock step comparison would degrade, and 128 fields is only just inside it.
+let distinctNameCases: [DistinctNameCase] = [8, 16, 32, 64, 128, 256, 512].map(DistinctNameCase.init)
 
 /// A name that is present in every field list, for the lookup and mutation benchmarks.
 let scalingPresentName: HTTPField.Name = .userAgent
@@ -212,18 +249,55 @@ func validateScalingFixtures() {
         let pairs = [
             ("equal, same order", scalingCase.equalSameOrder, true),
             ("equal, different order", scalingCase.equalDifferentOrder, true),
+            ("equal, locally displaced", scalingCase.equalLocallyDisplaced, true),
             ("differs at 80%, same order", scalingCase.mismatchSameOrder, false),
             ("differs at 80%, different order", scalingCase.mismatchDifferentOrder, false),
         ]
         for (description, pair, expected) in pairs {
             precondition(pair.lhs.count == n && pair.rhs.count == n, "N=\(n): \(description) has wrong field count")
             precondition((pair.lhs == pair.rhs) == expected, "N=\(n): \(description) is not \(expected)")
+            // The benchmarks compare the two implementations against each other, which only means
+            // anything while they agree on the answer.
+            precondition(
+                pair.lhs.equalAlternative(to: pair.rhs) == expected,
+                "N=\(n): \(description): equalAlternative disagrees with =="
+            )
         }
 
-        let differentOrder = scalingCase.equalDifferentOrder
+        let reorderedPairs = [
+            ("equal, different order", scalingCase.equalDifferentOrder),
+            ("equal, locally displaced", scalingCase.equalLocallyDisplaced),
+        ]
+        for (description, pair) in reorderedPairs {
+            precondition(
+                n < 2 || !Array(pair.lhs).elementsEqual(pair.rhs),
+                "N=\(n): \(description) is actually in the same order"
+            )
+        }
+
+        let displaced = scalingCase.equalLocallyDisplaced
+        let movedPositions = zip(Array(displaced.lhs), Array(displaced.rhs)).enumerated()
+            .filter { $0.element.0 != $0.element.1 }
+            .map(\.offset)
         precondition(
-            n < 2 || !Array(differentOrder.lhs).elementsEqual(differentOrder.rhs),
-            "N=\(n): equal, different order is actually in the same order"
+            movedPositions == Array(0...localDisplacementDistance),
+            "N=\(n): locally displaced pair disturbs \(movedPositions.count) positions, not \(localDisplacementDistance + 1)"
+        )
+    }
+
+    for distinctNameCase in distinctNameCases {
+        let n = distinctNameCase.n
+        let pair = distinctNameCase.sortedAgainstReversed
+        precondition(pair.lhs.count == n && pair.rhs.count == n, "distinct N=\(n): wrong field count")
+        precondition(Set(pair.lhs.map(\.name)).count == n, "distinct N=\(n): names are not all distinct")
+        precondition(pair.lhs == pair.rhs, "distinct N=\(n): not equal")
+        precondition(
+            pair.lhs.equalAlternative(to: pair.rhs) == true,
+            "distinct N=\(n): equalAlternative disagrees with =="
+        )
+        precondition(
+            !Array(pair.lhs).elementsEqual(pair.rhs),
+            "distinct N=\(n): actually in the same order"
         )
     }
 }

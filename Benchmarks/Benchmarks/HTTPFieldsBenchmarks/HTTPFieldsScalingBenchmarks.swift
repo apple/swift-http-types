@@ -35,7 +35,7 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         // MARK: contains
 
-        // Measured with a large scaling factor because a single call is too cheap to resolve against
+        // Measured with a `kilo` scaling factor because a single call is too cheap to resolve against
         // the measurement overhead. Note that package-benchmark divides the reported numbers by the
         // scaling factor, so they stay comparable to the benchmarks below.
         Benchmark(
@@ -110,8 +110,6 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         // MARK: Equality
 
-        // Both sides of every pair were built independently rather than copied from one another, so
-        // equality always has to do the real comparison.
         let equalSameOrder = scalingCase.equalSameOrder
         Benchmark(
             "HTTPFields.==-equal-sameOrder-N=\(n)",
@@ -122,6 +120,8 @@ func registerHTTPFieldsScalingBenchmarks() {
             }
         }
 
+        // This test reorders the elements in such a way that the distance between elements is large.
+        // Its purpose is to display the worst performance when doing a lock-step equality check.
         let equalDifferentOrder = scalingCase.equalDifferentOrder
         Benchmark(
             "HTTPFields.==-equal-differentOrder-N=\(n)",
@@ -129,6 +129,19 @@ func registerHTTPFieldsScalingBenchmarks() {
         ) { benchmark in
             for _ in benchmark.scaledIterations {
                 blackHole(equalDifferentOrder.lhs == equalDifferentOrder.rhs)
+            }
+        }
+
+        // This test compares two fields that have the same order, except for a single field that
+        // sits a few slots off. Its purpose is to show the benefits of a lock-step equality check,
+        // compared to a full blown dictionary equality check.
+        let equalLocallyDisplaced = scalingCase.equalLocallyDisplaced
+        Benchmark(
+            "HTTPFields.==-equal-locallyDisplaced-N=\(n)",
+            configuration: makeDefaultConfiguration()
+        ) { benchmark in
+            for _ in benchmark.scaledIterations {
+                blackHole(equalLocallyDisplaced.lhs == equalLocallyDisplaced.rhs)
             }
         }
 
@@ -201,6 +214,35 @@ func registerHTTPFieldsScalingBenchmarks() {
                 var copy = fields
                 copy[scalingAbsentName] = "chunked"
                 blackHole(copy)
+            }
+        }
+    }
+
+    // MARK: - All distinct names, reversed
+
+    // Every field has a unique name. Reversing the list displaces all of them. This test case
+    // represents the worst case for a lock-step implementation. It is worse than the cookie based
+    // `HTTPFields.==-equal-differentOrder-N`, since the latter heavily depends on cookies being
+    // in the correct order.
+    for distinctNameCase in distinctNameCases {
+        let n = distinctNameCase.n
+        let pair = distinctNameCase.sortedAgainstReversed
+
+        Benchmark(
+            "HTTPFields.==-equal-allDistinctNamesReversed-N=\(n)",
+            configuration: makeDefaultConfiguration()
+        ) { benchmark in
+            for _ in benchmark.scaledIterations {
+                blackHole(pair.lhs == pair.rhs)
+            }
+        }
+
+        Benchmark(
+            "HTTPFields.equalAlternative-equal-allDistinctNamesReversed-N=\(n)",
+            configuration: makeDefaultConfiguration()
+        ) { benchmark in
+            for _ in benchmark.scaledIterations {
+                blackHole(pair.lhs.equalAlternative(to: pair.rhs))
             }
         }
     }
