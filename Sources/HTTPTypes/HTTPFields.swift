@@ -31,14 +31,7 @@ public struct HTTPFields: Sendable {
     /// The position of the first field at or after `start` whose canonical name is `name`, or
     /// `nil` if there is none.
     private func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
-        var position = start
-        while position < self.fields.count {
-            if self.fields[position].name.canonicalName == name {
-                return position
-            }
-            position += 1
-        }
-        return nil
+        self.fields[start...].firstIndex(where: { $0.name.canonicalName == name })
     }
 
     private mutating func append(field: HTTPField) {
