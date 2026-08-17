@@ -30,7 +30,7 @@ public struct HTTPFields: Sendable {
 
     /// The position of the first field at or after `start` whose canonical name is `name`, or
     /// `nil` if there is none.
-    fileprivate func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
+    private func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
         self.fields[start...].firstIndex(where: { $0.name.canonicalName == name })
     }
 
@@ -126,7 +126,7 @@ public struct HTTPFields: Sendable {
             }
 
             mutating func next() -> HTTPField? {
-                while let index = self.fields.firstIndex(ofCanonicalName: self.name.canonicalName, from: self.index) {
+                if let index = self.fields.firstIndex(ofCanonicalName: self.name.canonicalName, from: self.index) {
                     defer { self.index = self.fields.index(after: index) }
                     return self.fields[index]
                 }
