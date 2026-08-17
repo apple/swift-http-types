@@ -30,7 +30,7 @@ public struct HTTPFields: Sendable {
 
     /// The position of the first field at or after `start` whose canonical name is `name`, or
     /// `nil` if there is none.
-    private func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
+    fileprivate func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
         self.fields[start...].firstIndex(where: { $0.name.canonicalName == name })
     }
 
@@ -109,35 +109,38 @@ public struct HTTPFields: Sendable {
     }
 
     private struct HTTPFieldSequence: Sequence {
-        let fields: [HTTPField]
-        let canonicalName: String
+        let fields: HTTPFields
+        let name: HTTPField.Name
 
         struct Iterator: IteratorProtocol {
-            let fields: [HTTPField]
-            let canonicalName: String
+            let fields: HTTPFields
+            let name: HTTPField.Name
             /// The position to resume scanning at. Keeping it in the iterator makes reading all
             /// the fields with one name a single pass over `fields`.
-            var position: Int
+            var index: Int
+
+            init(fields: HTTPFields, name: HTTPField.Name) {
+                self.fields = fields
+                self.name = name
+                self.index = fields.startIndex
+            }
 
             mutating func next() -> HTTPField? {
-                while self.position < self.fields.count {
-                    let field = self.fields[self.position]
-                    self.position += 1
-                    if field.name.canonicalName == self.canonicalName {
-                        return field
-                    }
+                while let index = self.fields.firstIndex(ofCanonicalName: self.name.canonicalName, from: self.index) {
+                    defer { self.index = self.fields.index(after: index) }
+                    return self.fields[index]
                 }
                 return nil
             }
         }
 
         func makeIterator() -> Iterator {
-            Iterator(fields: self.fields, canonicalName: self.canonicalName, position: 0)
+            Iterator(fields: self.fields, name: self.name)
         }
     }
 
     private func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
-        HTTPFieldSequence(fields: self.fields, canonicalName: name.canonicalName)
+        HTTPFieldSequence(fields: self, name: name)
     }
 
     private mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
