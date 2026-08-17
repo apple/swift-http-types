@@ -182,6 +182,13 @@ extension HTTPFields: Equatable {
         if lhs.fields.count != rhs.fields.count {
             return false
         }
+        // Fast path: field lists that were built the same way carry their fields in the same
+        // order, so a single lock step walk usually settles it. Element wise equality is
+        // sufficient, but not necessary, for the definition above, so a mismatch only means the
+        // general comparison below has to run.
+        if lhs.fields.elementsEqual(rhs.fields) {
+            return true
+        }
         for position in lhs.fields.indices {
             let name = lhs.fields[position].name.canonicalName
             if lhs.firstIndex(ofCanonicalName: name) != position {
