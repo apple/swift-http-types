@@ -34,6 +34,16 @@ extension HTTPField.Name {
         #expect(fields[values: .acceptEncodingUpper].count == 3)
     }
 
+    @Test func contains() {
+        var fields = HTTPFields()
+        fields[.acceptEncoding] = "gzip"
+
+        #expect(fields.contains(.acceptEncoding))
+        #expect(fields.contains(.acceptEncodingMixed))
+        #expect(fields.contains(.acceptEncodingUpper))
+        #expect(!fields.contains(.accept))
+    }
+
     @Test func fieldValue() {
         #expect(HTTPField(name: .accept, value: "   \n 😀 \t ").value == "😀")
         #expect(HTTPField(name: .accept, value: " a 😀 \t\n b \t \r ").value == "a 😀 \t  b")
