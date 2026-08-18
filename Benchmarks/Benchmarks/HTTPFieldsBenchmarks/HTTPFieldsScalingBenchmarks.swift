@@ -120,8 +120,6 @@ func registerHTTPFieldsScalingBenchmarks() {
             }
         }
 
-        // The uniquely named fields appended in the opposite order, so each of them sits far from
-        // its partner. The cookies stay put, which keeps most of the walk cheap.
         let equalDifferentOrder = scalingCase.equalDifferentOrder
         Benchmark(
             "HTTPFields.==-equal-differentOrder-N=\(n)",
@@ -132,8 +130,6 @@ func registerHTTPFieldsScalingBenchmarks() {
             }
         }
 
-        // One field a few slots off its partner and everything else in place: the cheapest kind of
-        // disorder, and the case the lock step walk exists for.
         let equalLocallyDisplaced = scalingCase.equalLocallyDisplaced
         Benchmark(
             "HTTPFields.==-equal-locallyDisplaced-N=\(n)",
@@ -219,9 +215,6 @@ func registerHTTPFieldsScalingBenchmarks() {
 
     // MARK: - All distinct names, reversed
 
-    // Every name unique and the list reversed, so no field is near its partner and none of the walk
-    // is cheap. This is where `==` hands off to the by-name index; running the two against each
-    // other here is what the handoff thresholds come from.
     for distinctNameCase in distinctNameCases {
         let n = distinctNameCase.n
         let pair = distinctNameCase.sortedAgainstReversed

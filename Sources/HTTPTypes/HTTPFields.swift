@@ -213,7 +213,7 @@ extension HTTPFields: Equatable {
                         return false
                     }
                 } else {
-                    // Disorder starts here; size both arrays for the rest of the walk once.
+                    // Disorder starts here
                     let remaining = lhs.fields.count - index
                     pendingLeft.reserveCapacity(remaining)
                     pendingRight.reserveCapacity(remaining)
@@ -222,8 +222,7 @@ extension HTTPFields: Equatable {
 
             let leftName = lhs.fields[index].name
             if let match = pendingRight.firstIndex(where: { rhs.fields[$0].name == leftName }) {
-                // The n-th field of a name pairs only with the other side's n-th field. A value
-                // mismatch leads to unequality.
+                // The n-th field of a name pairs only with the other side's n-th field.
                 if rhs.fields[pendingRight[match]] != lhs.fields[index] {
                     return false
                 }
@@ -251,22 +250,18 @@ extension HTTPFields: Equatable {
         return pendingLeft.isEmpty
     }
 
-    /// How many fields may be set aside before the lock step walk hands off to
+    /// How many fields can be unmatched before the lock step walk hands off to
     /// ``isEqualByNameIndex(_:_:)``.
-    ///
-    /// Set high enough that a real message does not reach it: getting here takes 32 distinctly named
-    /// fields displaced at once.
     private static var maxPendingFieldsBeforeIndexing: Int { 32 }
 
-    /// How many fields have to be left for building the index to pay for itself. Below this the walk
-    /// finishes first, even if this means lots of scanning.
+    /// How many fields have to be left for building the index to pay for itself. If
+    /// `maxPendingFieldsBeforeIndexing` is reached, but there are less than
+    /// `minFieldsToIndexByName` remaining, the equality check will continue to
+    /// compare in lock-step.
     private static var minFieldsToIndexByName: Int { 64 }
 
     /// Answers the same question as `==` in linear time, by indexing `rhs` by name and draining that
     /// index while walking `lhs`.
-    ///
-    /// Hashes every name twice and allocates per name, so it only wins once the lock step walk in
-    /// `==` is scanning a large number of set aside fields.
     @_spi(HTTPTypesBenchmarking)
     public static func isEqualByNameIndex(_ lhs: HTTPFields, _ rhs: HTTPFields) -> Bool {
         if lhs.fields.count != rhs.fields.count {
@@ -275,19 +270,16 @@ extension HTTPFields: Equatable {
         // The fields of `rhs`, grouped by name. Fields sharing a name have to appear in the same
         // order on both sides. Since we don't want to import swift-collections' Deque, we need
         // another way to create a FIFO structure: By adding the fields to the dictionary in reverse
-        // order, we'll add later values first to the values array. This is great since it allows us,
-        // when iterating the lhs fields, to remove values from the end of the values array for a
-        // given name.
+        // order, we'll add later values first to the values array. This allows us, when iterating
+        // the lhs fields, to remove values from the end of the values array.
         var remaining = [String: [HTTPField]](minimumCapacity: lhs.fields.count)
         for field in rhs.fields.reversed() {
             remaining[field.name.canonicalName, default: []].append(field)
         }
         for field in lhs.fields {
-            // One hash lookup; the group is then drained in place through its index.
             guard let group = remaining.index(forKey: field.name.canonicalName),
                 let candidate = remaining.values[group].last
             else {
-                // `rhs` has no field of this name left to pair with this one.
                 return false
             }
             if candidate != field {
@@ -295,8 +287,6 @@ extension HTTPFields: Equatable {
             }
             remaining.values[group].removeLast()
         }
-        // The groups started with as many fields as `lhs` has and each field took one, so nothing in
-        // `rhs` is left unpaired.
         return true
     }
 }

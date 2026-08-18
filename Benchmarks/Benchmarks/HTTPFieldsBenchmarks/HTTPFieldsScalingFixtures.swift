@@ -21,8 +21,7 @@
 /// The lists are nested: every list is a prefix of the next larger one, so a difference between two
 /// sizes is only ever caused by the fields that were added.
 ///
-/// Real field lists grow past ~16 fields almost exclusively because of cookies, so that is how these
-/// grow too: the ordinary headers stop at 16 and everything beyond that is a `Cookie` field.
+/// Real field lists grow past ~16 fields almost exclusively because of cookies.
 
 /// `Cookie` fields with distinct values, so that no two fields in a list compare equal.
 private func cookieFields(_ range: Range<Int>) -> [HTTPField] {
@@ -73,10 +72,8 @@ let scalingFields128: [HTTPField] = scalingFields64 + cookieFields(48..<112)
 
 // MARK: - Building
 
-/// Builds an `HTTPFields` by appending, the way a receive path does.
-///
-/// Every fixture gets its own call, so no two of them share storage and equality cannot shortcut on
-/// identical buffers.
+/// Builds an `HTTPFields` by appending, to ensure the resulting `HTTPFields` backing array
+/// is uniquely referenced.
 private func makeFieldsByRebuild(_ fields: [HTTPField]) -> HTTPFields {
     var result = HTTPFields()
     result.reserveCapacity(fields.count)
@@ -103,10 +100,8 @@ private func reorderingUniqueNames(_ fields: [HTTPField]) -> [HTTPField] {
     return fields.map { $0.name == .cookie ? $0 : reversed.next()! }
 }
 
-/// How far a locally displaced field moves.
 private let localDisplacementDistance = 3
 
-/// Moves the first field a few slots later, leaving every other field where it was.
 private func displacingOneField(_ fields: [HTTPField]) -> [HTTPField] {
     precondition(fields.count > localDisplacementDistance, "list too short to displace a field within")
     var fields = fields
@@ -201,7 +196,6 @@ private func distinctNameFields(_ count: Int) -> [HTTPField] {
     (1...count).map { HTTPField(name: name("n\($0)"), value: "value\($0)-aBcDeF0123456789") }
 }
 
-/// Distinctly named fields against the same fields in the opposite order.
 struct DistinctNameCase: Sendable {
     /// The number of fields, which is also the number of distinct names.
     let n: Int
@@ -258,7 +252,6 @@ func validateScalingFixtures() {
         for (description, pair, expected) in pairs {
             precondition(pair.lhs.count == n && pair.rhs.count == n, "N=\(n): \(description) has wrong field count")
             precondition((pair.lhs == pair.rhs) == expected, "N=\(n): \(description) is not \(expected)")
-            // Head-to-head benchmarks are only meaningful while both implementations agree.
             precondition(
                 HTTPFields.isEqualByNameIndex(pair.lhs, pair.rhs) == expected,
                 "N=\(n): \(description): isEqualByNameIndex disagrees with =="
