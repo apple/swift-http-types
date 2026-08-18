@@ -176,14 +176,9 @@ public struct HTTPFields: Sendable {
 
 extension HTTPFields: Equatable {
     public static func == (lhs: HTTPFields, rhs: HTTPFields) -> Bool {
-        // Two field lists are equal when, for every name, they hold the same fields in the same
-        // order. Fields with different names may be interleaved differently.
-
-        // Note:
-        // Within the code comments here, the following names are used:
-        //  `Element` -> a `HTTPField` inside the `HTTPFields`
-        //  `Fields` -> a `HTTPFields`
-
+        // Equal means: for every name, the same fields in the same order. Fields with different
+        // names may be interleaved differently on the two sides.
+        //
         // When checking for equality we try two approaches:
         //  1. We walk both fields' elements in lock-step. To support ordering differences within the
         //     fields, we use `pending` arrays, to store elements that have not appeared in the other.
@@ -195,7 +190,6 @@ extension HTTPFields: Equatable {
         //  2. An approach in which we build a dictionary from one field list and then remove items
         //     from it based on the other one. This scales linear but has significant build costs,
         //     since it needs to hash every field name twice.
-
         if lhs.fields.count != rhs.fields.count {
             return false
         }
@@ -208,24 +202,18 @@ extension HTTPFields: Equatable {
         var pendingRight = [Int]()
         for index in lhs.fields.indices {
             // A direct element comparison can only be done if there are no elements in the pending
-            // arrays. This because to ensure correct ordering, all the other sides' unpaired
-            // elements have to be considered before the current element of the other side can be
-            // considered.
+            // arrays. This is to ensure correct ordering. Unpaired elements must be considered
+            // before the current element.
             if pendingLeft.isEmpty {
                 if lhs.fields[index].name == rhs.fields[index].name {
                     if lhs.fields[index].value == rhs.fields[index].value {
-                        // name and values match. check the next elements
                         continue
                     } else {
-                        // if the elements' names are equal but the elements are unequal, the elements must
-                        // have different values -> early exit here, since the fields have no pending
-                        // candidates, that need to be checked first.
+                        // Same name, different value, and no earlier candidate for either of them.
                         return false
                     }
                 } else {
-                    // If the elements' names are unequal, we are dealing with different elements.
-                    // Because of that, we have to compare them against later candidates. In order to reduce
-                    // allocations, reserve array capacity first.
+                    // Disorder starts here; size both arrays for the rest of the walk once.
                     let remaining = lhs.fields.count - index
                     pendingLeft.reserveCapacity(remaining)
                     pendingRight.reserveCapacity(remaining)
@@ -234,9 +222,8 @@ extension HTTPFields: Equatable {
 
             let leftName = lhs.fields[index].name
             if let match = pendingRight.firstIndex(where: { rhs.fields[$0].name == leftName }) {
-                // The n-th value for a name on one side can only ever pair with the n-th value of that
-                // same name on the other, so a disagreement means the order of values is different,
-                // which means the http fields are different.
+                // The n-th field of a name pairs only with the other side's n-th field. A value
+                // mismatch leads to unequality.
                 if rhs.fields[pendingRight[match]] != lhs.fields[index] {
                     return false
                 }
@@ -254,40 +241,41 @@ extension HTTPFields: Equatable {
                 pendingRight.append(index)
             }
 
-            if pendingLeft.count >= Self.maxFieldsToScan,
+            if pendingLeft.count >= Self.maxPendingFieldsBeforeIndexing,
                 lhs.fields.count - index >= Self.minFieldsToIndexByName
             {
                 return Self.isEqualByNameIndex(lhs, rhs)
             }
         }
-        // Both arrays hold the same count here, so one being empty means both are. If both are
-        // empty, all elements found a partner.
+        // Both arrays hold the same count, so empty here means every field found a partner.
         return pendingLeft.isEmpty
     }
 
-    /// How many fields can be unresolved before the lock-step algorithm falls back to the `is`
-    /// them by name instead. Set from measurement, and reached only by a list far more disordered than
-    /// a real message: it needs this many distinctly named fields displaced at once, where real
-    /// messages carry 16 to 30 distinct names in total.
-    private static var maxFieldsToScan: Int { 32 }
+    /// How many fields may be set aside before the lock step walk hands off to
+    /// ``isEqualByNameIndex(_:_:)``.
+    ///
+    /// Set high enough that a real message does not reach it: getting here takes 32 distinctly named
+    /// fields displaced at once.
+    private static var maxPendingFieldsBeforeIndexing: Int { 32 }
 
-    /// How much of the list has to be left for indexing the set aside fields to be worth what the
-    /// index costs to build. Below this, scanning finishes sooner even when it is scanning a lot.
+    /// How many fields have to be left for building the index to pay for itself. Below this the walk
+    /// finishes first, even if this means lots of scanning.
     private static var minFieldsToIndexByName: Int { 64 }
 
-    /// Answers the same question as `==` by indexing one side by name up front and then draining
-    /// that index while walking the other.
+    /// Answers the same question as `==` in linear time, by indexing `rhs` by name and draining that
+    /// index while walking `lhs`.
     ///
-    /// This is linear, but it hashes every name twice and allocates per name, which costs roughly two
-    /// orders of magnitude more per field than a lock step pass.
-    static func isEqualByNameIndex(_ lhs: HTTPFields, _ rhs: HTTPFields) -> Bool {
+    /// Hashes every name twice and allocates per name, so it only wins once the lock step walk in
+    /// `==` is scanning a large number of set aside fields.
+    @_spi(HTTPTypesBenchmarking)
+    public static func isEqualByNameIndex(_ lhs: HTTPFields, _ rhs: HTTPFields) -> Bool {
         if lhs.fields.count != rhs.fields.count {
             return false
         }
         // The fields of `rhs`, grouped by name. Fields sharing a name have to appear in the same
         // order on both sides. Since we don't want to import swift-collections' Deque, we need
         // another way to create a FIFO structure: By adding the fields to the dictionary in reverse
-        // order, we'll add later values first to the name array. This is great as it allows us,
+        // order, we'll add later values first to the values array. This is great since it allows us,
         // when iterating the lhs fields, to remove values from the end of the values array for a
         // given name.
         var remaining = [String: [HTTPField]](minimumCapacity: lhs.fields.count)
@@ -295,11 +283,11 @@ extension HTTPFields: Equatable {
             remaining[field.name.canonicalName, default: []].append(field)
         }
         for field in lhs.fields {
-            // One hash lookup, then the group is drained in place through its index.
+            // One hash lookup; the group is then drained in place through its index.
             guard let group = remaining.index(forKey: field.name.canonicalName),
                 let candidate = remaining.values[group].last
             else {
-                // `other` has no field of this name left to pair with this one.
+                // `rhs` has no field of this name left to pair with this one.
                 return false
             }
             if candidate != field {
@@ -307,8 +295,8 @@ extension HTTPFields: Equatable {
             }
             remaining.values[group].removeLast()
         }
-        // The groups held as many fields as this list has, and each of them just gave one up, so
-        // they are all drained and every field of `other` was paired off.
+        // The groups started with as many fields as `lhs` has and each field took one, so nothing in
+        // `rhs` is left unpaired.
         return true
     }
 }

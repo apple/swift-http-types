@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Foundation
-import HTTPTypes
+@_spi(HTTPTypesBenchmarking) import HTTPTypes
 import Testing
 
 extension HTTPField.Name {
@@ -24,6 +24,14 @@ extension HTTPField.Name {
 }
 
 @Suite struct HTTPTypesTests {
+    private func makeFields(_ pairs: [(HTTPField.Name, String)]) -> HTTPFields {
+        var fields = HTTPFields()
+        for (name, value) in pairs {
+            fields.append(HTTPField(name: name, value: value))
+        }
+        return fields
+    }
+
     @Test func fields() {
         var fields = HTTPFields()
         fields[.acceptEncoding] = "gzip"
@@ -133,75 +141,50 @@ extension HTTPField.Name {
         #expect(fields1 != fields6)
     }
 
-    /// `==` walks the two field lists in lock step and sets aside the fields that do not line up.
-    /// These are the cases where the two sides diverge in the middle of a run of same-named
-    /// fields, so that a field has to be paired with one the other list produced at a different
-    /// position rather than with the one across from it.
+    /// Reorderings that split a run of same-named fields, so a field has to pair with one that is
+    /// not across from it.
     @Test func equalityWhenSameNamedFieldsAreDisplaced() {
         let a = HTTPField.Name("a")!
         let b = HTTPField.Name("b")!
-        func fields(_ pairs: [(HTTPField.Name, String)]) -> HTTPFields {
-            var fields = HTTPFields()
-            for (name, value) in pairs {
-                fields.append(HTTPField(name: name, value: value))
-            }
-            return fields
-        }
 
         // The leading "a" is identical on both sides, and the remaining "a" is on the far side of
         // the reordered "b" in one of them.
-        let dupSplitByReorder = fields([(a, "1"), (b, "9"), (a, "1")])
-        #expect(dupSplitByReorder == fields([(a, "1"), (a, "1"), (b, "9")]))
+        let dupSplitByReorder = makeFields([(a, "1"), (b, "9"), (a, "1")])
+        #expect(dupSplitByReorder == makeFields([(a, "1"), (a, "1"), (b, "9")]))
 
-        let distinctValues = fields([(a, "1"), (b, "2"), (a, "3")])
-        #expect(distinctValues == fields([(a, "1"), (a, "3"), (b, "2")]))
+        let distinctValues = makeFields([(a, "1"), (b, "2"), (a, "3")])
+        #expect(distinctValues == makeFields([(a, "1"), (a, "3"), (b, "2")]))
 
         // Same names and same total count, but the two "a" fields are swapped, and the relative
         // order of same-named fields is significant.
-        #expect(fields([(a, "1"), (a, "2")]) != fields([(a, "2"), (a, "1")]))
-        #expect(fields([(a, "1"), (b, "1"), (a, "2")]) != fields([(a, "2"), (a, "1"), (b, "1")]))
+        #expect(makeFields([(a, "1"), (a, "2")]) != makeFields([(a, "2"), (a, "1")]))
+        #expect(makeFields([(a, "1"), (b, "1"), (a, "2")]) != makeFields([(a, "2"), (a, "1"), (b, "1")]))
 
         // Equal counts, but one name's run is longer on one side than on the other.
-        #expect(fields([(a, "1"), (a, "1"), (b, "2")]) != fields([(a, "1"), (b, "2"), (b, "2")]))
+        #expect(makeFields([(a, "1"), (a, "1"), (b, "2")]) != makeFields([(a, "1"), (b, "2"), (b, "2")]))
     }
 
-    /// While `==` walks the two lists, the fields it has set aside on one side can briefly outnumber
-    /// those on the other: here the second "a" is set aside before the first one is paired off, so
-    /// one side holds two and the other one. This is the case to reach for when changing how those
-    /// set aside fields are counted.
+    /// A reordering where the fields `==` has set aside on one side outnumber the other side's part
+    /// way through the walk.
     @Test func equalityWhenOneSideBrieflyHoldsMoreSetAsideFields() {
         let a = HTTPField.Name("a")!
         let b = HTTPField.Name("b")!
         let c = HTTPField.Name("c")!
         let d = HTTPField.Name("d")!
-        func fields(_ pairs: [(HTTPField.Name, String)]) -> HTTPFields {
-            var fields = HTTPFields()
-            for (name, value) in pairs {
-                fields.append(HTTPField(name: name, value: value))
-            }
-            return fields
-        }
 
-        let straight = fields([(a, "1"), (b, "2"), (c, "3"), (a, "4"), (d, "5")])
-        #expect(straight == fields([(b, "2"), (c, "3"), (d, "5"), (a, "1"), (a, "4")]))
+        let straight = makeFields([(a, "1"), (b, "2"), (c, "3"), (a, "4"), (d, "5")])
+        #expect(straight == makeFields([(b, "2"), (c, "3"), (d, "5"), (a, "1"), (a, "4")]))
 
         // The same reordering with the two "a" fields swapped, which is not equal: the relative
         // order of the fields sharing a name is the one thing that has to match.
-        #expect(straight != fields([(b, "2"), (c, "3"), (d, "5"), (a, "4"), (a, "1")]))
+        #expect(straight != makeFields([(b, "2"), (c, "3"), (d, "5"), (a, "4"), (a, "1")]))
     }
 
-    /// `equalAlternative(to:)` is a second implementation of the same question, so it has to give
-    /// the same answer as `==` on every case that distinguishes them.
-    @Test func equalAlternativeAgreesWithEquality() {
+    /// `isEqualByNameIndex` is a second implementation of the same question, so it has to agree with
+    /// `==` on every pair, in both directions.
+    @Test func equalByNameIndexAgreesWithEquality() {
         let a = HTTPField.Name("a")!
         let b = HTTPField.Name("b")!
-        func fields(_ pairs: [(HTTPField.Name, String)]) -> HTTPFields {
-            var fields = HTTPFields()
-            for (name, value) in pairs {
-                fields.append(HTTPField(name: name, value: value))
-            }
-            return fields
-        }
 
         let lists = [
             [] as [(HTTPField.Name, String)],
@@ -217,18 +200,19 @@ extension HTTPField.Name {
             [(a, "1"), (b, "1"), (a, "2"), (b, "2")],
             [(a, "1"), (a, "2"), (b, "1"), (b, "2")],
             [(a, "2"), (a, "1"), (b, "1"), (b, "2")],
-        ].map(fields)
+        ].map(makeFields)
 
         for lhs in lists {
             for rhs in lists {
-                #expect(lhs.equalAlternative(to: rhs) == (lhs == rhs), "\(Array(lhs)) vs \(Array(rhs))")
+                #expect(
+                    HTTPFields.isEqualByNameIndex(lhs, rhs) == (lhs == rhs),
+                    "\(Array(lhs)) vs \(Array(rhs))"
+                )
             }
         }
     }
 
-    /// Past a certain amount of disorder `==` stops walking the two lists in lock step and indexes
-    /// one of them by name instead. The lists here are long enough and reordered enough to cross
-    /// that point, which no other test in this file does.
+    /// Lists long enough and disordered enough that `==` hands off to the by-name index.
     @Test func equalityOfLongHeavilyReorderedLists() {
         func fields(_ pairs: [(String, String)]) -> HTTPFields {
             var fields = HTTPFields()

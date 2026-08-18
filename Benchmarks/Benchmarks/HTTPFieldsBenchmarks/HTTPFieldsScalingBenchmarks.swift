@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Benchmark
-import HTTPTypes
+@_spi(HTTPTypesBenchmarking) import HTTPTypes
 
 /// Benchmarks that run the same operation over field lists of 8, 16, 32, 64 and 128 fields.
 ///
@@ -120,8 +120,8 @@ func registerHTTPFieldsScalingBenchmarks() {
             }
         }
 
-        // This test reorders the elements in such a way that the distance between elements is large.
-        // Its purpose is to display the worst performance when doing a lock-step equality check.
+        // The uniquely named fields appended in the opposite order, so each of them sits far from
+        // its partner. The cookies stay put, which keeps most of the walk cheap.
         let equalDifferentOrder = scalingCase.equalDifferentOrder
         Benchmark(
             "HTTPFields.==-equal-differentOrder-N=\(n)",
@@ -132,9 +132,8 @@ func registerHTTPFieldsScalingBenchmarks() {
             }
         }
 
-        // This test compares two fields that have the same order, except for a single field that
-        // sits a few slots off. Its purpose is to show the benefits of a lock-step equality check,
-        // compared to a full blown dictionary equality check.
+        // One field a few slots off its partner and everything else in place: the cheapest kind of
+        // disorder, and the case the lock step walk exists for.
         let equalLocallyDisplaced = scalingCase.equalLocallyDisplaced
         Benchmark(
             "HTTPFields.==-equal-locallyDisplaced-N=\(n)",
@@ -220,10 +219,9 @@ func registerHTTPFieldsScalingBenchmarks() {
 
     // MARK: - All distinct names, reversed
 
-    // Every field has a unique name. Reversing the list displaces all of them. This test case
-    // represents the worst case for a lock-step implementation. It is worse than the cookie based
-    // `HTTPFields.==-equal-differentOrder-N`, since the latter heavily depends on cookies being
-    // in the correct order.
+    // Every name unique and the list reversed, so no field is near its partner and none of the walk
+    // is cheap. This is where `==` hands off to the by-name index; running the two against each
+    // other here is what the handoff thresholds come from.
     for distinctNameCase in distinctNameCases {
         let n = distinctNameCase.n
         let pair = distinctNameCase.sortedAgainstReversed
@@ -238,11 +236,11 @@ func registerHTTPFieldsScalingBenchmarks() {
         }
 
         Benchmark(
-            "HTTPFields.equalAlternative-equal-allDistinctNamesReversed-N=\(n)",
+            "HTTPFields.isEqualByNameIndex-equal-allDistinctNamesReversed-N=\(n)",
             configuration: makeDefaultConfiguration()
         ) { benchmark in
             for _ in benchmark.scaledIterations {
-                blackHole(pair.lhs.equalAlternative(to: pair.rhs))
+                blackHole(HTTPFields.isEqualByNameIndex(pair.lhs, pair.rhs))
             }
         }
     }

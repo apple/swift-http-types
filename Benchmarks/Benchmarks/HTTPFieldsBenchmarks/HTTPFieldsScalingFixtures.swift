@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import HTTPTypes
+@_spi(HTTPTypesBenchmarking) import HTTPTypes
 
 // MARK: - Field lists
 
@@ -73,8 +73,10 @@ let scalingFields128: [HTTPField] = scalingFields64 + cookieFields(48..<112)
 
 // MARK: - Building
 
-/// Create a ``HTTPFields`` from an ``[HTTPField]`` array. We ensure that the resulting
-/// ``HTTPFields`` is backed by an array that is not a copied referenced to the input array.
+/// Builds an `HTTPFields` by appending, the way a receive path does.
+///
+/// Every fixture gets its own call, so no two of them share storage and equality cannot shortcut on
+/// identical buffers.
 private func makeFieldsByRebuild(_ fields: [HTTPField]) -> HTTPFields {
     var result = HTTPFields()
     result.reserveCapacity(fields.count)
@@ -216,8 +218,8 @@ struct DistinctNameCase: Sendable {
     }
 }
 
-/// The sizes go past the 128 the other lists stop at, because the whole point of this shape is the
-/// regime where a lock step comparison would degrade, and 128 fields is only just inside it.
+/// Runs past the 128 the other lists stop at, to cover both sides of the point where `==` hands off
+/// to the by-name index.
 let distinctNameCases: [DistinctNameCase] = [8, 16, 32, 64, 128, 256, 512].map(DistinctNameCase.init)
 
 /// A name that is present in every field list, for the lookup and mutation benchmarks.
@@ -256,11 +258,10 @@ func validateScalingFixtures() {
         for (description, pair, expected) in pairs {
             precondition(pair.lhs.count == n && pair.rhs.count == n, "N=\(n): \(description) has wrong field count")
             precondition((pair.lhs == pair.rhs) == expected, "N=\(n): \(description) is not \(expected)")
-            // The benchmarks compare the two implementations against each other, which only means
-            // anything while they agree on the answer.
+            // Head-to-head benchmarks are only meaningful while both implementations agree.
             precondition(
-                pair.lhs.equalAlternative(to: pair.rhs) == expected,
-                "N=\(n): \(description): equalAlternative disagrees with =="
+                HTTPFields.isEqualByNameIndex(pair.lhs, pair.rhs) == expected,
+                "N=\(n): \(description): isEqualByNameIndex disagrees with =="
             )
         }
 
@@ -292,8 +293,8 @@ func validateScalingFixtures() {
         precondition(Set(pair.lhs.map(\.name)).count == n, "distinct N=\(n): names are not all distinct")
         precondition(pair.lhs == pair.rhs, "distinct N=\(n): not equal")
         precondition(
-            pair.lhs.equalAlternative(to: pair.rhs) == true,
-            "distinct N=\(n): equalAlternative disagrees with =="
+            HTTPFields.isEqualByNameIndex(pair.lhs, pair.rhs) == true,
+            "distinct N=\(n): isEqualByNameIndex disagrees with =="
         )
         precondition(
             !Array(pair.lhs).elementsEqual(pair.rhs),
