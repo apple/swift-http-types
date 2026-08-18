@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import Benchmark
-import HTTPTypes
+@_spi(HTTPTypesBenchmarking) import HTTPTypes
 
 /// Benchmarks that run the same operation over field lists of 8, 16, 32, 64 and 128 fields.
 ///
@@ -35,7 +35,7 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         // MARK: contains
 
-        // Measured with a large scaling factor because a single call is too cheap to resolve against
+        // Measured with a `kilo` scaling factor because a single call is too cheap to resolve against
         // the measurement overhead. Note that package-benchmark divides the reported numbers by the
         // scaling factor, so they stay comparable to the benchmarks below.
         Benchmark(
@@ -110,8 +110,6 @@ func registerHTTPFieldsScalingBenchmarks() {
 
         // MARK: Equality
 
-        // Both sides of every pair were built independently rather than copied from one another, so
-        // equality always has to do the real comparison.
         let equalSameOrder = scalingCase.equalSameOrder
         Benchmark(
             "HTTPFields.==-equal-sameOrder-N=\(n)",
@@ -129,6 +127,16 @@ func registerHTTPFieldsScalingBenchmarks() {
         ) { benchmark in
             for _ in benchmark.scaledIterations {
                 blackHole(equalDifferentOrder.lhs == equalDifferentOrder.rhs)
+            }
+        }
+
+        let equalLocallyDisplaced = scalingCase.equalLocallyDisplaced
+        Benchmark(
+            "HTTPFields.==-equal-locallyDisplaced-N=\(n)",
+            configuration: makeDefaultConfiguration()
+        ) { benchmark in
+            for _ in benchmark.scaledIterations {
+                blackHole(equalLocallyDisplaced.lhs == equalLocallyDisplaced.rhs)
             }
         }
 
@@ -201,6 +209,31 @@ func registerHTTPFieldsScalingBenchmarks() {
                 var copy = fields
                 copy[scalingAbsentName] = "chunked"
                 blackHole(copy)
+            }
+        }
+    }
+
+    // MARK: - All distinct names, reversed
+
+    for distinctNameCase in distinctNameCases {
+        let n = distinctNameCase.n
+        let pair = distinctNameCase.sortedAgainstReversed
+
+        Benchmark(
+            "HTTPFields.==-equal-allDistinctNamesReversed-N=\(n)",
+            configuration: makeDefaultConfiguration()
+        ) { benchmark in
+            for _ in benchmark.scaledIterations {
+                blackHole(pair.lhs == pair.rhs)
+            }
+        }
+
+        Benchmark(
+            "HTTPFields.isEqualByNameIndex-equal-allDistinctNamesReversed-N=\(n)",
+            configuration: makeDefaultConfiguration()
+        ) { benchmark in
+            for _ in benchmark.scaledIterations {
+                blackHole(HTTPFields.isEqualByNameIndex(pair.lhs, pair.rhs))
             }
         }
     }
