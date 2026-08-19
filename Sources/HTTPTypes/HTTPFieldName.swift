@@ -42,11 +42,12 @@ extension HTTPField {
         /// - Parameter name: The name of the HTTP field. It can be accessed from the `rawName`
         ///                   property.
         public init?(_ name: String) {
-            guard HTTPField.isValidToken(name) else {
+            guard let canonicalName = HTTPField.validatedCanonicalName(name) else {
                 return nil
             }
+            
             self.rawName = name
-            self.canonicalName = name.lowercased()
+            self.canonicalName = canonicalName
         }
 
         /// Create an HTTP field name from a string produced by HPACK or QPACK decoders used in
