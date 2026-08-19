@@ -60,27 +60,13 @@ extension HTTPField {
         ///                   be lowercased.
         @available(HTTPTypes 1.2, *)
         public init?(parsed name: String) {
-            guard !name.isEmpty else {
-                return nil
-            }
             let token: Substring
             if name.utf8.first == UInt8(ascii: ":") {
                 token = name.dropFirst()
             } else {
                 token = Substring(name)
             }
-            guard
-                token.utf8.allSatisfy({
-                    switch $0 {
-                    case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
-                        return true
-                    case 0x30...0x39, 0x61...0x7A:  // DIGHT, ALPHA
-                        return true
-                    default:
-                        return false
-                    }
-                })
-            else {
+            guard HTTPField.isValidToken(token) else {
                 return nil
             }
             self.rawName = name
