@@ -279,11 +279,7 @@ extension HTTPField.Name {
             .acceptEncoding: "gzip",
         ]
         #expect(fields1 == fields2)
-
-        // Equal values must therefore hash equally.
-        withKnownIssue("HTTPFields.hash(into:) is order sensitive while == is not") {
-            #expect(fields1.hashValue == fields2.hashValue)
-        }
+        #expect(fields1.hashValue == fields2.hashValue)
     }
 
     @Test func sendable() {
