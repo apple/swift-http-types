@@ -169,6 +169,20 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
+    Benchmark("HTTPRequest.init(parsed)", configuration: makeDefaultConfiguration()) {
+        benchmark in
+        for _ in benchmark.scaledIterations {
+            blackHole(try HTTPRequest(parsed: parsedRequestFields))
+        }
+    }
+
+    Benchmark("HTTPResponse.init(parsed)", configuration: makeDefaultConfiguration()) {
+        benchmark in
+        for _ in benchmark.scaledIterations {
+            blackHole(try HTTPResponse(parsed: parsedResponseFields))
+        }
+    }
+
     // MARK: Scaling
 
     // The same operations over field lists of 8, 16, 32, 64 and 128 fields. See
