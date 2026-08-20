@@ -51,8 +51,12 @@ public struct HTTPFields: Sendable {
     /// let contentTypeValue = response.headerFields[.contentType]
     /// ```
     ///
-    /// If multiple fields with the same name exist, they are concatenated with commas (or
-    /// semicolons in the case of the "Cookie" header field).
+    /// When reading, if multiple fields with the same name exist, their values are concatenated
+    /// with commas (or semicolons in the case of the "Cookie" header field).
+    ///
+    /// When setting a value, all existing fields with the same name are replaced by a single
+    /// field with the new value, and setting `nil` removes them. Setting a value never appends
+    /// an additional field; to set multiple fields with the same name, use ``subscript(values:)``.
     ///
     /// When setting a "Cookie" header field value, it is split into multiple "Cookie" fields by
     /// semicolon.
