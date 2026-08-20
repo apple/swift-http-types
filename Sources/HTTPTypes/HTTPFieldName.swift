@@ -45,7 +45,7 @@ extension HTTPField {
             guard let canonicalName = HTTPField.validatedCanonicalName(name) else {
                 return nil
             }
-            
+
             self.rawName = name
             self.canonicalName = canonicalName
         }

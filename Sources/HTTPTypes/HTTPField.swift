@@ -276,7 +276,7 @@ extension HTTPField {
         case invalid
         case valid
         case canonical
-        
+
         var isValid: Bool {
             switch self {
             case .valid, .canonical:
@@ -286,11 +286,11 @@ extension HTTPField {
             }
         }
     }
-    
+
     private static let digits = UInt8(ascii: "0")...UInt8(ascii: "9")
     private static let lowerCaseLetters = UInt8(ascii: "a")...UInt8(ascii: "z")
     private static let upperCaseLetters = UInt8(ascii: "A")...UInt8(ascii: "Z")
-    
+
     static func validatedCanonicalName(_ name: String) -> String? {
         switch Self.tokenValidity(name) {
         case .canonical:
@@ -301,15 +301,15 @@ extension HTTPField {
             return nil
         }
     }
-    
+
     static func isValidToken(_ token: String) -> Bool {
         Self.tokenValidity(token).isValid
     }
-    
+
     static func isValidToken(_ token: Substring) -> Bool {
         Self.tokenValidity(token).isValid
     }
-    
+
     #if compiler(>=6.4)
     private static func tokenValidity(_ token: String) -> TokenValidity {
         #if canImport(Darwin)
@@ -321,7 +321,7 @@ extension HTTPField {
         return Self.tokenValidity(token.utf8.span)
         #endif
     }
-    
+
     private static func tokenValidity(_ token: Substring) -> TokenValidity {
         #if canImport(Darwin)
         if #available(anyAppleOS 27.0, *) {
@@ -332,19 +332,18 @@ extension HTTPField {
         return Self.tokenValidity(token.utf8.span)
         #endif
     }
-    
-    
+
     @available(anyAppleOS 27.0, *)
     private static func tokenValidity(_ buffer: borrowing Span<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
         guard !buffer.isEmpty else {
             return .invalid
         }
-        
+
         var validity: TokenValidity = .canonical
         for byte in buffer {
             switch byte {
-                // Symbols like "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+            // Symbols like "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
             case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
                 continue
             case Self.digits, Self.lowerCaseLetters:
@@ -355,7 +354,7 @@ extension HTTPField {
                 return .invalid
             }
         }
-        
+
         return validity
     }
     #else
@@ -363,17 +362,17 @@ extension HTTPField {
         Self.tokenValidity(token.utf8)
     }
     #endif
-    
+
     private static func tokenValidity(_ bytes: some Collection<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
         guard !bytes.isEmpty else {
             return .invalid
         }
-        
+
         var validity: TokenValidity = .canonical
         for byte in bytes {
             switch byte {
-                // Symbols like "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+            // Symbols like "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
             case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
                 continue
             case Self.digits, Self.lowerCaseLetters:
@@ -384,7 +383,7 @@ extension HTTPField {
                 return .invalid
             }
         }
-        
+
         return validity
     }
 }
