@@ -310,8 +310,8 @@ extension HTTPField {
         Self.tokenValidity(token).isValid
     }
     
+    #if compiler(>=6.4)
     private static func tokenValidity(_ token: String) -> TokenValidity {
-        #if compiler(>=6.4)
         #if canImport(Darwin)
         if #available(anyAppleOS 27.0, *) {
             return Self.tokenValidity(token.utf8.span)
@@ -319,14 +319,10 @@ extension HTTPField {
         return Self.tokenValidity(token.utf8)
         #else
         return Self.tokenValidity(token.utf8.span)
-        #endif
-        #else
-        return Self.tokenValidity(token.utf8)
         #endif
     }
     
     private static func tokenValidity(_ token: Substring) -> TokenValidity {
-        #if compiler(>=6.4)
         #if canImport(Darwin)
         if #available(anyAppleOS 27.0, *) {
             return Self.tokenValidity(token.utf8.span)
@@ -335,12 +331,9 @@ extension HTTPField {
         #else
         return Self.tokenValidity(token.utf8.span)
         #endif
-        #else
-        return Self.tokenValidity(token.utf8)
-        #endif
     }
     
-    #if compiler(>=6.4)
+    
     @available(anyAppleOS 27.0, *)
     private static func tokenValidity(_ buffer: borrowing Span<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
@@ -364,6 +357,10 @@ extension HTTPField {
         }
         
         return validity
+    }
+    #else
+    private static func tokenValidity(_ token: some StringProtocol) -> TokenValidity {
+        Self.tokenValidity(token.utf8)
     }
     #endif
     
