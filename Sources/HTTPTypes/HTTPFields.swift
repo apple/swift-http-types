@@ -28,6 +28,10 @@ public struct HTTPFields: Sendable {
     /// Create an empty list of HTTP fields
     public init() {}
 
+    init(reservingCapacity capacity: Int) {
+        fields.reserveCapacity(capacity)
+    }
+
     /// The position of the first field at or after `start` whose canonical name is `name`, or
     /// `nil` if there is none.
     private func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {

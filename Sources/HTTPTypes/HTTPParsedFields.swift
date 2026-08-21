@@ -21,7 +21,7 @@ struct HTTPParsedFields {
     private var path: ISOLatin1String?
     private var extendedConnectProtocol: ISOLatin1String?
     private var status: ISOLatin1String?
-    private var fields: HTTPFields = .init()
+    private var fields: HTTPFields
 
     enum ParsingError: Error {
         case invalidName
@@ -43,6 +43,18 @@ struct HTTPParsedFields {
         case multipleContentLength
         case multipleContentDisposition
         case multipleLocation
+    }
+
+    init() {
+        self.fields = .init()
+    }
+
+    init(parsed: [HTTPFields.Element]) throws {
+        let nonPseudoCount = parsed.count { !$0.name.isPseudo }
+        self.fields = HTTPFields(reservingCapacity: nonPseudoCount)
+        for field in parsed {
+            try self.add(field: field)
+        }
     }
 
     mutating func add(field: HTTPField) throws {
@@ -200,10 +212,7 @@ extension HTTPRequest {
     /// - Parameter fields: The array of parsed `HTTPField` produced by HPACK or QPACK decoders
     ///                     used in modern HTTP versions.
     public init(parsed fields: [HTTPField]) throws {
-        var parsedFields = HTTPParsedFields()
-        for field in fields {
-            try parsedFields.add(field: field)
-        }
+        let parsedFields = try HTTPParsedFields(parsed: fields)
         self = try parsedFields.request
     }
 }
@@ -216,10 +225,7 @@ extension HTTPResponse {
     /// - Parameter fields: The array of parsed `HTTPField` produced by HPACK or QPACK decoders
     ///                     used in modern HTTP versions.
     public init(parsed fields: [HTTPField]) throws {
-        var parsedFields = HTTPParsedFields()
-        for field in fields {
-            try parsedFields.add(field: field)
-        }
+        let parsedFields = try HTTPParsedFields(parsed: fields)
         self = try parsedFields.response
     }
 }
