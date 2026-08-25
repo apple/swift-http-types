@@ -15,12 +15,26 @@
 #if !hasFeature(Embedded) || compiler(>=6.4)
 
 struct HTTPParsedFields {
-    private var method: ISOLatin1String?
-    private var scheme: ISOLatin1String?
-    private var authority: ISOLatin1String?
-    private var path: ISOLatin1String?
-    private var extendedConnectProtocol: ISOLatin1String?
-    private var status: ISOLatin1String?
+    @ValidatedField(.singular, error: .multiplePseudo)
+    private var method
+    @ValidatedField(.singular, error: .multiplePseudo)
+    private var scheme
+    @ValidatedField(.singular, error: .multiplePseudo)
+    private var authority
+    @ValidatedField(.singular, error: .multiplePseudo)
+    private var path
+    @ValidatedField(.singular, error: .multiplePseudo)
+    private var extendedConnectProtocol
+    @ValidatedField(.singular, error: .multiplePseudo)
+    private var status
+
+    @ValidatedField(.distinct, error: .multipleContentLength)
+    private var contentLength
+    @ValidatedField(.distinct, error: .multipleContentDisposition)
+    private var contentDisposition
+    @ValidatedField(.distinct, error: .multipleLocation)
+    private var location
+
     private var fields: HTTPFields
 
     enum ParsingError: Error {
@@ -62,54 +76,18 @@ struct HTTPParsedFields {
             if !self.fields.isEmpty {
                 throw ParsingError.pseudoNotFirst
             }
-            switch field.name {
-            case .method:
-                if self.method != nil {
-                    throw ParsingError.multiplePseudo
-                }
-                self.method = field.rawValue
-            case .scheme:
-                if self.scheme != nil {
-                    throw ParsingError.multiplePseudo
-                }
-                self.scheme = field.rawValue
-            case .authority:
-                if self.authority != nil {
-                    throw ParsingError.multiplePseudo
-                }
-                self.authority = field.rawValue
-            case .path:
-                if self.path != nil {
-                    throw ParsingError.multiplePseudo
-                }
-                self.path = field.rawValue
-            case .protocol:
-                if self.extendedConnectProtocol != nil {
-                    throw ParsingError.multiplePseudo
-                }
-                self.extendedConnectProtocol = field.rawValue
-            case .status:
-                if self.status != nil {
-                    throw ParsingError.multiplePseudo
-                }
-                self.status = field.rawValue
-            default:
+
+            guard let validatedFieldPath = self.validatedField(for: field.name) else {
                 throw ParsingError.invalidPseudoName
             }
-        } else {
-            self.fields.append(field)
-        }
-    }
 
-    private func validateFields() throws {
-        guard self.fields.fields(for: .contentLength).allValuesSame else {
-            throw ParsingError.multipleContentLength
-        }
-        guard self.fields.fields(for: .contentDisposition).allValuesSame else {
-            throw ParsingError.multipleContentDisposition
-        }
-        guard self.fields.fields(for: .location).allValuesSame else {
-            throw ParsingError.multipleLocation
+            try self[keyPath: validatedFieldPath].validateAndSetIfPossible(field.rawValue)
+        } else {
+            if let validatedFieldPath = self.validatedField(for: field.name) {
+                try self[keyPath: validatedFieldPath].validateAndSetIfPossible(field.rawValue)
+            }
+
+            self.fields.append(field)
         }
     }
 
@@ -124,7 +102,6 @@ struct HTTPParsedFields {
             if self.status != nil {
                 throw ParsingError.requestWithResponsePseudo
             }
-            try self.validateFields()
             var request = HTTPRequest(
                 method: requestMethod,
                 scheme: self.scheme,
@@ -155,7 +132,6 @@ struct HTTPParsedFields {
             if !HTTPResponse.Status.isValidStatus(statusString) {
                 throw ParsingError.invalidStatus
             }
-            try self.validateFields()
             return HTTPResponse(status: .init(code: Int(statusString)!), headerFields: self.fields)
         }
     }
@@ -167,8 +143,32 @@ struct HTTPParsedFields {
             {
                 throw ParsingError.trailerFieldsWithPseudo
             }
-            try self.validateFields()
             return self.fields
+        }
+    }
+
+    private func validatedField(for name: HTTPField.Name) -> WritableKeyPath<HTTPParsedFields, ValidatedField>? {
+        switch name {
+        case .method:
+            return \._method
+        case .scheme:
+            return \._scheme
+        case .authority:
+            return \._authority
+        case .path:
+            return \._path
+        case .protocol:
+            return \._extendedConnectProtocol
+        case .status:
+            return \._status
+        case .contentLength:
+            return \._contentLength
+        case .contentDisposition:
+            return \._contentDisposition
+        case .location:
+            return \._location
+        default:
+            return nil
         }
     }
 }
@@ -192,27 +192,6 @@ extension HTTPRequest {
             path: pathField
         )
         self.headerFields = headerFields
-    }
-}
-
-extension Sequence where Element: Equatable {
-    fileprivate var allElementsSame: Bool {
-        var iterator = makeIterator()
-        guard let first = iterator.next() else {
-            return true
-        }
-        while let next = iterator.next() {
-            if first != next {
-                return false
-            }
-        }
-        return true
-    }
-}
-
-extension Sequence where Element == HTTPField {
-    fileprivate var allValuesSame: Bool {
-        lazy.map { $0.value }.allElementsSame
     }
 }
 
@@ -252,6 +231,50 @@ extension HTTPFields {
     public init(parsedTrailerFields fields: [HTTPField]) throws {
         let parsedFields = try HTTPParsedFields(parsed: fields)
         self = try parsedFields.trailerFields
+    }
+}
+
+extension HTTPParsedFields {
+    @propertyWrapper
+    fileprivate struct ValidatedField {
+        enum Validation {
+            case singular, distinct
+        }
+
+        private let validation: Validation
+        private let error: HTTPParsedFields.ParsingError
+        private var currentValue: ISOLatin1String?
+
+        var wrappedValue: ISOLatin1String? {
+            get {
+                return self.currentValue
+            }
+        }
+
+        init(_ validation: Validation, error: HTTPParsedFields.ParsingError) {
+            self.validation = validation
+            self.error = error
+        }
+
+        mutating func validateAndSetIfPossible(_ value: ISOLatin1String) throws {
+            switch self.validation {
+            case .singular:
+                if self.currentValue != nil {
+                    throw self.error
+                }
+
+                self.currentValue = value
+            case .distinct:
+                guard let currentValue = self.currentValue else {
+                    self.currentValue = value
+                    return
+                }
+
+                if currentValue.string != value.string {
+                    throw self.error
+                }
+            }
+        }
     }
 }
 

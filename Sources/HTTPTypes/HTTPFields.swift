@@ -139,7 +139,7 @@ public struct HTTPFields: Sendable {
         }
     }
 
-    func fields(for name: HTTPField.Name) -> some Sequence<HTTPField> {
+    private func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
         HTTPFieldSequence(fields: self, name: name)
     }
 
