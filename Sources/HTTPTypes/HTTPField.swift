@@ -318,7 +318,7 @@ extension HTTPField {
         Self.tokenValidity(token).isValid
     }
 
-    #if compiler(>=6.3)
+    #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))
     private static func tokenValidity(_ token: String) -> TokenValidity {
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
