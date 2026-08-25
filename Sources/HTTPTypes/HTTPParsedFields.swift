@@ -50,8 +50,8 @@ struct HTTPParsedFields {
     }
 
     init(parsed: [HTTPFields.Element]) throws {
-        let nonPseudoCount = parsed.count { !$0.name.isPseudo }
-        self.fields = HTTPFields(reservingCapacity: nonPseudoCount)
+        self.fields = .init()
+        self.fields.reserveCapacity(parsed.count)
         for field in parsed {
             try self.add(field: field)
         }
