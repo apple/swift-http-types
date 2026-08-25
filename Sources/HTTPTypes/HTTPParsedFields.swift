@@ -102,13 +102,13 @@ struct HTTPParsedFields {
     }
 
     private func validateFields() throws {
-        guard self.fields[values: .contentLength].allElementsSame else {
+        guard self.fields.fields(for: .contentLength).allValuesSame else {
             throw ParsingError.multipleContentLength
         }
-        guard self.fields[values: .contentDisposition].allElementsSame else {
+        guard self.fields.fields(for: .contentDisposition).allValuesSame else {
             throw ParsingError.multipleContentDisposition
         }
-        guard self.fields[values: .location].allElementsSame else {
+        guard self.fields.fields(for: .location).allValuesSame else {
             throw ParsingError.multipleLocation
         }
     }
@@ -195,12 +195,24 @@ extension HTTPRequest {
     }
 }
 
-extension Array where Element: Equatable {
+extension Sequence where Element: Equatable {
     fileprivate var allElementsSame: Bool {
-        guard let first = self.first else {
+        var iterator = makeIterator()
+        guard let first = iterator.next() else {
             return true
         }
-        return dropFirst().allSatisfy { $0 == first }
+        while let next = iterator.next() {
+            if first != next {
+                return false
+            }
+        }
+        return true
+    }
+}
+
+extension Sequence where Element == HTTPField {
+    fileprivate var allValuesSame: Bool {
+        lazy.map { $0.value }.allElementsSame
     }
 }
 
@@ -238,10 +250,7 @@ extension HTTPFields {
     /// - Parameter fields: The array of parsed `HTTPField` produced by HPACK or QPACK decoders
     ///                     used in modern HTTP versions.
     public init(parsedTrailerFields fields: [HTTPField]) throws {
-        var parsedFields = HTTPParsedFields()
-        for field in fields {
-            try parsedFields.add(field: field)
-        }
+        let parsedFields = try HTTPParsedFields(parsed: fields)
         self = try parsedFields.trailerFields
     }
 }
