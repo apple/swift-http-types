@@ -287,9 +287,17 @@ extension HTTPField {
         }
     }
 
-    private static let digits = UInt8(ascii: "0")...UInt8(ascii: "9")
-    private static let lowerCaseLetters = UInt8(ascii: "a")...UInt8(ascii: "z")
-    private static let upperCaseLetters = UInt8(ascii: "A")...UInt8(ascii: "Z")
+    private static var digits: ClosedRange<UInt8> {
+        UInt8(ascii: "0")...UInt8(ascii: "9")
+    }
+
+    private static var lowerCaseLetters: ClosedRange<UInt8> {
+        UInt8(ascii: "a")...UInt8(ascii: "z")
+    }
+
+    private static var upperCaseLetters: ClosedRange<UInt8> {
+        UInt8(ascii: "A")...UInt8(ascii: "Z")
+    }
 
     static func validatedCanonicalName(_ name: String) -> String? {
         switch Self.tokenValidity(name) {
