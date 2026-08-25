@@ -336,7 +336,7 @@ extension HTTPField {
     @available(anyAppleOS 26.0, *)
     private static func tokenValidity(_ buffer: borrowing Span<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
-        guard !buffer.isEmpty else {
+        if buffer.isEmpty {
             return .invalid
         }
 
@@ -365,7 +365,7 @@ extension HTTPField {
 
     private static func tokenValidity(_ bytes: some Collection<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
-        guard !bytes.isEmpty else {
+        if bytes.isEmpty {
             return .invalid
         }
 
