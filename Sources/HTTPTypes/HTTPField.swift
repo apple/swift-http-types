@@ -310,10 +310,10 @@ extension HTTPField {
         Self.tokenValidity(token).isValid
     }
 
-    #if compiler(>=6.4)
+    #if compiler(>=6.3)
     private static func tokenValidity(_ token: String) -> TokenValidity {
         #if canImport(Darwin)
-        if #available(anyAppleOS 27.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             return Self.tokenValidity(token.utf8.span)
         }
         return Self.tokenValidity(token.utf8)
@@ -324,7 +324,7 @@ extension HTTPField {
 
     private static func tokenValidity(_ token: Substring) -> TokenValidity {
         #if canImport(Darwin)
-        if #available(anyAppleOS 27.0, *) {
+        if #available(anyAppleOS 26.0, *) {
             return Self.tokenValidity(token.utf8.span)
         }
         return Self.tokenValidity(token.utf8)
@@ -333,7 +333,7 @@ extension HTTPField {
         #endif
     }
 
-    @available(anyAppleOS 27.0, *)
+    @available(anyAppleOS 26.0, *)
     private static func tokenValidity(_ buffer: borrowing Span<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
         guard !buffer.isEmpty else {
@@ -341,8 +341,8 @@ extension HTTPField {
         }
 
         var validity: TokenValidity = .canonical
-        for byte in buffer {
-            switch byte {
+        for index in buffer.indices {
+            switch buffer[index] {
             // Symbols like "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
             case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
                 continue
