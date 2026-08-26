@@ -272,17 +272,126 @@ extension HTTPField: Codable {
 
 @available(HTTPTypes 1.0, *)
 extension HTTPField {
-    static func isValidToken(_ token: some StringProtocol) -> Bool {
-        !token.isEmpty
-            && token.utf8.allSatisfy {
-                switch $0 {
-                case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
-                    return true
-                case 0x30...0x39, 0x41...0x5A, 0x61...0x7A:  // DIGHT, ALPHA
-                    return true
-                default:
-                    return false
-                }
+    private enum TokenValidity {
+        case invalid
+        case valid
+        case canonical
+
+        var isValid: Bool {
+            switch self {
+            case .valid, .canonical:
+                return true
+            case .invalid:
+                return false
             }
+        }
+    }
+
+    private static var digits: ClosedRange<UInt8> {
+        UInt8(ascii: "0")...UInt8(ascii: "9")
+    }
+
+    private static var lowerCaseLetters: ClosedRange<UInt8> {
+        UInt8(ascii: "a")...UInt8(ascii: "z")
+    }
+
+    private static var upperCaseLetters: ClosedRange<UInt8> {
+        UInt8(ascii: "A")...UInt8(ascii: "Z")
+    }
+
+    static func validatedCanonicalName(_ name: String) -> String? {
+        switch Self.tokenValidity(name) {
+        case .canonical:
+            return name
+        case .valid:
+            return name.lowercased()
+        case .invalid:
+            return nil
+        }
+    }
+
+    static func isValidToken(_ token: String) -> Bool {
+        Self.tokenValidity(token).isValid
+    }
+
+    static func isValidToken(_ token: Substring) -> Bool {
+        Self.tokenValidity(token).isValid
+    }
+
+    #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))
+    private static func tokenValidity(_ token: String) -> TokenValidity {
+        #if canImport(Darwin)
+        if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+            return Self.tokenValidity(token.utf8.span)
+        }
+        return Self.tokenValidity(token.utf8)
+        #else
+        return Self.tokenValidity(token.utf8.span)
+        #endif
+    }
+
+    private static func tokenValidity(_ token: Substring) -> TokenValidity {
+        #if canImport(Darwin)
+        if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+            return Self.tokenValidity(token.utf8.span)
+        }
+        return Self.tokenValidity(token.utf8)
+        #else
+        return Self.tokenValidity(token.utf8.span)
+        #endif
+    }
+
+    @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
+    private static func tokenValidity(_ buffer: borrowing Span<UInt8>) -> TokenValidity {
+        // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
+        if buffer.isEmpty {
+            return .invalid
+        }
+
+        var validity: TokenValidity = .canonical
+        for index in buffer.indices {
+            switch buffer[index] {
+            // Symbols like "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+            case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
+                continue
+            case Self.digits, Self.lowerCaseLetters:
+                continue
+            case Self.upperCaseLetters:
+                validity = .valid
+            default:
+                return .invalid
+            }
+        }
+
+        return validity
+    }
+    #else
+    private static func tokenValidity(_ token: some StringProtocol) -> TokenValidity {
+        Self.tokenValidity(token.utf8)
+    }
+    #endif
+
+    private static func tokenValidity(_ bytes: some Collection<UInt8>) -> TokenValidity {
+        // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
+        if bytes.isEmpty {
+            return .invalid
+        }
+
+        var validity: TokenValidity = .canonical
+        for byte in bytes {
+            switch byte {
+            // Symbols like "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+            case 0x21, 0x23, 0x24, 0x25, 0x26, 0x27, 0x2A, 0x2B, 0x2D, 0x2E, 0x5E, 0x5F, 0x60, 0x7C, 0x7E:
+                continue
+            case Self.digits, Self.lowerCaseLetters:
+                continue
+            case Self.upperCaseLetters:
+                validity = .valid
+            default:
+                return .invalid
+            }
+        }
+
+        return validity
     }
 }
