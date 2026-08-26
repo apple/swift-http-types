@@ -15,25 +15,16 @@
 #if !hasFeature(Embedded) || compiler(>=6.4)
 
 struct HTTPParsedFields {
-    @ValidatedField(.singular, error: .multiplePseudo)
-    private var method
-    @ValidatedField(.singular, error: .multiplePseudo)
-    private var scheme
-    @ValidatedField(.singular, error: .multiplePseudo)
-    private var authority
-    @ValidatedField(.singular, error: .multiplePseudo)
-    private var path
-    @ValidatedField(.singular, error: .multiplePseudo)
-    private var extendedConnectProtocol
-    @ValidatedField(.singular, error: .multiplePseudo)
-    private var status
+    private var method: ISOLatin1String?
+    private var scheme: ISOLatin1String?
+    private var authority: ISOLatin1String?
+    private var path: ISOLatin1String?
+    private var extendedConnectProtocol: ISOLatin1String?
+    private var status: ISOLatin1String?
 
-    @ValidatedField(.distinct, error: .multipleContentLength)
-    private var contentLength
-    @ValidatedField(.distinct, error: .multipleContentDisposition)
-    private var contentDisposition
-    @ValidatedField(.distinct, error: .multipleLocation)
-    private var location
+    private var contentLength: ISOLatin1String?
+    private var contentDisposition: ISOLatin1String?
+    private var location: ISOLatin1String?
 
     private var fields: HTTPFields
 
@@ -76,17 +67,60 @@ struct HTTPParsedFields {
             if !self.fields.isEmpty {
                 throw ParsingError.pseudoNotFirst
             }
-
-            guard let validatedFieldPath = self.validatedField(for: field.name) else {
+            switch field.name {
+            case .method:
+                if self.method != nil {
+                    throw ParsingError.multiplePseudo
+                }
+                self.method = field.rawValue
+            case .scheme:
+                if self.scheme != nil {
+                    throw ParsingError.multiplePseudo
+                }
+                self.scheme = field.rawValue
+            case .authority:
+                if self.authority != nil {
+                    throw ParsingError.multiplePseudo
+                }
+                self.authority = field.rawValue
+            case .path:
+                if self.path != nil {
+                    throw ParsingError.multiplePseudo
+                }
+                self.path = field.rawValue
+            case .protocol:
+                if self.extendedConnectProtocol != nil {
+                    throw ParsingError.multiplePseudo
+                }
+                self.extendedConnectProtocol = field.rawValue
+            case .status:
+                if self.status != nil {
+                    throw ParsingError.multiplePseudo
+                }
+                self.status = field.rawValue
+            default:
                 throw ParsingError.invalidPseudoName
             }
-
-            try self[keyPath: validatedFieldPath].validateAndSetIfPossible(field.rawValue)
         } else {
-            if let validatedFieldPath = self.validatedField(for: field.name) {
-                try self[keyPath: validatedFieldPath].validateAndSetIfPossible(field.rawValue)
+            switch field.name {
+            case .contentLength:
+                if let contentLength = self.contentLength, contentLength != field.rawValue {
+                    throw ParsingError.multipleContentLength
+                }
+                self.contentLength = field.rawValue
+            case .contentDisposition:
+                if let contentDisposition = self.contentDisposition, contentDisposition != field.rawValue {
+                    throw ParsingError.multipleContentDisposition
+                }
+                self.contentDisposition = field.rawValue
+            case .location:
+                if let location = self.location, location != field.rawValue {
+                    throw ParsingError.multipleLocation
+                }
+                self.location = field.rawValue
+            default:
+                break
             }
-
             self.fields.append(field)
         }
     }
@@ -144,31 +178,6 @@ struct HTTPParsedFields {
                 throw ParsingError.trailerFieldsWithPseudo
             }
             return self.fields
-        }
-    }
-
-    private func validatedField(for name: HTTPField.Name) -> WritableKeyPath<HTTPParsedFields, ValidatedField>? {
-        switch name {
-        case .method:
-            return \._method
-        case .scheme:
-            return \._scheme
-        case .authority:
-            return \._authority
-        case .path:
-            return \._path
-        case .protocol:
-            return \._extendedConnectProtocol
-        case .status:
-            return \._status
-        case .contentLength:
-            return \._contentLength
-        case .contentDisposition:
-            return \._contentDisposition
-        case .location:
-            return \._location
-        default:
-            return nil
         }
     }
 }
@@ -231,50 +240,6 @@ extension HTTPFields {
     public init(parsedTrailerFields fields: [HTTPField]) throws {
         let parsedFields = try HTTPParsedFields(parsed: fields)
         self = try parsedFields.trailerFields
-    }
-}
-
-extension HTTPParsedFields {
-    @propertyWrapper
-    fileprivate struct ValidatedField {
-        enum Validation {
-            case singular, distinct
-        }
-
-        private let validation: Validation
-        private let error: HTTPParsedFields.ParsingError
-        private var currentValue: ISOLatin1String?
-
-        var wrappedValue: ISOLatin1String? {
-            get {
-                return self.currentValue
-            }
-        }
-
-        init(_ validation: Validation, error: HTTPParsedFields.ParsingError) {
-            self.validation = validation
-            self.error = error
-        }
-
-        mutating func validateAndSetIfPossible(_ value: ISOLatin1String) throws {
-            switch self.validation {
-            case .singular:
-                if self.currentValue != nil {
-                    throw self.error
-                }
-
-                self.currentValue = value
-            case .distinct:
-                guard let currentValue = self.currentValue else {
-                    self.currentValue = value
-                    return
-                }
-
-                if currentValue.string != value.string {
-                    throw self.error
-                }
-            }
-        }
     }
 }
 
