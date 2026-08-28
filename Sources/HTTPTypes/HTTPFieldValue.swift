@@ -166,38 +166,52 @@ extension HTTPField.Value {
 }
 
 extension HTTPField.Value {
-    private static func legalize(from bytes: some Sequence<UInt8>) -> Storage {
-        let legalizedBytes = bytes
-            .lazy
-            .map { byte -> UInt8 in
+    private static func legalize(from bytes: some Collection<UInt8>) -> Storage {
+        withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
+            var index = 0
+            var lastValidIndex = 0
+            for byte in bytes {
                 switch byte {
-                case 0x09, 0x20:
-                    return byte
                 case 0x21...0x7E, 0x80...0xFF:
-                    return byte
+                    buffer[index] = byte
+                    lastValidIndex = index
+                    index += 1
+                case 0x09, 0x20:
+                    if index > 0 {
+                        buffer[index] = byte
+                        index += 1
+                    }
                 default:
-                    return 0x20
+                    if index > 0 {
+                        buffer[index] = 0x20
+                        index += 1
+                    }
                 }
             }
-            .reversed()
-            .drop { $0 == 0x09 || $0 == 0x20 }
-            .reversed()
-            .drop { $0 == 0x09 || $0 == 0x20 }
 
-        return .init(from: legalizedBytes)
+            if index == 0 {
+                return .string("")
+            }
+
+            return .init(from: buffer[...lastValidIndex])
+        }
     }
 
-    private static func cleanUpAsLenient(from bytes: some Sequence<UInt8>) -> Storage {
-        let lenientBytes = bytes.lazy.map { byte -> UInt8 in
-            switch byte {
-            case 0x00, 0x0A, 0x0D:
-                return 0x20
-            default:
-                return byte
+    private static func cleanUpAsLenient(from bytes: some Collection<UInt8>) -> Storage {
+        withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
+            var index = 0
+            for byte in bytes {
+                switch byte {
+                case 0x00, 0x0A, 0x0D:
+                    buffer[index] = 0x20
+                default:
+                    buffer[index] = byte
+                }
+                index += 1
             }
-        }
 
-        return .init(from: lenientBytes)
+            return .init(from: buffer)
+        }
     }
 }
 
