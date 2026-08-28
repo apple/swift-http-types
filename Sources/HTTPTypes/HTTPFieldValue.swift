@@ -61,11 +61,11 @@ extension HTTPField {
 
 extension HTTPField.Value {
 
-    #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))
     init(legalize value: String) {
         if Self.isValid(value) {
             self._storage = .string(value)
         } else {
+            #if compiler(>=6.2) && !(os(watchOS) && _pointerBitWidth(_32))
             #if canImport(Darwin)
             if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
                 self._storage = Self.legalize(from: value.utf8.span)
@@ -75,17 +75,11 @@ extension HTTPField.Value {
             #else
             self._storage = Self.legalize(from: value.utf8.span)
             #endif
-        }
-    }
-    #else
-    init(legalize value: String) {
-        if Self.isValid(value) {
-            self._storage = .string(value)
-        } else {
+            #else
             self._storage = Self.legalize(from: value.utf8)
+            #endif
         }
     }
-    #endif
 
     init(legalize bytes: some Collection<UInt8>) {
         if Self.isValid(bytes) {
@@ -106,7 +100,7 @@ extension HTTPField.Value {
 
 extension HTTPField.Value {
 
-    #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))
+    #if compiler(>=6.2) && !(os(watchOS) && _pointerBitWidth(_32))
     static func isValid(_ string: String) -> Bool {
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
@@ -160,10 +154,21 @@ extension HTTPField.Value: Codable {
 
 extension HTTPField.Value {
     fileprivate static func isLegal(_ bytes: some Sequence<UInt8>) -> Bool {
+        #if compiler(>=6.2)
+        #if canImport(Darwin)
+        if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+            let optimized = bytes.withContiguousStorageIfAvailable { isLegal($0.span) }
+            if let optimized {
+                return optimized
+            }
+        }
+        #else
         let optimized = bytes.withContiguousStorageIfAvailable { isLegal($0.span) }
         if let optimized {
             return optimized
         }
+        #endif
+        #endif
 
         var iterator = bytes.makeIterator()
         guard var byte = iterator.next() else {
@@ -198,7 +203,9 @@ extension HTTPField.Value {
         return true
     }
 
-    fileprivate static func isLegal(_ bytes: Span<UInt8>) -> Bool {
+    #if compiler(>=6.2)
+    @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
+    fileprivate static func isLegal(_ bytes: borrowing Span<UInt8>) -> Bool {
         for index in bytes.indices {
             switch bytes[index] {
             case 0x09, 0x20:
@@ -216,16 +223,30 @@ extension HTTPField.Value {
 
         return true
     }
+    #endif
 
     fileprivate static func isLenient(_ bytes: some Sequence<UInt8>) -> Bool {
+        #if compiler(>=6.2)
+        #if canImport(Darwin)
+        if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+            let optimized = bytes.withContiguousStorageIfAvailable { isLenient($0.span) }
+            if let optimized {
+                return optimized
+            }
+        }
+        #else
         let optimized = bytes.withContiguousStorageIfAvailable { isLenient($0.span) }
         if let optimized {
             return optimized
         }
+        #endif
+        #endif
 
         return bytes.allSatisfy { $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }
     }
 
+    #if compiler(>=6.2)
+    @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
     fileprivate static func isLenient(_ bytes: Span<UInt8>) -> Bool {
         for index in bytes.indices {
             switch bytes[index] {
@@ -237,14 +258,26 @@ extension HTTPField.Value {
         }
         return true
     }
+    #endif
 }
 
 extension HTTPField.Value {
     private static func legalize(from bytes: some Collection<UInt8>) -> Storage {
+        #if compiler(>=6.2)
+        #if canImport(Darwin)
+        if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+            let optimized = bytes.withContiguousStorageIfAvailable { legalize(from: $0.span) }
+            if let optimized {
+                return optimized
+            }
+        }
+        #else
         let optimized = bytes.withContiguousStorageIfAvailable { legalize(from: $0.span) }
         if let optimized {
             return optimized
         }
+        #endif
+        #endif
 
         return withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
             var index = 0
@@ -276,6 +309,8 @@ extension HTTPField.Value {
         }
     }
 
+    #if compiler(>=6.2)
+    @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
     private static func legalize(from bytes: Span<UInt8>) -> Storage {
         withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
             var index = 0
@@ -307,28 +342,24 @@ extension HTTPField.Value {
             return .init(from: buffer[...lastValidIndex])
         }
     }
-
-    private static func cleanUpAsLenient(from bytes: Span<UInt8>) -> Storage {
-        withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
-            for index in bytes.indices {
-                let byte = bytes[index]
-                switch byte {
-                case 0x00, 0x0A, 0x0D:
-                    buffer[index] = 0x20
-                default:
-                    buffer[index] = byte
-                }
-            }
-
-            return .init(from: buffer)
-        }
-    }
+    #endif
 
     private static func cleanUpAsLenient(from bytes: some Collection<UInt8>) -> Storage {
-        let optimized = bytes.withContiguousStorageIfAvailable { cleanUpAsLenient(from: $0.span) }
+        #if compiler(>=6.2)
+        #if canImport(Darwin)
+        if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+            let optimized = bytes.withContiguousStorageIfAvailable { legalize(from: $0.span) }
+            if let optimized {
+                return optimized
+            }
+        }
+        #else
+        let optimized = bytes.withContiguousStorageIfAvailable { legalize(from: $0.span) }
         if let optimized {
             return optimized
         }
+        #endif
+        #endif
 
         return withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
             var index = 0
@@ -345,6 +376,25 @@ extension HTTPField.Value {
             return .init(from: buffer)
         }
     }
+
+    #if compiler(>=6.2)
+    @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
+    private static func cleanUpAsLenient(from bytes: Span<UInt8>) -> Storage {
+        withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
+            for index in bytes.indices {
+                let byte = bytes[index]
+                switch byte {
+                case 0x00, 0x0A, 0x0D:
+                    buffer[index] = 0x20
+                default:
+                    buffer[index] = byte
+                }
+            }
+
+            return .init(from: buffer)
+        }
+    }
+    #endif
 }
 
 extension HTTPField.Value.Storage {
