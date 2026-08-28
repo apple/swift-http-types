@@ -107,8 +107,13 @@ let sampleURL = URL(string: "https://www.example.com/api/v1/items?page=2&limit=5
 
 let sampleRequest = HTTPRequest(method: .get, url: sampleURL, headerFields: sampleRequestFields)
 
+let asciiFieldValue = "attachment; filename=\"quarterly-report-2026.pdf\""
 /// A field value that is not representable as ASCII, exercising the ISO-Latin-1 slow paths.
 let latin1FieldValue = "attachment; filename=\"Übergrößenträger-Prüfbericht-2026.pdf\""
+
+let invalidAsciiFieldValue = "\0 \t\(asciiFieldValue)\n\(asciiFieldValue)\t\r"
+
+let invalidLatin1FieldValue = "\0 \t\(latin1FieldValue)\n\(latin1FieldValue)\t\r"
 
 extension HTTPField.Name {
     /// `isPseudo` is internal to HTTPTypes, so recompute it here.
@@ -144,11 +149,71 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: ISO-Latin-1 values
+    // MARK: HTTPField.Value handling
+
+    Benchmark("HTTPField-asciiValueRoundTrip", configuration: makeDefaultConfiguration()) { benchmark in
+        for _ in benchmark.scaledIterations {
+            let field = HTTPField(name: .contentDisposition, value: asciiFieldValue)
+            blackHole(field.value)
+            field.withUnsafeBytesOfValue { blackHole($0.count) }
+        }
+    }
+
+    Benchmark("HTTPField-asciiBytesValueRoundTrip", configuration: makeDefaultConfiguration()) { benchmark in
+        for _ in benchmark.scaledIterations {
+            let field = HTTPField(name: .contentDisposition, value: asciiFieldValue.utf8)
+            blackHole(field.value)
+            field.withUnsafeBytesOfValue { blackHole($0.count) }
+        }
+    }
 
     Benchmark("HTTPField-nonASCIIValueRoundTrip", configuration: makeDefaultConfiguration()) { benchmark in
         for _ in benchmark.scaledIterations {
             let field = HTTPField(name: .contentDisposition, value: latin1FieldValue)
+            blackHole(field.value)
+            field.withUnsafeBytesOfValue { blackHole($0.count) }
+        }
+    }
+
+    Benchmark(
+        "HTTPField-invalidAsciiValueRoundTrip",
+        configuration: makeDefaultConfiguration()
+    ) { benchmark in
+        for _ in benchmark.scaledIterations {
+            let field = HTTPField(name: .contentDisposition, value: invalidAsciiFieldValue)
+            blackHole(field.value)
+            field.withUnsafeBytesOfValue { blackHole($0.count) }
+        }
+    }
+
+    Benchmark(
+        "HTTPField-invalidAsciiBytesValueRoundTrip",
+        configuration: makeDefaultConfiguration()
+    ) { benchmark in
+        for _ in benchmark.scaledIterations {
+            let field = HTTPField(name: .contentDisposition, value: invalidAsciiFieldValue.utf8)
+            blackHole(field.value)
+            field.withUnsafeBytesOfValue { blackHole($0.count) }
+        }
+    }
+
+    Benchmark(
+        "HTTPField-invalidAsciiBytesValueRoundTripAsLenientValue",
+        configuration: makeDefaultConfiguration()
+    ) { benchmark in
+        for _ in benchmark.scaledIterations {
+            let field = HTTPField(name: .contentDisposition, lenientValue: invalidAsciiFieldValue.utf8)
+            blackHole(field.value)
+            field.withUnsafeBytesOfValue { blackHole($0.count) }
+        }
+    }
+
+    Benchmark(
+        "HTTPField-invalidNonASCIIValueRoundTrip",
+        configuration: makeDefaultConfiguration()
+    ) { benchmark in
+        for _ in benchmark.scaledIterations {
+            let field = HTTPField(name: .contentDisposition, value: invalidLatin1FieldValue.utf8)
             blackHole(field.value)
             field.withUnsafeBytesOfValue { blackHole($0.count) }
         }
