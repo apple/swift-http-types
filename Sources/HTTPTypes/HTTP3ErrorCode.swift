@@ -23,17 +23,18 @@ public struct HTTP3ErrorCode: Sendable, Hashable, RawRepresentable {
     /// larger values.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9000.html#section-16
-    public static var maxRawValue: UInt64 { 0x3fff_ffff_ffff_ffff }
+    private static let maxRawValue: UInt64 = 0x3fff_ffff_ffff_ffff
 
-    /// The error code value, which is never greater than ``maxRawValue``.
+    /// The error code value, which is never greater than 2^62 - 1.
     public let rawValue: UInt64
 
     /// Create an HTTP/3 error code from its numeric value.
     ///
     /// Values that are not registered are allowed, but the value must be representable as a QUIC
     /// variable-length integer.
-    /// - Parameter rawValue: The error code value. It must not be greater than ``maxRawValue``.
-    @inlinable
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9000.html#section-16
+    /// - Parameter rawValue: The error code value. It must not be greater than 2^62 - 1.
     public init(rawValue: UInt64) {
         precondition(rawValue <= Self.maxRawValue, "Invalid HTTP/3 error code")
         self.rawValue = rawValue

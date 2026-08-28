@@ -437,7 +437,8 @@ extension HTTPField.Name {
         #expect(HTTP3ErrorCode(rawValue: 0x0111).description == "0x111")
 
         // An HTTP/3 code is a QUIC variable-length integer, so it tops out below UInt64.max.
-        #expect(HTTP3ErrorCode.maxRawValue == (1 << 62) - 1)
-        #expect(HTTP3ErrorCode(rawValue: HTTP3ErrorCode.maxRawValue).description == "0x3fffffffffffffff")
+        let maxRawValue: UInt64 = (1 << 62) - 1
+        #expect(HTTP3ErrorCode(rawValue: maxRawValue).rawValue == maxRawValue)
+        #expect(HTTP3ErrorCode(rawValue: maxRawValue).description == "0x3fffffffffffffff")
     }
 }
