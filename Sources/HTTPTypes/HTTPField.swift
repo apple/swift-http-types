@@ -57,7 +57,7 @@ public struct HTTPField: Sendable, Hashable {
     ///            Invalid bytes are converted into space characters.
     public init(name: Name, value: String) {
         self.name = name
-        self.rawValue = Self.legalizeValue(ISOLatin1String(value))
+        self.rawValue = Self.legalizeValue(HTTPField.Value(value))
     }
 
     /// Create an HTTP field from a name and a value.
@@ -66,7 +66,7 @@ public struct HTTPField: Sendable, Hashable {
     ///   - value: The HTTP field value. Invalid bytes are converted into space characters.
     public init(name: Name, value: some Collection<UInt8>) {
         self.name = name
-        self.rawValue = Self.legalizeValue(ISOLatin1String(value))
+        self.rawValue = Self.legalizeValue(HTTPField.Value(value))
     }
 
     /// Create an HTTP field from a name and a value. Leniently legalize the value.
@@ -77,10 +77,10 @@ public struct HTTPField: Sendable, Hashable {
     @available(HTTPTypes 1.1, *)
     public init(name: Name, lenientValue: some Collection<UInt8>) {
         self.name = name
-        self.rawValue = Self.lenientLegalizeValue(ISOLatin1String(lenientValue))
+        self.rawValue = Self.lenientLegalizeValue(HTTPField.Value(lenientValue))
     }
 
-    init(name: Name, uncheckedValue: ISOLatin1String) {
+    init(name: Name, uncheckedValue: HTTPField.Value) {
         self.name = name
         self.rawValue = uncheckedValue
     }
@@ -101,7 +101,7 @@ public struct HTTPField: Sendable, Hashable {
             self.rawValue.string
         }
         set {
-            self.rawValue = Self.legalizeValue(ISOLatin1String(newValue))
+            self.rawValue = Self.legalizeValue(HTTPField.Value(newValue))
         }
     }
 
@@ -123,7 +123,7 @@ public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
     public var indexingStrategy: DynamicTableIndexingStrategy = .automatic
 
-    var rawValue: ISOLatin1String
+    var rawValue: HTTPField.Value
 
     private static func _isValidValue(_ bytes: some Sequence<UInt8>) -> Bool {
         var iterator = bytes.makeIterator()
@@ -157,7 +157,7 @@ public struct HTTPField: Sendable, Hashable {
         return true
     }
 
-    static func legalizeValue(_ value: ISOLatin1String) -> ISOLatin1String {
+    static func legalizeValue(_ value: HTTPField.Value) -> HTTPField.Value {
         if self._isValidValue(value._storage.utf8) {
             return value
         } else {
@@ -174,11 +174,11 @@ public struct HTTPField: Sendable, Hashable {
             let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop {
                 $0 == 0x09 || $0 == 0x20
             }
-            return ISOLatin1String(unchecked: String(decoding: trimmed, as: UTF8.self))
+            return HTTPField.Value(unchecked: String(decoding: trimmed, as: UTF8.self))
         }
     }
 
-    static func lenientLegalizeValue(_ value: ISOLatin1String) -> ISOLatin1String {
+    static func lenientLegalizeValue(_ value: HTTPField.Value) -> HTTPField.Value {
         if value._storage.utf8.allSatisfy({ $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }) {
             return value
         } else {
@@ -190,7 +190,7 @@ public struct HTTPField: Sendable, Hashable {
                     return byte
                 }
             }
-            return ISOLatin1String(unchecked: String(decoding: bytes, as: UTF8.self))
+            return HTTPField.Value(unchecked: String(decoding: bytes, as: UTF8.self))
         }
     }
 
@@ -259,7 +259,7 @@ extension HTTPField: Codable {
                 debugDescription: "HTTP field value \"\(value)\" contains invalid characters"
             )
         }
-        self.init(name: name, uncheckedValue: ISOLatin1String(unchecked: value))
+        self.init(name: name, uncheckedValue: HTTPField.Value(unchecked: value))
         if let indexingStrategyValue = try container.decodeIfPresent(UInt8.self, forKey: .indexingStrategy),
             let indexingStrategy = DynamicTableIndexingStrategy(rawValue: indexingStrategyValue)
         {

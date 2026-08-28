@@ -166,7 +166,7 @@ public struct HTTPResponse: Sendable, Hashable {
             return Status(uncheckedCode: code, reasonPhrase: self.pseudoHeaderFields.reasonPhrase)
         }
         set {
-            self.pseudoHeaderFields.status.rawValue = ISOLatin1String(unchecked: newValue.fieldValue)
+            self.pseudoHeaderFields.status.rawValue = HTTPField.Value(unchecked: newValue.fieldValue)
             self.pseudoHeaderFields.reasonPhrase = newValue.reasonPhrase
         }
     }
@@ -236,7 +236,7 @@ public struct HTTPResponse: Sendable, Hashable {
 
         init(status: Status) {
             self._storage = .init(
-                status: HTTPField(name: .status, uncheckedValue: ISOLatin1String(unchecked: status.fieldValue)),
+                status: HTTPField(name: .status, uncheckedValue: HTTPField.Value(unchecked: status.fieldValue)),
                 reasonPhrase: status.reasonPhrase
             )
         }

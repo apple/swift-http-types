@@ -15,16 +15,16 @@
 #if !hasFeature(Embedded) || compiler(>=6.4)
 
 struct HTTPParsedFields {
-    private var method: ISOLatin1String?
-    private var scheme: ISOLatin1String?
-    private var authority: ISOLatin1String?
-    private var path: ISOLatin1String?
-    private var extendedConnectProtocol: ISOLatin1String?
-    private var status: ISOLatin1String?
+    private var method: HTTPField.Value?
+    private var scheme: HTTPField.Value?
+    private var authority: HTTPField.Value?
+    private var path: HTTPField.Value?
+    private var extendedConnectProtocol: HTTPField.Value?
+    private var status: HTTPField.Value?
 
-    private var contentLength: ISOLatin1String?
-    private var contentDisposition: ISOLatin1String?
-    private var location: ISOLatin1String?
+    private var contentLength: HTTPField.Value?
+    private var contentDisposition: HTTPField.Value?
+    private var location: HTTPField.Value?
 
     private var fields: HTTPFields
 
@@ -185,12 +185,12 @@ struct HTTPParsedFields {
 extension HTTPRequest {
     fileprivate init(
         method: Method,
-        scheme: ISOLatin1String?,
-        authority: ISOLatin1String?,
-        path: ISOLatin1String?,
+        scheme: HTTPField.Value?,
+        authority: HTTPField.Value?,
+        path: HTTPField.Value?,
         headerFields: HTTPFields
     ) {
-        let methodField = HTTPField(name: .method, uncheckedValue: ISOLatin1String(unchecked: method.rawValue))
+        let methodField = HTTPField(name: .method, uncheckedValue: HTTPField.Value(unchecked: method.rawValue))
         let schemeField = scheme.map { HTTPField(name: .scheme, uncheckedValue: $0) }
         let authorityField = authority.map { HTTPField(name: .authority, uncheckedValue: $0) }
         let pathField = path.map { HTTPField(name: .path, uncheckedValue: $0) }
