@@ -173,6 +173,7 @@ extension HTTP3ErrorCode {
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
     @inlinable
+    @inlinable
     public static var connectError: Self { .init(uncheckedRawValue: 0x010f) }
 
     /// H3_VERSION_FALLBACK (0x0110)
@@ -180,6 +181,7 @@ extension HTTP3ErrorCode {
     /// Retry over HTTP/1.1.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     @inlinable
     public static var versionFallback: Self { .init(uncheckedRawValue: 0x0110) }
 
@@ -189,6 +191,7 @@ extension HTTP3ErrorCode {
     ///
     /// https://www.rfc-editor.org/rfc/rfc9204.html#section-6
     @inlinable
+    @inlinable
     public static var qpackDecompressionFailed: Self { .init(uncheckedRawValue: 0x0200) }
 
     /// QPACK_ENCODER_STREAM_ERROR (0x0201)
@@ -197,6 +200,7 @@ extension HTTP3ErrorCode {
     ///
     /// https://www.rfc-editor.org/rfc/rfc9204.html#section-6
     @inlinable
+    @inlinable
     public static var qpackEncoderStreamError: Self { .init(uncheckedRawValue: 0x0201) }
 
     /// QPACK_DECODER_STREAM_ERROR (0x0202)
@@ -204,6 +208,7 @@ extension HTTP3ErrorCode {
     /// Error on the decoder stream.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9204.html#section-6
+    @inlinable
     @inlinable
     public static var qpackDecoderStreamError: Self { .init(uncheckedRawValue: 0x0202) }
 }
