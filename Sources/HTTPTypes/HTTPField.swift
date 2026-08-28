@@ -57,7 +57,7 @@ public struct HTTPField: Sendable, Hashable {
     ///            Invalid bytes are converted into space characters.
     public init(name: Name, value: String) {
         self.name = name
-        self.rawValue = Self.legalizeValue(HTTPField.Value(value))
+        self.rawValue = HTTPField.Value(legalize: value)
     }
 
     /// Create an HTTP field from a name and a value.
@@ -66,7 +66,7 @@ public struct HTTPField: Sendable, Hashable {
     ///   - value: The HTTP field value. Invalid bytes are converted into space characters.
     public init(name: Name, value: some Collection<UInt8>) {
         self.name = name
-        self.rawValue = Self.legalizeValue(HTTPField.Value(value))
+        self.rawValue = HTTPField.Value(legalize: value)
     }
 
     /// Create an HTTP field from a name and a value. Leniently legalize the value.
@@ -77,7 +77,7 @@ public struct HTTPField: Sendable, Hashable {
     @available(HTTPTypes 1.1, *)
     public init(name: Name, lenientValue: some Collection<UInt8>) {
         self.name = name
-        self.rawValue = Self.lenientLegalizeValue(HTTPField.Value(lenientValue))
+        self.rawValue = HTTPField.Value(lenient: lenientValue)
     }
 
     init(name: Name, uncheckedValue: HTTPField.Value) {
@@ -101,7 +101,7 @@ public struct HTTPField: Sendable, Hashable {
             self.rawValue.string
         }
         set {
-            self.rawValue = Self.legalizeValue(HTTPField.Value(newValue))
+            self.rawValue = HTTPField.Value(legalize: newValue)
         }
     }
 
@@ -125,75 +125,6 @@ public struct HTTPField: Sendable, Hashable {
 
     var rawValue: HTTPField.Value
 
-    private static func _isValidValue(_ bytes: some Sequence<UInt8>) -> Bool {
-        var iterator = bytes.makeIterator()
-        guard var byte = iterator.next() else {
-            // Empty string is allowed.
-            return true
-        }
-        if byte == 0x09 || byte == 0x20 {
-            // First character cannot be a space or a tab.
-            return false
-        }
-        while true {
-            switch byte {
-            case 0x09, 0x20:
-                break
-            case 0x21...0x7E, 0x80...0xFF:
-                break
-            default:
-                return false
-            }
-            if let next = iterator.next() {
-                byte = next
-            } else {
-                break
-            }
-        }
-        if byte == 0x09 || byte == 0x20 {
-            // Last character cannot be a space or a tab.
-            return false
-        }
-        return true
-    }
-
-    static func legalizeValue(_ value: HTTPField.Value) -> HTTPField.Value {
-        if self._isValidValue(value._storage.utf8) {
-            return value
-        } else {
-            let bytes = value._storage.utf8.lazy.map { byte -> UInt8 in
-                switch byte {
-                case 0x09, 0x20:
-                    return byte
-                case 0x21...0x7E, 0x80...0xFF:
-                    return byte
-                default:
-                    return 0x20
-                }
-            }
-            let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop {
-                $0 == 0x09 || $0 == 0x20
-            }
-            return HTTPField.Value(unchecked: String(decoding: trimmed, as: UTF8.self))
-        }
-    }
-
-    static func lenientLegalizeValue(_ value: HTTPField.Value) -> HTTPField.Value {
-        if value._storage.utf8.allSatisfy({ $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }) {
-            return value
-        } else {
-            let bytes = value._storage.utf8.lazy.map { byte -> UInt8 in
-                switch byte {
-                case 0x00, 0x0A, 0x0D:
-                    return 0x20
-                default:
-                    return byte
-                }
-            }
-            return HTTPField.Value(unchecked: String(decoding: bytes, as: UTF8.self))
-        }
-    }
-
     /// Whether the string is valid for an HTTP field value based on RFC 9110.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html#name-field-values
@@ -201,7 +132,7 @@ public struct HTTPField: Sendable, Hashable {
     /// - Parameter value: The string to validate.
     /// - Returns: Whether the string is valid.
     public static func isValidValue(_ value: String) -> Bool {
-        self._isValidValue(value.utf8)
+        Self.Value.isValid(value)
     }
 
     /// Whether the byte collection is valid for an HTTP field value based on RFC 9110.
@@ -211,7 +142,7 @@ public struct HTTPField: Sendable, Hashable {
     /// - Parameter value: The byte collection to validate.
     /// - Returns: Whether the byte collection is valid.
     public static func isValidValue(_ value: some Collection<UInt8>) -> Bool {
-        self._isValidValue(value)
+        Self.Value.isValid(value)
     }
 }
 
