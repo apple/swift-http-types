@@ -13,17 +13,13 @@
 //===----------------------------------------------------------------------===//
 
 extension HTTPField {
-    struct Value: Sendable, Hashable {
-        fileprivate enum Storage: Equatable, Hashable {
+    struct Value: Sendable {
+        fileprivate enum Storage: Equatable {
             case string(String)
             case bytes([UInt8])
         }
 
         private let _storage: Storage
-
-        fileprivate init(_ storage: Storage) {
-            self._storage = storage
-        }
 
         init(unchecked: String) {
             self._storage = .string(unchecked)
@@ -57,6 +53,33 @@ extension HTTPField {
             }
         }
     }
+}
+
+extension HTTPField.Value: Hashable {
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        switch (lhs._storage, rhs._storage) {
+        case (.string(let lhs), .string(let rhs)):
+            return lhs == rhs
+        case (.bytes(let lhs), .bytes(let rhs)):
+            return lhs == rhs
+        default:
+            return lhs.withUnsafeBytes { lhsBytes in
+                return rhs.withUnsafeBytes { rhsBytes in
+                    lhsBytes.elementsEqual(rhsBytes)
+                }
+            }
+        }
+    }
+
+    func hash(into hasher: inout Hasher) {
+        self.withUnsafeBytes { buffer in
+            for byte in buffer {
+                hasher.combine(byte)
+            }
+        }
+    }
+
 }
 
 extension HTTPField.Value {

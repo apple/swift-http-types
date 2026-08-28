@@ -150,4 +150,40 @@ extension HTTPField.Name {
             #expect(buffer[3] == 0x20)
         }
     }
+
+    @Test func equalityOfString() {
+        let lhs = HTTPField(name: .foo, value: "bar")
+        let rhs = HTTPField(name: .foo, value: " bar ")
+
+        #expect(lhs == rhs)
+    }
+
+    @Test func inequalityOfStrings() {
+        let lhs = HTTPField(name: .foo, value: "bar")
+        let rhs = HTTPField(name: .foo, value: "baz")
+
+        #expect(lhs != rhs)
+    }
+
+    @Test func equalityOfBytes() {
+        let lhs = HTTPField(name: .foo, value: [0x00, 0x62, 0x61, 0x00, 0x72, 0xC0, 0x00])
+        let rhs = HTTPField(name: .foo, value: [0x00, 0x00, 0x62, 0x61, 0x00, 0x72, 0xC0, 0x00])
+
+        #expect(lhs == rhs)
+    }
+
+    @Test func inequalityOfBytes() {
+        let lhs = HTTPField(name: .foo, value: [0x00, 0x62, 0x61, 0x00, 0x72, 0xC0, 0x00])
+        let rhs = HTTPField(name: .foo, value: [0x00, 0x62, 0x61, 0x00, 0x7A, 0xC0, 0x00])
+
+        #expect(lhs != rhs)
+    }
+
+    @Test func inequalityOfStringAndBytes() {
+        let lhs = HTTPField(name: .foo, value: "bar")
+        // picked 0xC0 since it's guaranteed to not be utf8
+        let rhs = HTTPField(name: .foo, value: [0xC0, 0x62, 0x61, 0x00, 0x72, 0xC0])
+
+        #expect(lhs != rhs)
+    }
 }
