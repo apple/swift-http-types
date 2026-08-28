@@ -131,6 +131,8 @@ extension HTTPField.Value {
     }
 }
 
+#if !hasFeature(Embedded)
+
 extension HTTPField.Value: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
@@ -151,6 +153,8 @@ extension HTTPField.Value: Codable {
         self.init(fromISOLatin1: isoLatin1)
     }
 }
+
+#endif
 
 extension HTTPField.Value {
     fileprivate static func isLegal(_ bytes: some Sequence<UInt8>) -> Bool {
