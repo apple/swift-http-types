@@ -325,16 +325,12 @@ extension HTTPFields: Hashable {
         var grouped = [String: Hasher]()
         for field in self._fields {
             let key = field.name.canonicalName
-            var nameHasher = grouped[key] ?? Hasher()
-            nameHasher.combine(field)
-            grouped[key] = nameHasher
+            grouped[key, default: Hasher()].combine(field)
         }
         var combined = 0
-        for (name, nameHasher) in grouped {
-            var entryHasher = Hasher()
-            entryHasher.combine(name)
-            entryHasher.combine(nameHasher.finalize())
-            combined ^= entryHasher.finalize()
+        for nameHasher in grouped.values {
+            // HTTPField already hashes its name, so XOR the per-name sequence hashes directly.
+            combined ^= nameHasher.finalize()
         }
         hasher.combine(combined)
         hasher.combine(self._fields.count)
