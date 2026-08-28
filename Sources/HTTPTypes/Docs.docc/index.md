@@ -10,6 +10,8 @@ A set of version-independent HTTP currency types.
 
 `HTTPFields` represents a list of HTTP header or trailer fields.
 
+`HTTP2ErrorCode` and `HTTP3ErrorCode` represent the version-specific error codes used to terminate HTTP/2 and HTTP/3 streams and connections.
+
 ## Getting Started
 
 #### Create a request
