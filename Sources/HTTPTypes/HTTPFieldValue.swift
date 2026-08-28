@@ -60,6 +60,24 @@ extension HTTPField {
 }
 
 extension HTTPField.Value {
+
+    #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))
+    init(legalize value: String) {
+        if Self.isValid(value) {
+            self._storage = .string(value)
+        } else {
+            #if canImport(Darwin)
+            if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+                self._storage = Self.legalize(from: value.utf8.span)
+                return
+            }
+            self._storage = Self.legalize(from: value.utf8)
+            #else
+            self._storage = Self.legalize(from: value.utf8.span)
+            #endif
+        }
+    }
+    #else
     init(legalize value: String) {
         if Self.isValid(value) {
             self._storage = .string(value)
@@ -67,6 +85,7 @@ extension HTTPField.Value {
             self._storage = Self.legalize(from: value.utf8)
         }
     }
+    #endif
 
     init(legalize bytes: some Collection<UInt8>) {
         if Self.isValid(bytes) {
@@ -86,9 +105,23 @@ extension HTTPField.Value {
 }
 
 extension HTTPField.Value {
+
+    #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))
+    static func isValid(_ string: String) -> Bool {
+        #if canImport(Darwin)
+        if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
+            return isLegal(string.utf8.span)
+        }
+        return isLegal(string.utf8)
+        #else
+        return isLegal(string.utf8.span)
+        #endif
+    }
+    #else
     static func isValid(_ string: String) -> Bool {
         isLegal(string.utf8)
     }
+    #endif
 
     static func isValid(_ bytes: some Collection<UInt8>) -> Bool {
         isLegal(bytes)
@@ -160,6 +193,25 @@ extension HTTPField.Value {
         return true
     }
 
+    fileprivate static func isLegal(_ bytes: Span<UInt8>) -> Bool {
+        for index in bytes.indices {
+            switch bytes[index] {
+            case 0x09, 0x20:
+                if index == 0 || index == bytes.count - 1 {
+                    return false
+                }
+
+                break
+            case 0x21...0x7E, 0x80...0xFF:
+                break
+            default:
+                return false
+            }
+        }
+
+        return true
+    }
+
     fileprivate static func isLenient(_ bytes: some Sequence<UInt8>) -> Bool {
         bytes.allSatisfy { $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }
     }
@@ -171,6 +223,38 @@ extension HTTPField.Value {
             var index = 0
             var lastValidIndex = 0
             for byte in bytes {
+                switch byte {
+                case 0x21...0x7E, 0x80...0xFF:
+                    buffer[index] = byte
+                    lastValidIndex = index
+                    index += 1
+                case 0x09, 0x20:
+                    if index > 0 {
+                        buffer[index] = byte
+                        index += 1
+                    }
+                default:
+                    if index > 0 {
+                        buffer[index] = 0x20
+                        index += 1
+                    }
+                }
+            }
+
+            if index == 0 {
+                return .string("")
+            }
+
+            return .init(from: buffer[...lastValidIndex])
+        }
+    }
+
+    private static func legalize(from bytes: Span<UInt8>) -> Storage {
+        withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
+            var index = 0
+            var lastValidIndex = 0
+            for spanIndex in bytes.indices {
+                let byte = bytes[spanIndex]
                 switch byte {
                 case 0x21...0x7E, 0x80...0xFF:
                     buffer[index] = byte
