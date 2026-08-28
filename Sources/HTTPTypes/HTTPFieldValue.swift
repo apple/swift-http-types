@@ -65,7 +65,7 @@ extension HTTPField.Value: Hashable {
             return lhs == rhs
         default:
             return lhs.withUnsafeBytes { lhsBytes in
-                return rhs.withUnsafeBytes { rhsBytes in
+                rhs.withUnsafeBytes { rhsBytes in
                     lhsBytes.elementsEqual(rhsBytes)
                 }
             }
