@@ -114,10 +114,10 @@ extension HTTPField.Name {
 
     @Test func nonUTF8WithControlBytesLegalized() {
         let bytes: [UInt8] = [
-            0xC0, // not valid UTF8. will be changed with replacement character in string representation
-            0x41, // simple ASCII
-            0xFF, // not valid UTF8. will be changed with replacement character in string representation
-            0x0A, // random control character which should be trimmed
+            0xC0,  // not valid UTF8. will be changed with replacement character in string representation
+            0x41,  // simple ASCII
+            0xFF,  // not valid UTF8. will be changed with replacement character in string representation
+            0x0A,  // random control character which should be trimmed
         ]
         let field = HTTPField(name: .foo, value: bytes)
 
@@ -133,10 +133,10 @@ extension HTTPField.Name {
 
     @Test func nonUTF8WithControlBytesLenient() {
         let bytes: [UInt8] = [
-            0xC0, // not valid UTF8. will be changed with replacement character in string representation
-            0x41, // simple ASCII
-            0xFF, // not valid UTF8. will be changed with replacement character in string representation
-            0x0A, // random control character which should be swapped with a space
+            0xC0,  // not valid UTF8. will be changed with replacement character in string representation
+            0x41,  // simple ASCII
+            0xFF,  // not valid UTF8. will be changed with replacement character in string representation
+            0x0A,  // random control character which should be swapped with a space
         ]
         let field = HTTPField(name: .foo, lenientValue: bytes)
 
