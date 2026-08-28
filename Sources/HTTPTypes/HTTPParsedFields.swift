@@ -130,7 +130,7 @@ struct HTTPParsedFields {
             guard let method = self.method else {
                 throw ParsingError.requestWithoutMethod
             }
-            guard let requestMethod = HTTPRequest.Method(method._storage) else {
+            guard let requestMethod = HTTPRequest.Method(method.string) else {
                 throw ParsingError.invalidMethod
             }
             if self.status != nil {
@@ -155,7 +155,7 @@ struct HTTPParsedFields {
 
     var response: HTTPResponse {
         get throws {
-            guard let statusString = self.status?._storage else {
+            guard let statusString = self.status?.string else {
                 throw ParsingError.responseWithoutStatus
             }
             if self.method != nil || self.scheme != nil || self.authority != nil || self.path != nil

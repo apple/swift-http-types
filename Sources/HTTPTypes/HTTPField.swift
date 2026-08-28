@@ -173,7 +173,7 @@ extension HTTPField: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(self.name, forKey: .name)
-        try container.encode(self.rawValue._storage, forKey: .value)
+        try container.encode(self.rawValue, forKey: .value)
         if self.indexingStrategy != .automatic {
             try container.encode(self.indexingStrategy.rawValue, forKey: .indexingStrategy)
         }
@@ -182,15 +182,8 @@ extension HTTPField: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let name = try container.decode(Name.self, forKey: .name)
-        let value = try container.decode(String.self, forKey: .value)
-        guard value.unicodeScalars.allSatisfy({ $0.value <= UInt8.max }) && Self.isValidValue(value) else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .value,
-                in: container,
-                debugDescription: "HTTP field value \"\(value)\" contains invalid characters"
-            )
-        }
-        self.init(name: name, uncheckedValue: HTTPField.Value(unchecked: value))
+        let value = try container.decode(HTTPField.Value.self, forKey: .value)
+        self.init(name: name, uncheckedValue: value)
         if let indexingStrategyValue = try container.decodeIfPresent(UInt8.self, forKey: .indexingStrategy),
             let indexingStrategy = DynamicTableIndexingStrategy(rawValue: indexingStrategyValue)
         {
@@ -247,6 +240,10 @@ extension HTTPField {
 
     static func isValidToken(_ token: Substring) -> Bool {
         Self.tokenValidity(token).isValid
+    }
+
+    static func isValidToken(_ bytes: some Collection<UInt8>) -> Bool {
+        Self.tokenValidity(bytes).isValid
     }
 
     #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))

@@ -159,7 +159,7 @@ public struct HTTPResponse: Sendable, Hashable {
     /// phrase.
     public var status: Status {
         get {
-            var codeIterator = self.pseudoHeaderFields.status.rawValue._storage.utf8.makeIterator()
+            var codeIterator = self.pseudoHeaderFields.status.value.utf8.makeIterator()
             let code =
                 Int(codeIterator.next()! - 48) * 100 + Int(codeIterator.next()! - 48) * 10
                 + Int(codeIterator.next()! - 48)
@@ -209,7 +209,7 @@ public struct HTTPResponse: Sendable, Hashable {
             }
             set {
                 precondition(newValue.name == .status, "Cannot change pseudo-header field name")
-                precondition(Status.isValidStatus(newValue.rawValue._storage), "Invalid status code")
+                precondition(Status.isValidStatus(newValue.value), "Invalid status code")
 
                 if !isKnownUniquelyReferenced(&self._storage) {
                     self._storage = self._storage.copy()
@@ -303,10 +303,10 @@ extension HTTPResponse.PseudoHeaderFields: Codable {
                 debugDescription: "\":status\" pseudo header field is missing"
             )
         }
-        guard HTTPResponse.Status.isValidStatus(status.rawValue._storage) else {
+        guard HTTPResponse.Status.isValidStatus(status.value) else {
             throw DecodingError.dataCorruptedError(
                 in: container,
-                debugDescription: "\"\(status.rawValue._storage)\" is not a valid status code"
+                debugDescription: "\"\(status.value)\" is not a valid status code"
             )
         }
         self.init(status: status)

@@ -58,7 +58,7 @@ public struct HTTPRequest: Sendable, Hashable {
     /// A convenient way to access the value of the ":method" pseudo header field.
     public var method: Method {
         get {
-            Method(unchecked: self.pseudoHeaderFields.method.rawValue._storage)
+            Method(unchecked: self.pseudoHeaderFields.method.value)
         }
         set {
             self.pseudoHeaderFields.method.rawValue = HTTPField.Value(unchecked: newValue.rawValue)
@@ -205,7 +205,7 @@ public struct HTTPRequest: Sendable, Hashable {
             }
             set {
                 precondition(newValue.name == .method, "Cannot change pseudo-header field name")
-                precondition(HTTPField.isValidToken(newValue.rawValue._storage), "Invalid character in method field")
+                precondition(newValue.rawValue.isValidToken, "Invalid character in method field")
 
                 if !isKnownUniquelyReferenced(&self._storage) {
                     self._storage = self._storage.copy()
@@ -330,7 +330,7 @@ public struct HTTPRequest: Sendable, Hashable {
 @available(HTTPTypes 1.0, *)
 extension HTTPRequest: CustomDebugStringConvertible {
     public var debugDescription: String {
-        "(\(self.pseudoHeaderFields.method.rawValue._storage)) \((self.pseudoHeaderFields.scheme?.value).map { "\($0)://" } ?? "")\(self.pseudoHeaderFields.authority?.value ?? "")\(self.pseudoHeaderFields.path?.value ?? "")"
+        "(\(self.pseudoHeaderFields.method.value)) \((self.pseudoHeaderFields.scheme?.value).map { "\($0)://" } ?? "")\(self.pseudoHeaderFields.authority?.value ?? "")\(self.pseudoHeaderFields.path?.value ?? "")"
     }
 }
 
@@ -420,10 +420,10 @@ extension HTTPRequest.PseudoHeaderFields: Codable {
                 debugDescription: "\":method\" pseudo header field is missing"
             )
         }
-        guard HTTPField.isValidToken(method.rawValue._storage) else {
+        guard method.rawValue.isValidToken else {
             throw DecodingError.dataCorruptedError(
                 in: container,
-                debugDescription: "\"\(method.rawValue._storage)\" is not a valid method"
+                debugDescription: "\"\(method.value)\" is not a valid method"
             )
         }
         self.init(

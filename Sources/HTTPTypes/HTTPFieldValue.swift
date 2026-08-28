@@ -12,80 +12,48 @@
 //
 //===----------------------------------------------------------------------===//
 
-extension String {
-    var isASCII: Bool {
-        self.utf8.allSatisfy { $0 & 0x80 == 0 }
-    }
-}
-
 extension HTTPField {
     struct Value: Sendable, Hashable {
-        let _storage: String
-
-        private static func transcodeSlowPath(from bytes: some Collection<UInt8>) -> String {
-            let scalars = bytes.lazy.map { UnicodeScalar(UInt32($0))! }
-            var string = ""
-            string.unicodeScalars.append(contentsOf: scalars)
-            return string
+        fileprivate enum Storage: Equatable, Hashable {
+            case string(String)
+            case bytes([UInt8])
         }
 
-        private func withISOLatin1BytesSlowPath<Return, Failure: Error>(
-            _ body: (UnsafeBufferPointer<UInt8>) throws(Failure) -> Return
-        ) throws(Failure) -> Return {
-            try withUnsafeTemporaryAllocation(of: UInt8.self, capacity: self._storage.unicodeScalars.count) { buffer in
-                for (index, scalar) in self._storage.unicodeScalars.enumerated() {
-                    assert(scalar.value <= UInt8.max)
-                    buffer[index] = UInt8(truncatingIfNeeded: scalar.value)
-                }
-                return Result { () throws(Failure) in
-                    try body(UnsafeBufferPointer(buffer))
-                }
-            }.get()
-        }
+        private let _storage: Storage
 
-        fileprivate init(_ string: String) {
-            if string.isASCII {
-                self._storage = string
-            } else {
-                self._storage = Self.transcodeSlowPath(from: string.utf8)
-            }
-        }
-
-        fileprivate init(_ bytes: some Collection<UInt8>) {
-            let ascii = bytes.allSatisfy { $0 & 0x80 == 0 }
-            if ascii {
-                self._storage = String(decoding: bytes, as: UTF8.self)
-            } else {
-                self._storage = Self.transcodeSlowPath(from: bytes)
-            }
+        fileprivate init(_ storage: Storage) {
+            self._storage = storage
         }
 
         init(unchecked: String) {
-            self._storage = unchecked
+            self._storage = .string(unchecked)
         }
 
         var string: String {
-            if self._storage.isASCII {
-                return self._storage
-            } else {
-                return self.withISOLatin1BytesSlowPath {
-                    String(decoding: $0, as: UTF8.self)
-                }
+            switch self._storage {
+            case .string(let string):
+                return string
+            case .bytes(let bytes):
+                return String(decoding: bytes, as: UTF8.self)
             }
         }
 
         func withUnsafeBytes<Return, Failure: Error>(
             _ body: (UnsafeBufferPointer<UInt8>) throws(Failure) -> Return
         ) throws(Failure) -> Return {
-            if self._storage.isASCII {
-                var string = self._storage
+            switch self._storage {
+            case .string(var string):
                 return try string.withUTF8 { buffer in
                     Result { () throws(Failure) in
                         try body(buffer)
                     }
                 }.get()
-            } else {
-                return try self.withISOLatin1BytesSlowPath(body)
+            case .bytes(let array):
+                return try array.withUnsafeBufferPointer { buffer throws(Failure) in
+                    try Result { () throws(Failure) in
+                        try body(buffer)
+                    }.get()
+                }
             }
         }
     }
@@ -93,26 +61,72 @@ extension HTTPField {
 
 extension HTTPField.Value {
     init(legalize value: String) {
-        self = .legalizeValue(Self(value))
+        if Self.isValid(value) {
+            self._storage = .string(value)
+        } else {
+            self._storage = Self.legalize(from: value.utf8)
+        }
     }
 
     init(legalize bytes: some Collection<UInt8>) {
-        self = .legalizeValue(Self(bytes))
+        if Self.isValid(bytes) {
+            self._storage = .init(from: bytes)
+        } else {
+            self._storage = Self.legalize(from: bytes)
+        }
     }
 
     init(lenient bytes: some Collection<UInt8>) {
-        self = .lenientLegalizeValue(Self(bytes))
+        if Self.isLenient(bytes) {
+            self._storage = .init(from: bytes)
+        } else {
+            self._storage = Self.cleanUpAsLenient(from: bytes)
+        }
     }
+}
 
+extension HTTPField.Value {
     static func isValid(_ string: String) -> Bool {
-        _isValidValue(string.utf8)
+        isLegal(string.utf8)
     }
 
     static func isValid(_ bytes: some Collection<UInt8>) -> Bool {
-        _isValidValue(bytes)
+        isLegal(bytes)
     }
 
-    private static func _isValidValue(_ bytes: some Sequence<UInt8>) -> Bool {
+    var isValidToken: Bool {
+        switch self._storage {
+        case .string(let string):
+            return HTTPField.isValidToken(string)
+        case .bytes(let bytes):
+            return HTTPField.isValidToken(bytes)
+        }
+    }
+}
+
+extension HTTPField.Value: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(isoLatin1)
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let isoLatin1 = try container.decode(String.self)
+
+        guard isoLatin1.unicodeScalars.allSatisfy({ $0.value <= UInt8.max }) && Self.isValid(isoLatin1) else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "HTTP field value \"\(isoLatin1)\" contains invalid characters"
+            )
+        }
+
+        self.init(fromISOLatin1: isoLatin1)
+    }
+}
+
+extension HTTPField.Value {
+    fileprivate static func isLegal(_ bytes: some Sequence<UInt8>) -> Bool {
         var iterator = bytes.makeIterator()
         guard var byte = iterator.next() else {
             // Empty string is allowed.
@@ -137,18 +151,25 @@ extension HTTPField.Value {
                 break
             }
         }
+
         if byte == 0x09 || byte == 0x20 {
             // Last character cannot be a space or a tab.
             return false
         }
+
         return true
     }
 
-    private static func legalizeValue(_ value: HTTPField.Value) -> HTTPField.Value {
-        if self._isValidValue(value._storage.utf8) {
-            return value
-        } else {
-            let bytes = value._storage.utf8.lazy.map { byte -> UInt8 in
+    fileprivate static func isLenient(_ bytes: some Sequence<UInt8>) -> Bool {
+        bytes.allSatisfy { $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }
+    }
+}
+
+extension HTTPField.Value {
+    private static func legalize(from bytes: some Sequence<UInt8>) -> Storage {
+        let legalizedBytes = bytes
+            .lazy
+            .map { byte -> UInt8 in
                 switch byte {
                 case 0x09, 0x20:
                     return byte
@@ -158,26 +179,89 @@ extension HTTPField.Value {
                     return 0x20
                 }
             }
-            let trimmed = bytes.reversed().drop { $0 == 0x09 || $0 == 0x20 }.reversed().drop {
-                $0 == 0x09 || $0 == 0x20
+            .reversed()
+            .drop { $0 == 0x09 || $0 == 0x20 }
+            .reversed()
+            .drop { $0 == 0x09 || $0 == 0x20 }
+
+        return .init(from: legalizedBytes)
+    }
+
+    private static func cleanUpAsLenient(from bytes: some Sequence<UInt8>) -> Storage {
+        let lenientBytes = bytes.lazy.map { byte -> UInt8 in
+            switch byte {
+            case 0x00, 0x0A, 0x0D:
+                return 0x20
+            default:
+                return byte
             }
-            return HTTPField.Value(unchecked: String(decoding: trimmed, as: UTF8.self))
+        }
+
+        return .init(from: lenientBytes)
+    }
+}
+
+extension HTTPField.Value.Storage {
+    init(from bytes: some Sequence<UInt8>) {
+        #if canImport(Darwin)
+        if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *) {
+            if let string = String(validating: bytes, as: UTF8.self) {
+                self = .string(string)
+                return
+            }
+        }
+        #else
+        if let string = String(validating: bytes, as: UTF8.self) {
+            self = .string(string)
+            return
+        }
+        #endif
+        self = .bytes(Array(bytes))
+    }
+}
+
+extension Sequence where Element == UInt8 {
+    fileprivate var isASCII: Bool {
+        allSatisfy { $0 & 0x80 == 0 }
+    }
+}
+
+extension HTTPField.Value {
+    var isoLatin1: String {
+        switch self._storage {
+        case .string(let string):
+            if string.utf8.isASCII {
+                return string
+            }
+
+            return Self.transcodeToISOLatin1SlowPath(from: string.utf8)
+        case .bytes(let bytes):
+            if bytes.isASCII {
+                return self.string
+            }
+
+            return Self.transcodeToISOLatin1SlowPath(from: bytes)
         }
     }
 
-    private static func lenientLegalizeValue(_ value: HTTPField.Value) -> HTTPField.Value {
-        if value._storage.utf8.allSatisfy({ $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }) {
-            return value
-        } else {
-            let bytes = value._storage.utf8.lazy.map { byte -> UInt8 in
-                switch byte {
-                case 0x00, 0x0A, 0x0D:
-                    return 0x20
-                default:
-                    return byte
-                }
-            }
-            return HTTPField.Value(unchecked: String(decoding: bytes, as: UTF8.self))
+    init(fromISOLatin1 string: String) {
+        if string.utf8.isASCII {
+            self._storage = .string(string)
+            return
         }
+
+        let bytes = string.unicodeScalars.lazy.map { scalar in
+            assert(scalar.value <= UInt8.max)
+            return UInt8(truncatingIfNeeded: scalar.value)
+        }
+
+        self._storage = .init(from: bytes)
+    }
+
+    private static func transcodeToISOLatin1SlowPath(from bytes: some Collection<UInt8>) -> String {
+        let scalars = bytes.lazy.map { UnicodeScalar(UInt32($0))! }
+        var string = ""
+        string.unicodeScalars.append(contentsOf: scalars)
+        return string
     }
 }
