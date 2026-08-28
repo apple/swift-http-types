@@ -160,6 +160,11 @@ extension HTTPField.Value: Codable {
 
 extension HTTPField.Value {
     fileprivate static func isLegal(_ bytes: some Sequence<UInt8>) -> Bool {
+        let optimized = bytes.withContiguousStorageIfAvailable { isLegal($0.span) }
+        if let optimized {
+            return optimized
+        }
+
         var iterator = bytes.makeIterator()
         guard var byte = iterator.next() else {
             // Empty string is allowed.
@@ -213,13 +218,35 @@ extension HTTPField.Value {
     }
 
     fileprivate static func isLenient(_ bytes: some Sequence<UInt8>) -> Bool {
-        bytes.allSatisfy { $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }
+        let optimized = bytes.withContiguousStorageIfAvailable { isLenient($0.span) }
+        if let optimized {
+            return optimized
+        }
+
+        return bytes.allSatisfy { $0 != 0x00 && $0 != 0x0A && $0 != 0x0D }
+    }
+
+    fileprivate static func isLenient(_ bytes: Span<UInt8>) -> Bool {
+        for index in bytes.indices {
+            switch bytes[index] {
+            case 0x00, 0x0A, 0x0D:
+                return false
+            default:
+                continue
+            }
+        }
+        return true
     }
 }
 
 extension HTTPField.Value {
     private static func legalize(from bytes: some Collection<UInt8>) -> Storage {
-        withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
+        let optimized = bytes.withContiguousStorageIfAvailable { legalize(from: $0.span) }
+        if let optimized {
+            return optimized
+        }
+
+        return withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
             var index = 0
             var lastValidIndex = 0
             for byte in bytes {
@@ -281,8 +308,29 @@ extension HTTPField.Value {
         }
     }
 
-    private static func cleanUpAsLenient(from bytes: some Collection<UInt8>) -> Storage {
+    private static func cleanUpAsLenient(from bytes: Span<UInt8>) -> Storage {
         withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
+            for index in bytes.indices {
+                let byte = bytes[index]
+                switch byte {
+                case 0x00, 0x0A, 0x0D:
+                    buffer[index] = 0x20
+                default:
+                    buffer[index] = byte
+                }
+            }
+
+            return .init(from: buffer)
+        }
+    }
+
+    private static func cleanUpAsLenient(from bytes: some Collection<UInt8>) -> Storage {
+        let optimized = bytes.withContiguousStorageIfAvailable { cleanUpAsLenient(from: $0.span) }
+        if let optimized {
+            return optimized
+        }
+
+        return withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
             var index = 0
             for byte in bytes {
                 switch byte {
