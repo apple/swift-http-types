@@ -24,6 +24,7 @@ public struct HTTP2ErrorCode: Sendable, Hashable, RawRepresentable {
     ///
     /// Every 32-bit value is a valid HTTP/2 error code, including values that are not registered.
     /// - Parameter rawValue: The error code value.
+    @inlinable
     public init(rawValue: UInt32) {
         self.rawValue = rawValue
     }
@@ -36,6 +37,7 @@ extension HTTP2ErrorCode {
     /// Graceful shutdown.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var noError: Self { .init(rawValue: 0x00) }
 
     /// PROTOCOL_ERROR (0x01)
@@ -43,6 +45,7 @@ extension HTTP2ErrorCode {
     /// Protocol error detected.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var protocolError: Self { .init(rawValue: 0x01) }
 
     /// INTERNAL_ERROR (0x02)
@@ -50,6 +53,7 @@ extension HTTP2ErrorCode {
     /// Implementation fault.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var internalError: Self { .init(rawValue: 0x02) }
 
     /// FLOW_CONTROL_ERROR (0x03)
@@ -57,6 +61,7 @@ extension HTTP2ErrorCode {
     /// Flow-control limits exceeded.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var flowControlError: Self { .init(rawValue: 0x03) }
 
     /// SETTINGS_TIMEOUT (0x04)
@@ -64,6 +69,7 @@ extension HTTP2ErrorCode {
     /// Settings not acknowledged.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var settingsTimeout: Self { .init(rawValue: 0x04) }
 
     /// STREAM_CLOSED (0x05)
@@ -71,6 +77,7 @@ extension HTTP2ErrorCode {
     /// Frame received for closed stream.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var streamClosed: Self { .init(rawValue: 0x05) }
 
     /// FRAME_SIZE_ERROR (0x06)
@@ -78,6 +85,7 @@ extension HTTP2ErrorCode {
     /// Frame size incorrect.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var frameSizeError: Self { .init(rawValue: 0x06) }
 
     /// REFUSED_STREAM (0x07)
@@ -85,6 +93,7 @@ extension HTTP2ErrorCode {
     /// Stream not processed.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var refusedStream: Self { .init(rawValue: 0x07) }
 
     /// CANCEL (0x08)
@@ -92,6 +101,7 @@ extension HTTP2ErrorCode {
     /// Stream cancelled.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var cancel: Self { .init(rawValue: 0x08) }
 
     /// COMPRESSION_ERROR (0x09)
@@ -99,6 +109,7 @@ extension HTTP2ErrorCode {
     /// Compression state not updated.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var compressionError: Self { .init(rawValue: 0x09) }
 
     /// CONNECT_ERROR (0x0a)
@@ -106,6 +117,7 @@ extension HTTP2ErrorCode {
     /// TCP connection error for CONNECT method.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var connectError: Self { .init(rawValue: 0x0a) }
 
     /// ENHANCE_YOUR_CALM (0x0b)
@@ -113,6 +125,7 @@ extension HTTP2ErrorCode {
     /// Processing capacity exceeded.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var enhanceYourCalm: Self { .init(rawValue: 0x0b) }
 
     /// INADEQUATE_SECURITY (0x0c)
@@ -120,6 +133,7 @@ extension HTTP2ErrorCode {
     /// Negotiated TLS parameters not acceptable.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var inadequateSecurity: Self { .init(rawValue: 0x0c) }
 
     /// HTTP_1_1_REQUIRED (0x0d)
@@ -127,6 +141,7 @@ extension HTTP2ErrorCode {
     /// Use HTTP/1.1 for the request.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9113.html#section-7
+    @inlinable
     public static var http11Required: Self { .init(rawValue: 0x0d) }
 }
 

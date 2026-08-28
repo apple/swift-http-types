@@ -33,12 +33,14 @@ public struct HTTP3ErrorCode: Sendable, Hashable, RawRepresentable {
     /// Values that are not registered are allowed, but the value must be representable as a QUIC
     /// variable-length integer.
     /// - Parameter rawValue: The error code value. It must not be greater than ``maxRawValue``.
+    @inlinable
     public init(rawValue: UInt64) {
         precondition(rawValue <= Self.maxRawValue, "Invalid HTTP/3 error code")
         self.rawValue = rawValue
     }
 
-    fileprivate init(uncheckedRawValue: UInt64) {
+    @inlinable
+    init(uncheckedRawValue: UInt64) {
         self.rawValue = uncheckedRawValue
     }
 }
@@ -50,6 +52,7 @@ extension HTTP3ErrorCode {
     /// No error.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var noError: Self { .init(uncheckedRawValue: 0x0100) }
 
     /// H3_GENERAL_PROTOCOL_ERROR (0x0101)
@@ -57,6 +60,7 @@ extension HTTP3ErrorCode {
     /// General protocol error.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var generalProtocolError: Self { .init(uncheckedRawValue: 0x0101) }
 
     /// H3_INTERNAL_ERROR (0x0102)
@@ -64,6 +68,7 @@ extension HTTP3ErrorCode {
     /// Internal error.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var internalError: Self { .init(uncheckedRawValue: 0x0102) }
 
     /// H3_STREAM_CREATION_ERROR (0x0103)
@@ -71,6 +76,7 @@ extension HTTP3ErrorCode {
     /// Stream creation error.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var streamCreationError: Self { .init(uncheckedRawValue: 0x0103) }
 
     /// H3_CLOSED_CRITICAL_STREAM (0x0104)
@@ -78,6 +84,7 @@ extension HTTP3ErrorCode {
     /// Critical stream was closed.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var closedCriticalStream: Self { .init(uncheckedRawValue: 0x0104) }
 
     /// H3_FRAME_UNEXPECTED (0x0105)
@@ -85,6 +92,7 @@ extension HTTP3ErrorCode {
     /// Frame not permitted in the current state.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var frameUnexpected: Self { .init(uncheckedRawValue: 0x0105) }
 
     /// H3_FRAME_ERROR (0x0106)
@@ -92,6 +100,7 @@ extension HTTP3ErrorCode {
     /// Frame violated layout or size rules.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var frameError: Self { .init(uncheckedRawValue: 0x0106) }
 
     /// H3_EXCESSIVE_LOAD (0x0107)
@@ -99,6 +108,7 @@ extension HTTP3ErrorCode {
     /// Peer generating excessive load.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var excessiveLoad: Self { .init(uncheckedRawValue: 0x0107) }
 
     /// H3_ID_ERROR (0x0108)
@@ -106,6 +116,7 @@ extension HTTP3ErrorCode {
     /// An identifier was used incorrectly.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var idError: Self { .init(uncheckedRawValue: 0x0108) }
 
     /// H3_SETTINGS_ERROR (0x0109)
@@ -113,6 +124,7 @@ extension HTTP3ErrorCode {
     /// SETTINGS frame contained invalid values.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var settingsError: Self { .init(uncheckedRawValue: 0x0109) }
 
     /// H3_MISSING_SETTINGS (0x010a)
@@ -120,6 +132,7 @@ extension HTTP3ErrorCode {
     /// No SETTINGS frame received.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var missingSettings: Self { .init(uncheckedRawValue: 0x010a) }
 
     /// H3_REQUEST_REJECTED (0x010b)
@@ -127,6 +140,7 @@ extension HTTP3ErrorCode {
     /// Request not processed.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var requestRejected: Self { .init(uncheckedRawValue: 0x010b) }
 
     /// H3_REQUEST_CANCELLED (0x010c)
@@ -134,6 +148,7 @@ extension HTTP3ErrorCode {
     /// Data no longer needed.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var requestCancelled: Self { .init(uncheckedRawValue: 0x010c) }
 
     /// H3_REQUEST_INCOMPLETE (0x010d)
@@ -141,6 +156,7 @@ extension HTTP3ErrorCode {
     /// Stream terminated early.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var requestIncomplete: Self { .init(uncheckedRawValue: 0x010d) }
 
     /// H3_MESSAGE_ERROR (0x010e)
@@ -148,6 +164,7 @@ extension HTTP3ErrorCode {
     /// Malformed message.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var messageError: Self { .init(uncheckedRawValue: 0x010e) }
 
     /// H3_CONNECT_ERROR (0x010f)
@@ -155,6 +172,7 @@ extension HTTP3ErrorCode {
     /// TCP reset or error on CONNECT request.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var connectError: Self { .init(uncheckedRawValue: 0x010f) }
 
     /// H3_VERSION_FALLBACK (0x0110)
@@ -162,6 +180,7 @@ extension HTTP3ErrorCode {
     /// Retry over HTTP/1.1.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9114.html#section-8.1
+    @inlinable
     public static var versionFallback: Self { .init(uncheckedRawValue: 0x0110) }
 
     /// QPACK_DECOMPRESSION_FAILED (0x0200)
@@ -169,6 +188,7 @@ extension HTTP3ErrorCode {
     /// Decoding of a field section failed.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9204.html#section-6
+    @inlinable
     public static var qpackDecompressionFailed: Self { .init(uncheckedRawValue: 0x0200) }
 
     /// QPACK_ENCODER_STREAM_ERROR (0x0201)
@@ -176,6 +196,7 @@ extension HTTP3ErrorCode {
     /// Error on the encoder stream.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9204.html#section-6
+    @inlinable
     public static var qpackEncoderStreamError: Self { .init(uncheckedRawValue: 0x0201) }
 
     /// QPACK_DECODER_STREAM_ERROR (0x0202)
@@ -183,6 +204,7 @@ extension HTTP3ErrorCode {
     /// Error on the decoder stream.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9204.html#section-6
+    @inlinable
     public static var qpackDecoderStreamError: Self { .init(uncheckedRawValue: 0x0202) }
 }
 
