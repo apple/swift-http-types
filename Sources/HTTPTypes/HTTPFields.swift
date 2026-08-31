@@ -23,21 +23,24 @@
 @available(HTTPTypes 1.0, *)
 public struct HTTPFields: Sendable {
     /// The fields, in the order they were added.
-    private var fields: [HTTPField] = []
+    @usableFromInline
+    var _fields: [HTTPField] = []
 
     /// Create an empty list of HTTP fields
     public init() {}
 
     /// The position of the first field at or after `start` whose canonical name is `name`, or
     /// `nil` if there is none.
-    private func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
-        self.fields[start...].firstIndex(where: { $0.name.canonicalName == name })
+    @inlinable
+    func firstIndex(ofCanonicalName name: String, from start: [HTTPField].Index = 0) -> Int? {
+        self._fields[start...].firstIndex(where: { $0.name.canonicalName == name })
     }
 
-    private mutating func append(field: HTTPField) {
+    @inlinable
+    mutating func append(field: HTTPField) {
         precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
-        self.fields.append(field)
-        precondition(self.fields.count < UInt16.max, "Too many fields")
+        self._fields.append(field)
+        precondition(self._fields.count < UInt16.max, "Too many fields")
     }
 
     /// Access the field value string by name.
@@ -56,6 +59,7 @@ public struct HTTPFields: Sendable {
     ///
     /// When setting a "Cookie" header field value, it is split into multiple "Cookie" fields by
     /// semicolon.
+    @inlinable
     public subscript(name: HTTPField.Name) -> String? {
         get {
             let fields = self.fields(for: name)
@@ -99,6 +103,7 @@ public struct HTTPFields: Sendable {
     }
 
     /// Access the fields by name as an array. The order of fields is preserved.
+    @inlinable
     public subscript(fields name: HTTPField.Name) -> [HTTPField] {
         get {
             Array(self.fields(for: name))
@@ -108,23 +113,38 @@ public struct HTTPFields: Sendable {
         }
     }
 
-    private struct HTTPFieldSequence: Sequence {
+    @usableFromInline
+    struct HTTPFieldSequence: Sequence {
+        @usableFromInline
         let fields: HTTPFields
+        @usableFromInline
         let name: HTTPField.Name
 
+        @inlinable
+        init(fields: HTTPFields, name: HTTPField.Name) {
+            self.fields = fields
+            self.name = name
+        }
+
+        @usableFromInline
         struct Iterator: IteratorProtocol {
+            @usableFromInline
             let fields: HTTPFields
+            @usableFromInline
             let name: HTTPField.Name
             /// The position to resume scanning at. Keeping it in the iterator makes reading all
             /// the fields with one name a single pass over `fields`.
+            @usableFromInline
             var index: Int
 
+            @inlinable
             init(fields: HTTPFields, name: HTTPField.Name) {
                 self.fields = fields
                 self.name = name
                 self.index = fields.startIndex
             }
 
+            @inlinable
             mutating func next() -> HTTPField? {
                 if let index = self.fields.firstIndex(ofCanonicalName: self.name.canonicalName, from: self.index) {
                     defer { self.index = self.fields.index(after: index) }
@@ -134,16 +154,19 @@ public struct HTTPFields: Sendable {
             }
         }
 
+        @inlinable
         func makeIterator() -> Iterator {
             Iterator(fields: self.fields, name: self.name)
         }
     }
 
-    private func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
+    @inlinable
+    func fields(for name: HTTPField.Name) -> HTTPFieldSequence {
         HTTPFieldSequence(fields: self, name: name)
     }
 
-    private mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
+    @inlinable
+    mutating func setFields(_ fieldSequence: some Sequence<HTTPField>, for name: HTTPField.Name) {
         let canonicalName = name.canonicalName
         var existingIndex = self.firstIndex(ofCanonicalName: canonicalName)
         var newFieldIterator = fieldSequence.makeIterator()
@@ -152,14 +175,14 @@ public struct HTTPFields: Sendable {
         // place while new fields last, and the leftovers are collected for removal.
         while let index = existingIndex {
             if let field = newFieldIterator.next() {
-                self.fields[index] = field
+                self._fields[index] = field
             } else {
                 toDelete.append(index)
             }
             existingIndex = self.firstIndex(ofCanonicalName: canonicalName, from: index + 1)
         }
         if !toDelete.isEmpty {
-            self.fields.remove(at: toDelete)
+            self._fields.remove(at: toDelete)
         }
         while let field = newFieldIterator.next() {
             self.append(field: field)
@@ -190,7 +213,7 @@ extension HTTPFields: Equatable {
         //  2. An approach in which we build a dictionary from one field list and then remove items
         //     from it based on the other one. This scales linear but has significant build costs,
         //     since it needs to hash every field name twice.
-        if lhs.fields.count != rhs.fields.count {
+        if lhs._fields.count != rhs._fields.count {
             return false
         }
 
@@ -200,13 +223,13 @@ extension HTTPFields: Equatable {
         // the same order. After each iteration both arrays have the same length.
         var pendingLeft = [Int]()
         var pendingRight = [Int]()
-        for index in lhs.fields.indices {
+        for index in lhs._fields.indices {
             // A direct element comparison can only be done if there are no elements in the pending
             // arrays. This is to ensure correct ordering. Unpaired elements must be considered
             // before the current element.
             if pendingLeft.isEmpty {
-                if lhs.fields[index].name == rhs.fields[index].name {
-                    if lhs.fields[index].value == rhs.fields[index].value {
+                if lhs._fields[index].name == rhs._fields[index].name {
+                    if lhs._fields[index].value == rhs._fields[index].value {
                         continue
                     } else {
                         // Same name, different value, and no earlier candidate for either of them.
@@ -214,25 +237,25 @@ extension HTTPFields: Equatable {
                     }
                 } else {
                     // Disorder starts here
-                    let remaining = lhs.fields.count - index
+                    let remaining = lhs._fields.count - index
                     pendingLeft.reserveCapacity(remaining)
                     pendingRight.reserveCapacity(remaining)
                 }
             }
 
-            let leftName = lhs.fields[index].name
-            if let match = pendingRight.firstIndex(where: { rhs.fields[$0].name == leftName }) {
+            let leftName = lhs._fields[index].name
+            if let match = pendingRight.firstIndex(where: { rhs._fields[$0].name == leftName }) {
                 // The n-th field of a name pairs only with the other side's n-th field.
-                if rhs.fields[pendingRight[match]] != lhs.fields[index] {
+                if rhs._fields[pendingRight[match]] != lhs._fields[index] {
                     return false
                 }
                 pendingRight.remove(at: match)
             } else {
                 pendingLeft.append(index)
             }
-            let rightName = rhs.fields[index].name
-            if let match = pendingLeft.firstIndex(where: { lhs.fields[$0].name == rightName }) {
-                if lhs.fields[pendingLeft[match]] != rhs.fields[index] {
+            let rightName = rhs._fields[index].name
+            if let match = pendingLeft.firstIndex(where: { lhs._fields[$0].name == rightName }) {
+                if lhs._fields[pendingLeft[match]] != rhs._fields[index] {
                     return false
                 }
                 pendingLeft.remove(at: match)
@@ -241,7 +264,7 @@ extension HTTPFields: Equatable {
             }
 
             if pendingLeft.count >= Self.maxPendingFieldsBeforeIndexing,
-                lhs.fields.count - index >= Self.minFieldsToIndexByName
+                lhs._fields.count - index >= Self.minFieldsToIndexByName
             {
                 return Self.isEqualByNameIndex(lhs, rhs)
             }
@@ -264,7 +287,7 @@ extension HTTPFields: Equatable {
     /// index while walking `lhs`.
     @_spi(HTTPTypesBenchmarking)
     public static func isEqualByNameIndex(_ lhs: HTTPFields, _ rhs: HTTPFields) -> Bool {
-        if lhs.fields.count != rhs.fields.count {
+        if lhs._fields.count != rhs._fields.count {
             return false
         }
         // The fields of `rhs`, grouped by name. Fields sharing a name have to appear in the same
@@ -272,11 +295,11 @@ extension HTTPFields: Equatable {
         // another way to create a FIFO structure: By adding the fields to the dictionary in reverse
         // order, we'll add later values first to the values array. This allows us, when iterating
         // the lhs fields, to remove values from the end of the values array.
-        var remaining = [String: [HTTPField]](minimumCapacity: lhs.fields.count)
-        for field in rhs.fields.reversed() {
+        var remaining = [String: [HTTPField]](minimumCapacity: lhs._fields.count)
+        for field in rhs._fields.reversed() {
             remaining[field.name.canonicalName, default: []].append(field)
         }
-        for field in lhs.fields {
+        for field in lhs._fields {
             guard let group = remaining.index(forKey: field.name.canonicalName),
                 let candidate = remaining.values[group].last
             else {
@@ -293,7 +316,7 @@ extension HTTPFields: Equatable {
 
 extension HTTPFields: Hashable {
     public func hash(into hasher: inout Hasher) {
-        for field in self.fields {
+        for field in self._fields {
             hasher.combine(field)
         }
     }
@@ -317,15 +340,15 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
     public typealias Index = Int
 
     public var startIndex: Int {
-        self.fields.startIndex
+        self._fields.startIndex
     }
 
     public var endIndex: Int {
-        self.fields.endIndex
+        self._fields.endIndex
     }
 
     public var isEmpty: Bool {
-        self.fields.isEmpty
+        self._fields.isEmpty
     }
 
     public subscript(position: Int) -> HTTPField {
@@ -333,19 +356,19 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
             guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("getter position: \(position) out of range in HTTPFields")
             }
-            return self.fields[position]
+            return self._fields[position]
         }
         set {
             guard position >= self.startIndex, position < self.endIndex else {
                 preconditionFailure("setter position: \(position) out of range in HTTPFields")
             }
-            if self.fields[position] == newValue {
+            if self._fields[position] == newValue {
                 return
             }
-            if newValue.name != self.fields[position].name {
+            if newValue.name != self._fields[position].name {
                 precondition(!newValue.name.isPseudo, "Pseudo header field \"\(newValue.name)\" disallowed")
             }
-            self.fields[position] = newValue
+            self._fields[position] = newValue
         }
     }
 
@@ -357,7 +380,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
                 self.append(field: field)
             }
         } else {
-            self.fields.replaceSubrange(
+            self._fields.replaceSubrange(
                 subrange,
                 with: newElements.lazy.map { field in
                     precondition(!field.name.isPseudo, "Pseudo header field \"\(field.name)\" disallowed")
@@ -369,7 +392,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
     }
 
     public mutating func reserveCapacity(_ capacity: Int) {
-        self.fields.reserveCapacity(capacity)
+        self._fields.reserveCapacity(capacity)
     }
 }
 
@@ -378,7 +401,7 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
 @available(HTTPTypes 1.0, *)
 extension HTTPFields: CustomDebugStringConvertible {
     public var debugDescription: String {
-        self.fields.description
+        self._fields.description
     }
 }
 
@@ -411,6 +434,7 @@ extension HTTPFields: Codable {
 
 extension Array {
     // `removalIndices` must be ordered.
+    @inlinable
     mutating func remove(at removalIndices: some Sequence<Index>) {
         var offset = 0
         var iterator = removalIndices.makeIterator()

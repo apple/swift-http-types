@@ -78,6 +78,7 @@ extension HTTPField {
             self.canonicalName = canonicalName
         }
 
+        @inlinable
         var isPseudo: Bool {
             self.rawName.utf8.first == UInt8(ascii: ":")
         }
