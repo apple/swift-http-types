@@ -13,18 +13,23 @@
 //===----------------------------------------------------------------------===//
 
 extension HTTPField {
+    @usableFromInline
     struct Value: Sendable {
-        fileprivate enum Storage: Equatable {
+        @usableFromInline
+        enum Storage: Equatable, Sendable {
             case string(String)
             case bytes([UInt8])
         }
 
-        private let _storage: Storage
+        @usableFromInline
+        let _storage: Storage
 
+        @inlinable
         init(unchecked: String) {
             self._storage = .string(unchecked)
         }
 
+        @inlinable
         var string: String {
             switch self._storage {
             case .string(let string):
@@ -34,6 +39,7 @@ extension HTTPField {
             }
         }
 
+        @inlinable
         func withUnsafeBytes<Return, Failure: Error>(
             _ body: (UnsafeBufferPointer<UInt8>) throws(Failure) -> Return
         ) throws(Failure) -> Return {
@@ -57,6 +63,7 @@ extension HTTPField {
 
 extension HTTPField.Value: Hashable {
 
+    @inlinable
     static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs._storage, rhs._storage) {
         case (.string(let lhs), .string(let rhs)):
@@ -72,6 +79,7 @@ extension HTTPField.Value: Hashable {
         }
     }
 
+    @inlinable
     func hash(into hasher: inout Hasher) {
         self.withUnsafeBytes { buffer in
             for byte in buffer {
@@ -84,6 +92,7 @@ extension HTTPField.Value: Hashable {
 
 extension HTTPField.Value {
 
+    @inlinable
     init(legalize value: String) {
         if Self.isValid(value) {
             self._storage = .string(value)
@@ -104,6 +113,7 @@ extension HTTPField.Value {
         }
     }
 
+    @inlinable
     init(legalize bytes: some Collection<UInt8>) {
         if Self.isValid(bytes) {
             self._storage = .init(from: bytes)
@@ -112,6 +122,7 @@ extension HTTPField.Value {
         }
     }
 
+    @inlinable
     init(lenient bytes: some Collection<UInt8>) {
         if Self.isLenient(bytes) {
             self._storage = .init(from: bytes)
@@ -124,6 +135,7 @@ extension HTTPField.Value {
 extension HTTPField.Value {
 
     #if compiler(>=6.2) && !(os(watchOS) && _pointerBitWidth(_32))
+    @inlinable
     static func isValid(_ string: String) -> Bool {
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
@@ -140,8 +152,9 @@ extension HTTPField.Value {
     }
     #endif
 
+    @inlinable
     static func isValid(_ bytes: some Collection<UInt8>) -> Bool {
-        isLegal(bytes)
+        Self.isLegal(bytes)
     }
 
     var isValidToken: Bool {
@@ -180,7 +193,8 @@ extension HTTPField.Value: Codable {
 #endif
 
 extension HTTPField.Value {
-    fileprivate static func isLegal(_ bytes: some Sequence<UInt8>) -> Bool {
+    @inlinable
+    static func isLegal(_ bytes: some Sequence<UInt8>) -> Bool {
         #if compiler(>=6.2)
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
@@ -232,7 +246,8 @@ extension HTTPField.Value {
 
     #if compiler(>=6.2)
     @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
-    fileprivate static func isLegal(_ bytes: borrowing Span<UInt8>) -> Bool {
+    @inlinable
+    static func isLegal(_ bytes: borrowing Span<UInt8>) -> Bool {
         for index in bytes.indices {
             switch bytes[index] {
             case 0x09, 0x20:
@@ -252,11 +267,12 @@ extension HTTPField.Value {
     }
     #endif
 
-    fileprivate static func isLenient(_ bytes: some Sequence<UInt8>) -> Bool {
+    @inlinable
+    static func isLenient(_ bytes: some Sequence<UInt8>) -> Bool {
         #if compiler(>=6.2)
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
-            let optimized = bytes.withContiguousStorageIfAvailable { isLenient($0.span) }
+            let optimized = bytes.withContiguousStorageIfAvailable { Self.isLenient($0.span) }
             if let optimized {
                 return optimized
             }
@@ -274,7 +290,8 @@ extension HTTPField.Value {
 
     #if compiler(>=6.2)
     @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
-    fileprivate static func isLenient(_ bytes: Span<UInt8>) -> Bool {
+    @inlinable
+    static func isLenient(_ bytes: Span<UInt8>) -> Bool {
         for index in bytes.indices {
             switch bytes[index] {
             case 0x00, 0x0A, 0x0D:
@@ -289,7 +306,8 @@ extension HTTPField.Value {
 }
 
 extension HTTPField.Value {
-    private static func legalize(from bytes: some Collection<UInt8>) -> Storage {
+    @inlinable
+    static func legalize(from bytes: some Collection<UInt8>) -> Storage {
         #if compiler(>=6.2)
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
@@ -338,7 +356,8 @@ extension HTTPField.Value {
 
     #if compiler(>=6.2)
     @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
-    private static func legalize(from bytes: Span<UInt8>) -> Storage {
+    @inlinable
+    static func legalize(from bytes: Span<UInt8>) -> Storage {
         withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
             var index = 0
             var lastValidIndex = 0
@@ -371,11 +390,12 @@ extension HTTPField.Value {
     }
     #endif
 
-    private static func cleanUpAsLenient(from bytes: some Collection<UInt8>) -> Storage {
+    @inlinable
+    static func cleanUpAsLenient(from bytes: some Collection<UInt8>) -> Storage {
         #if compiler(>=6.2)
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
-            let optimized = bytes.withContiguousStorageIfAvailable { cleanUpAsLenient(from: $0.span) }
+            let optimized = bytes.withContiguousStorageIfAvailable { Self.cleanUpAsLenient(from: $0.span) }
             if let optimized {
                 return optimized
             }
@@ -406,7 +426,8 @@ extension HTTPField.Value {
 
     #if compiler(>=6.2)
     @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
-    private static func cleanUpAsLenient(from bytes: Span<UInt8>) -> Storage {
+    @inlinable
+    static func cleanUpAsLenient(from bytes: Span<UInt8>) -> Storage {
         withUnsafeTemporaryAllocation(of: UInt8.self, capacity: bytes.count) { buffer in
             for index in bytes.indices {
                 let byte = bytes[index]
@@ -425,6 +446,7 @@ extension HTTPField.Value {
 }
 
 extension HTTPField.Value.Storage {
+    @inlinable
     init(from bytes: some Sequence<UInt8>) {
         #if canImport(Darwin)
         if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *) {

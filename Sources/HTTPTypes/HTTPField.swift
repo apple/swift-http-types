@@ -55,6 +55,7 @@ public struct HTTPField: Sendable, Hashable {
     ///   - name: The HTTP field name.
     ///   - value: The HTTP field value is initialized from the UTF-8 encoded bytes of the string.
     ///            Invalid bytes are converted into space characters.
+    @inlinable
     public init(name: Name, value: String) {
         self.name = name
         self.rawValue = HTTPField.Value(legalize: value)
@@ -64,6 +65,7 @@ public struct HTTPField: Sendable, Hashable {
     /// - Parameters:
     ///   - name: The HTTP field name.
     ///   - value: The HTTP field value. Invalid bytes are converted into space characters.
+    @inlinable
     public init(name: Name, value: some Collection<UInt8>) {
         self.name = name
         self.rawValue = HTTPField.Value(legalize: value)
@@ -75,6 +77,7 @@ public struct HTTPField: Sendable, Hashable {
     ///   - lenientValue: The HTTP field value. Newlines and NULs are converted into space
     ///                   characters.
     @available(HTTPTypes 1.1, *)
+    @inlinable
     public init(name: Name, lenientValue: some Collection<UInt8>) {
         self.name = name
         self.rawValue = HTTPField.Value(lenient: lenientValue)
@@ -96,6 +99,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// If the field is not UTF-8 encoded, `withUnsafeBytesOfValue` can be used to access the
     /// underlying bytes of the field value.
+    @inlinable
     public var value: String {
         get {
             self.rawValue.string
@@ -114,6 +118,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter body: The closure to be invoked with the buffer.
     /// - Returns: Result of the `body` closure.
+    @inlinable
     public func withUnsafeBytesOfValue<Result, Failure: Error>(
         _ body: (UnsafeBufferPointer<UInt8>) throws(Failure) -> Result
     ) throws(Failure) -> Result {
@@ -123,6 +128,7 @@ public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
     public var indexingStrategy: DynamicTableIndexingStrategy = .automatic
 
+    @usableFromInline
     var rawValue: HTTPField.Value
 
     /// Whether the string is valid for an HTTP field value based on RFC 9110.
