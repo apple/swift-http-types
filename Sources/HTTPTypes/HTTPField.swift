@@ -21,28 +21,36 @@ public struct HTTPField: Sendable, Hashable {
     /// The strategy for whether the field is indexed in the HPACK or QPACK dynamic table.
     public struct DynamicTableIndexingStrategy: Sendable, Hashable {
         /// Default strategy.
+        @inlinable
         public static var automatic: Self { .init(uncheckedValue: 0) }
 
         /// Always put this field in the dynamic table if possible.
+        @inlinable
         public static var prefer: Self { .init(uncheckedValue: 1) }
 
         /// Don't put this field in the dynamic table.
+        @inlinable
         public static var avoid: Self { .init(uncheckedValue: 2) }
 
         /// Don't put this field in the dynamic table, and set a flag to disallow intermediaries to
         /// index this field.
+        @inlinable
         public static var disallow: Self { .init(uncheckedValue: 3) }
 
-        fileprivate let rawValue: UInt8
+        @usableFromInline
+        let rawValue: UInt8
 
-        private static let maxRawValue: UInt8 = 3
+        @inlinable
+        static var maxRawValue: UInt8 { 3 }
 
-        private init(uncheckedValue: UInt8) {
+        @inlinable
+        init(uncheckedValue: UInt8) {
             assert(uncheckedValue <= Self.maxRawValue)
             self.rawValue = uncheckedValue
         }
 
-        fileprivate init?(rawValue: UInt8) {
+        @inlinable
+        init?(rawValue: UInt8) {
             if rawValue > Self.maxRawValue {
                 return nil
             }
@@ -137,6 +145,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter value: The string to validate.
     /// - Returns: Whether the string is valid.
+    @inlinable
     public static func isValidValue(_ value: String) -> Bool {
         Self.Value.isValid(value)
     }
@@ -147,6 +156,7 @@ public struct HTTPField: Sendable, Hashable {
     ///
     /// - Parameter value: The byte collection to validate.
     /// - Returns: Whether the byte collection is valid.
+    @inlinable
     public static func isValidValue(_ value: some Collection<UInt8>) -> Bool {
         Self.Value.isValid(value)
     }
@@ -202,11 +212,13 @@ extension HTTPField: Codable {
 
 @available(HTTPTypes 1.0, *)
 extension HTTPField {
-    private enum TokenValidity {
+    @usableFromInline
+    enum TokenValidity {
         case invalid
         case valid
         case canonical
 
+        @inlinable
         var isValid: Bool {
             switch self {
             case .valid, .canonical:
@@ -217,18 +229,22 @@ extension HTTPField {
         }
     }
 
-    private static var digits: ClosedRange<UInt8> {
+    @inlinable
+    static var digits: ClosedRange<UInt8> {
         UInt8(ascii: "0")...UInt8(ascii: "9")
     }
 
-    private static var lowerCaseLetters: ClosedRange<UInt8> {
+    @inlinable
+    static var lowerCaseLetters: ClosedRange<UInt8> {
         UInt8(ascii: "a")...UInt8(ascii: "z")
     }
 
-    private static var upperCaseLetters: ClosedRange<UInt8> {
+    @inlinable
+    static var upperCaseLetters: ClosedRange<UInt8> {
         UInt8(ascii: "A")...UInt8(ascii: "Z")
     }
 
+    @inlinable
     static func validatedCanonicalName(_ name: String) -> String? {
         switch Self.tokenValidity(name) {
         case .canonical:
@@ -240,20 +256,24 @@ extension HTTPField {
         }
     }
 
+    @inlinable
     static func isValidToken(_ token: String) -> Bool {
         Self.tokenValidity(token).isValid
     }
 
+    @inlinable
     static func isValidToken(_ token: Substring) -> Bool {
         Self.tokenValidity(token).isValid
     }
 
+    @inlinable
     static func isValidToken(_ bytes: some Collection<UInt8>) -> Bool {
         Self.tokenValidity(bytes).isValid
     }
 
     #if compiler(>=6.3) && !(os(watchOS) && _pointerBitWidth(_32))
-    private static func tokenValidity(_ token: String) -> TokenValidity {
+    @inlinable
+    static func tokenValidity(_ token: String) -> TokenValidity {
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
             return Self.tokenValidity(token.utf8.span)
@@ -264,7 +284,8 @@ extension HTTPField {
         #endif
     }
 
-    private static func tokenValidity(_ token: Substring) -> TokenValidity {
+    @inlinable
+    static func tokenValidity(_ token: Substring) -> TokenValidity {
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
             return Self.tokenValidity(token.utf8.span)
@@ -276,7 +297,8 @@ extension HTTPField {
     }
 
     @available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *)
-    private static func tokenValidity(_ buffer: borrowing Span<UInt8>) -> TokenValidity {
+    @inlinable
+    static func tokenValidity(_ buffer: borrowing Span<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
         if buffer.isEmpty {
             return .invalid
@@ -300,12 +322,14 @@ extension HTTPField {
         return validity
     }
     #else
-    private static func tokenValidity(_ token: some StringProtocol) -> TokenValidity {
+    @inlinable
+    static func tokenValidity(_ token: some StringProtocol) -> TokenValidity {
         Self.tokenValidity(token.utf8)
     }
     #endif
 
-    private static func tokenValidity(_ bytes: some Collection<UInt8>) -> TokenValidity {
+    @inlinable
+    static func tokenValidity(_ bytes: some Collection<UInt8>) -> TokenValidity {
         // Checks validity of token based on [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
         if bytes.isEmpty {
             return .invalid

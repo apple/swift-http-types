@@ -27,6 +27,7 @@ public struct HTTPFields: Sendable {
     var _fields: [HTTPField] = []
 
     /// Create an empty list of HTTP fields
+    @inlinable
     public init() {}
 
     /// The position of the first field at or after `start` whose canonical name is `name`, or
@@ -93,6 +94,7 @@ public struct HTTPFields: Sendable {
     }
 
     /// Access the field values by name as an array of strings. The order of fields is preserved.
+    @inlinable
     public subscript(values name: HTTPField.Name) -> [String] {
         get {
             self.fields(for: name).map { $0.value }
@@ -192,6 +194,7 @@ public struct HTTPFields: Sendable {
     /// Whether one or more field with this name exists in the fields.
     /// - Parameter name: The field name.
     /// - Returns: Whether a field exists.
+    @inlinable
     public func contains(_ name: HTTPField.Name) -> Bool {
         self.firstIndex(ofCanonicalName: name.canonicalName) != nil
     }

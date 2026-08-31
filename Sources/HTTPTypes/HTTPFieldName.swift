@@ -41,6 +41,7 @@ extension HTTPField {
         ///
         /// - Parameter name: The name of the HTTP field. It can be accessed from the `rawName`
         ///                   property.
+        @inlinable
         public init?(_ name: String) {
             guard let canonicalName = HTTPField.validatedCanonicalName(name) else {
                 return nil

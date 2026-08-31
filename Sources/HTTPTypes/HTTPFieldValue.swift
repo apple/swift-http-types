@@ -157,6 +157,7 @@ extension HTTPField.Value {
         Self.isLegal(bytes)
     }
 
+    @inlinable
     var isValidToken: Bool {
         switch self._storage {
         case .string(let string):
@@ -466,12 +467,14 @@ extension HTTPField.Value.Storage {
 }
 
 extension Sequence where Element == UInt8 {
-    fileprivate var isASCII: Bool {
+    @inlinable
+    var isASCII: Bool {
         allSatisfy { $0 & 0x80 == 0 }
     }
 }
 
 extension HTTPField.Value {
+    @inlinable
     var isoLatin1: String {
         switch self._storage {
         case .string(let string):
@@ -503,7 +506,8 @@ extension HTTPField.Value {
         self._storage = .init(from: bytes)
     }
 
-    private static func transcodeToISOLatin1SlowPath(from bytes: some Collection<UInt8>) -> String {
+    @inlinable
+    static func transcodeToISOLatin1SlowPath(from bytes: some Collection<UInt8>) -> String {
         let scalars = bytes.lazy.map { UnicodeScalar(UInt32($0))! }
         var string = ""
         string.unicodeScalars.append(contentsOf: scalars)
