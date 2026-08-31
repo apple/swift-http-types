@@ -300,6 +300,8 @@ extension HTTPField.Name {
         let response: HTTPResponse = .init(status: .ok)
         let status: HTTPResponse.Status = response.status
         let responsePseudoHeaderFields: HTTPResponse.PseudoHeaderFields = response.pseudoHeaderFields
+        let http2ErrorCode: HTTP2ErrorCode = .cancel
+        let http3ErrorCode: HTTP3ErrorCode = .requestCancelled
 
         #expect(isSendable(field))
         #expect(isSendable(indexingStrategy))
@@ -311,6 +313,8 @@ extension HTTPField.Name {
         #expect(isSendable(response))
         #expect(isSendable(status))
         #expect(isSendable(responsePseudoHeaderFields))
+        #expect(isSendable(http2ErrorCode))
+        #expect(isSendable(http3ErrorCode))
     }
 
     @Test func requestCoding() throws {
@@ -417,5 +421,24 @@ extension HTTPField.Name {
         #expect(MemoryLayout<HTTPRequest>.size == MemoryLayout<AnyObject>.size * 2)
         #expect(MemoryLayout<HTTPResponse>.size == MemoryLayout<AnyObject>.size * 2)
         #expect(MemoryLayout<HTTPFields>.size == MemoryLayout<AnyObject>.size)
+        #expect(MemoryLayout<HTTP2ErrorCode>.size == 4)
+        #expect(MemoryLayout<HTTP3ErrorCode>.size == 8)
+    }
+
+    @Test func errorCodes() {
+        #expect(HTTP2ErrorCode.cancel.description == "CANCEL (0x8)")
+        #expect("\(HTTP2ErrorCode.enhanceYourCalm)" == "ENHANCE_YOUR_CALM (0xb)")
+        #expect(HTTP3ErrorCode.requestCancelled.description == "H3_REQUEST_CANCELLED (0x10c)")
+        #expect(HTTP3ErrorCode.qpackDecompressionFailed.description == "QPACK_DECOMPRESSION_FAILED (0x200)")
+
+        // Codes that are not registered render as a bare hexadecimal value.
+        #expect(HTTP2ErrorCode(rawValue: 0x0e).description == "0xe")
+        #expect(HTTP2ErrorCode(rawValue: .max).description == "0xffffffff")
+        #expect(HTTP3ErrorCode(rawValue: 0x0111).description == "0x111")
+
+        // An HTTP/3 code is a QUIC variable-length integer, so it tops out below UInt64.max.
+        let maxRawValue: UInt64 = (1 << 62) - 1
+        #expect(HTTP3ErrorCode(rawValue: maxRawValue).rawValue == maxRawValue)
+        #expect(HTTP3ErrorCode(rawValue: maxRawValue).description == "0x3fffffffffffffff")
     }
 }

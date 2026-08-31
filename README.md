@@ -12,7 +12,7 @@ dependencies: [
 ]
 ```
 
-The `HTTPTypes` library exposes the core HTTP currency types, including `HTTPRequest`, `HTTPResponse`, and `HTTPFields`.
+The `HTTPTypes` library exposes the core HTTP currency types, including `HTTPRequest`, `HTTPResponse`, and `HTTPFields`, as well as the HTTP/2 and HTTP/3 error code types `HTTP2ErrorCode` and `HTTP3ErrorCode`.
 
 The `HTTPTypesFoundation` library provides conveniences for using new HTTP types with Foundation, including bidirectional convertors between the new types and Foundation URL types, and URLSession convenience methods with the new types.
 
