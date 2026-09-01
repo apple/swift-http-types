@@ -139,14 +139,15 @@ extension HTTPField.Value {
     static func isValid(_ string: String) -> Bool {
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
-            return isLegal(string.utf8.span)
+            return Self.isLegal(string.utf8.span)
         }
-        return isLegal(string.utf8)
+        return Self.isLegal(string.utf8)
         #else
-        return isLegal(string.utf8.span)
+        return Self.isLegal(string.utf8.span)
         #endif
     }
     #else
+    @inlinable
     static func isValid(_ string: String) -> Bool {
         isLegal(string.utf8)
     }
