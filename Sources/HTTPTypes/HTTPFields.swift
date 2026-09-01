@@ -342,18 +342,22 @@ extension HTTPFields: RangeReplaceableCollection, RandomAccessCollection, Mutabl
     public typealias Element = HTTPField
     public typealias Index = Int
 
+    @inlinable
     public var startIndex: Int {
         self._fields.startIndex
     }
 
+    @inlinable
     public var endIndex: Int {
         self._fields.endIndex
     }
 
+    @inlinable
     public var isEmpty: Bool {
         self._fields.isEmpty
     }
 
+    @inlinable
     public subscript(position: Int) -> HTTPField {
         get {
             guard position >= self.startIndex, position < self.endIndex else {
