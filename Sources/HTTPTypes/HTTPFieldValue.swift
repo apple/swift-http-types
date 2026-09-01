@@ -149,7 +149,7 @@ extension HTTPField.Value {
     #else
     @inlinable
     static func isValid(_ string: String) -> Bool {
-        isLegal(string.utf8)
+        Self.isLegal(string.utf8)
     }
     #endif
 
@@ -200,13 +200,13 @@ extension HTTPField.Value {
         #if compiler(>=6.2)
         #if canImport(Darwin)
         if #available(macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0, *) {
-            let optimized = bytes.withContiguousStorageIfAvailable { isLegal($0.span) }
+            let optimized = bytes.withContiguousStorageIfAvailable { Self.isLegal($0.span) }
             if let optimized {
                 return optimized
             }
         }
         #else
-        let optimized = bytes.withContiguousStorageIfAvailable { isLegal($0.span) }
+        let optimized = bytes.withContiguousStorageIfAvailable { Self.isLegal($0.span) }
         if let optimized {
             return optimized
         }
