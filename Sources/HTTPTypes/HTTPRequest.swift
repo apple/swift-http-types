@@ -33,6 +33,7 @@ public struct HTTPRequest: Sendable, Hashable {
         /// https://www.rfc-editor.org/rfc/rfc9110.html#name-methods
         ///
         /// - Parameter method: The method string. It can be accessed from the `rawValue` property.
+        @inlinable
         public init?(_ method: String) {
             guard HTTPField.isValidToken(method) else {
                 return nil
@@ -40,14 +41,17 @@ public struct HTTPRequest: Sendable, Hashable {
             self.rawValue = method
         }
 
+        @inlinable
         public init?(rawValue: String) {
             self.init(rawValue)
         }
 
-        fileprivate init(unchecked: String) {
+        @inlinable
+        init(unchecked: String) {
             self.rawValue = unchecked
         }
 
+        @inlinable
         public var description: String {
             self.rawValue
         }
@@ -463,51 +467,61 @@ extension HTTPRequest.Method {
     /// GET
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var get: Self { .init(unchecked: "GET") }
 
     /// HEAD
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var head: Self { .init(unchecked: "HEAD") }
 
     /// POST
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var post: Self { .init(unchecked: "POST") }
 
     /// PUT
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var put: Self { .init(unchecked: "PUT") }
 
     /// DELETE
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var delete: Self { .init(unchecked: "DELETE") }
 
     /// CONNECT
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var connect: Self { .init(unchecked: "CONNECT") }
     /// OPTIONS
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var options: Self { .init(unchecked: "OPTIONS") }
 
     /// TRACE
     ///
     /// https://www.rfc-editor.org/rfc/rfc9110.html
+    @inlinable
     public static var trace: Self { .init(unchecked: "TRACE") }
 
     /// PATCH
     ///
     /// https://www.rfc-editor.org/rfc/rfc5789.html
+    @inlinable
     public static var patch: Self { .init(unchecked: "PATCH") }
 
     /// QUERY
     ///
     /// https://www.rfc-editor.org/rfc/rfc10008.html
     @available(HTTPTypes 1.7, *)
+    @inlinable
     public static var query: Self { .init(unchecked: "QUERY") }
 
     /// CONNECT-UDP
