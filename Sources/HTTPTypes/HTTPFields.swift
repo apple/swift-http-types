@@ -323,6 +323,7 @@ extension HTTPFields: Hashable {
         // must too. Combine each name's sequence (order of same-named fields
         // still matters), then mix those group hashes commutatively.
         var grouped = [String: Hasher]()
+        grouped.reserveCapacity(self._fields.count)
         for field in self._fields {
             let key = field.name.canonicalName
             grouped[key, default: Hasher()].combine(field)
