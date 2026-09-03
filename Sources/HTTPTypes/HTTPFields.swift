@@ -286,6 +286,46 @@ extension HTTPFields: Equatable {
     /// compare in lock-step.
     private static var minFieldsToIndexByName: Int { 64 }
 
+    private enum FieldEqualityGroup {
+        case empty
+        case single(HTTPField)
+        case multiple([HTTPField])
+
+        mutating func append(_ newElement: HTTPField) {
+            switch self {
+            case .empty:
+                self = .single(newElement)
+            case .single(let element):
+                self = .multiple([element, newElement])
+            case .multiple(var elements):
+                elements.append(newElement)
+                self = .multiple(elements)
+            }
+        }
+
+        mutating func popLast() -> HTTPField? {
+            switch self {
+            case .empty:
+                return nil
+            case .single(let field):
+                self = .empty
+                return field
+            case .multiple(var fields):
+                let field = fields.removeLast()
+                guard let first = fields.first else {
+                    self = .empty
+                    return field
+                }
+                if fields.count < 2 {
+                    self = .single(first)
+                } else {
+                    self = .multiple(fields)
+                }
+                return field
+            }
+        }
+    }
+
     /// Answers the same question as `==` in linear time, by indexing `rhs` by name and draining that
     /// index while walking `lhs`.
     @_spi(HTTPTypesBenchmarking)
@@ -298,20 +338,19 @@ extension HTTPFields: Equatable {
         // another way to create a FIFO structure: By adding the fields to the dictionary in reverse
         // order, we'll add later values first to the values array. This allows us, when iterating
         // the lhs fields, to remove values from the end of the values array.
-        var remaining = [String: [HTTPField]](minimumCapacity: lhs._fields.count)
+        var remaining = [String: FieldEqualityGroup](minimumCapacity: lhs._fields.count)
         for field in rhs._fields.reversed() {
-            remaining[field.name.canonicalName, default: []].append(field)
+            remaining[field.name.canonicalName, default: .empty].append(field)
         }
         for field in lhs._fields {
             guard let group = remaining.index(forKey: field.name.canonicalName),
-                let candidate = remaining.values[group].last
+                let candidate = remaining.values[group].popLast()
             else {
                 return false
             }
             if candidate != field {
                 return false
             }
-            remaining.values[group].removeLast()
         }
         return true
     }
