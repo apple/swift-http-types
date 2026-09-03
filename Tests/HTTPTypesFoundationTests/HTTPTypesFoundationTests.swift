@@ -43,6 +43,17 @@ import FoundationNetworking
         #expect(urlRequest.value(forHTTPHeaderField: "cookie") == "a=b; c=d")
     }
 
+    @Test func schemelessRequestFromFoundationIsNil() throws {
+        for string in ["/relative/path", "relative", "foo/bar", "//example.com/path", "?query=1", "#frag"] {
+            let url = try #require(URL(string: string))
+            #expect(url.scheme == nil)
+            #expect(URLRequest(url: url).httpRequest == nil, "\(string) should not convert")
+        }
+
+        let resolved = try #require(URL(string: "/foo", relativeTo: URL(string: "https://example.com")))
+        #expect(URLRequest(url: resolved).httpRequest?.path == "/foo")
+    }
+
     @Test func requestFromFoundation() throws {
         var urlRequest = URLRequest(url: URL(string: "https://www.example.com/")!)
         urlRequest.httpMethod = "POST"

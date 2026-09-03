@@ -18,6 +18,12 @@ public import FoundationNetworking
 public import Foundation
 #endif
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+import Foundation
+#endif
+
 #if !os(WASI)
 
 @available(HTTPTypes 1.0, *)
@@ -67,7 +73,8 @@ extension URLRequest {
     /// Convert the `URLRequest` into an `HTTPRequest`.
     public var httpRequest: HTTPRequest? {
         guard let method = HTTPRequest.Method(self.httpMethod ?? "GET"),
-            let url
+            let url,
+            url.scheme != nil
         else {
             return nil
         }
