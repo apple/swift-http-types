@@ -60,6 +60,7 @@ extension HTTPField {
         /// - Parameter name: The name of the HTTP field or the HTTP pseudo header field. It must
         ///                   be lowercased.
         @available(HTTPTypes 1.2, *)
+        @inlinable
         public init?(parsed name: String) {
             let token: Substring
             if name.utf8.first == UInt8(ascii: ":") {
