@@ -23,7 +23,8 @@ public struct HTTP3ErrorCode: Sendable, Hashable, RawRepresentable {
     /// larger values.
     ///
     /// https://www.rfc-editor.org/rfc/rfc9000.html#section-16
-    private static let maxRawValue: UInt64 = 0x3fff_ffff_ffff_ffff
+    @usableFromInline
+    static var maxRawValue: UInt64 { 0x3fff_ffff_ffff_ffff }
 
     /// The error code value, which is never greater than 2^62 - 1.
     public let rawValue: UInt64
@@ -35,6 +36,7 @@ public struct HTTP3ErrorCode: Sendable, Hashable, RawRepresentable {
     ///
     /// https://www.rfc-editor.org/rfc/rfc9000.html#section-16
     /// - Parameter rawValue: The error code value. It must not be greater than 2^62 - 1.
+    @inlinable
     public init(rawValue: UInt64) {
         precondition(rawValue <= Self.maxRawValue, "Invalid HTTP/3 error code")
         self.rawValue = rawValue
@@ -207,6 +209,14 @@ extension HTTP3ErrorCode {
     /// https://www.rfc-editor.org/rfc/rfc9204.html#section-6
     @inlinable
     public static var qpackDecoderStreamError: Self { .init(uncheckedRawValue: 0x0202) }
+
+    /// H3_DATAGRAM_ERROR (0x33)
+    ///
+    /// Datagram or Capsule protocol parse error.
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc9297.html#section-5.2
+    @inlinable
+    public static var datagramError: Self { .init(uncheckedRawValue: 0x33) }
 }
 
 @available(HTTPTypes 1.7, *)
