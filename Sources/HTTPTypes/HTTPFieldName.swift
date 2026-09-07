@@ -54,6 +54,15 @@ extension HTTPField {
         /// Create an HTTP field name from a string produced by HPACK or QPACK decoders used in
         /// modern HTTP versions.
         ///
+        /// Returns nil if the name contains invalid characters defined in RFC 9110, or if it is not
+        /// already lowercased. Names arriving over HTTP/2 or HTTP/3 must be lowercased on the wire,
+        /// and a message carrying an uppercase field name has to be treated as malformed, so this
+        /// initializer rejects rather than canonicalises such a name. Use `init?(_:)` for names from
+        /// sources which are allowed to use mixed case.
+        ///
+        /// https://www.rfc-editor.org/rfc/rfc9113.html#name-field-validity
+        /// https://www.rfc-editor.org/rfc/rfc9114.html#name-field-formatting-and-compre
+        ///
         /// - Warning: Do not use directly with the `HTTPFields` struct which does not allow pseudo
         ///            header fields.
         ///
@@ -68,11 +77,16 @@ extension HTTPField {
             } else {
                 token = Substring(name)
             }
-            guard HTTPField.isValidToken(token) else {
+
+            switch HTTPField.tokenValidity(token) {
+            case .canonical:
+                self.rawName = name
+                self.canonicalName = name
+
+            case .invalid, .valid:
+                // valid also allows uppercased characters
                 return nil
             }
-            self.rawName = name
-            self.canonicalName = name
         }
 
         @inlinable
