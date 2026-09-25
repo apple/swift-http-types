@@ -106,4 +106,4 @@ final class ExampleChannelHandler: ChannelDuplexHandler {
 
 For the most part, HTTP Types development is as straightforward as any other SwiftPM project. With that said, we do have a few processes that are worth understanding before you contribute. For details, please see `CONTRIBUTING.md` in this repository.
 
-Please note that all work on HTTP Types is covered by the [Swift HTTP Types Code of Conduct](https://github.com/apple/swift-http-types/blob/main/CODE_OF_CONDUCT.md).
+Please note that all work on HTTP Types is covered by our [Code of Conduct](https://github.com/apple/.github/blob/main/CODE_OF_CONDUCT.md).
