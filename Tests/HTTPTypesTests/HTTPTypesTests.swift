@@ -282,6 +282,37 @@ extension HTTPField.Name {
         #expect(fields1.hashValue == fields2.hashValue)
     }
 
+    @Test func equalityComparesWholeFields() {
+        func indexed(_ strategy: HTTPField.DynamicTableIndexingStrategy) -> HTTPField {
+            var field = HTTPField(name: .accept, value: "1")
+            field.indexingStrategy = strategy
+            return field
+        }
+        let pairs: [(HTTPField, HTTPField)] = [
+            (indexed(.automatic), indexed(.disallow)),
+            (HTTPField(name: .accept, value: [0xFE] as [UInt8]), HTTPField(name: .accept, value: [0xFF] as [UInt8])),
+        ]
+        for (left, right) in pairs {
+            #expect(left != right)
+
+            var fields1 = HTTPFields()
+            fields1.append(left)
+            var fields2 = HTTPFields()
+            fields2.append(right)
+            #expect(fields1 != fields2)
+
+            var interleaved1 = HTTPFields()
+            interleaved1.append(contentsOf: [left, HTTPField(name: .acceptEncoding, value: "x")])
+            var interleaved2 = HTTPFields()
+            interleaved2.append(contentsOf: [HTTPField(name: .acceptEncoding, value: "x"), right])
+            #expect(interleaved1 != interleaved2)
+
+            var set: Set<HTTPFields> = [fields1]
+            set.insert(fields2)
+            #expect(set.count == 2)
+        }
+    }
+
     @Test func sendable() {
         func isSendable(_ value: some Sendable) -> Bool { true }
         func isSendable(_ value: Any) -> Bool { false }
