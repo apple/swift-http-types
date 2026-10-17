@@ -219,6 +219,9 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
+    // Raw-bytes paths of `HTTPField.Value`. See `HTTPFieldValueBenchmarks.swift`.
+    registerHTTPFieldValueBenchmarks()
+
     // MARK: URL conversion
 
     Benchmark("HTTPRequest(method,url)-requestFromURL", configuration: makeDefaultConfiguration()) { benchmark in

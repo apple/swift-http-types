@@ -65,7 +65,7 @@ public struct HTTPRequest: Sendable, Hashable {
             Method(unchecked: self.pseudoHeaderFields.method.value)
         }
         set {
-            self.pseudoHeaderFields.method.rawValue = HTTPField.Value(unchecked: newValue.rawValue)
+            self.pseudoHeaderFields.method.rawValue = HTTPField.Value(uncheckedASCII: newValue.rawValue)
         }
     }
 
@@ -317,7 +317,7 @@ public struct HTTPRequest: Sendable, Hashable {
     ///   - path: The value of the ":path" pseudo header field.
     ///   - headerFields: The request header fields.
     public init(method: Method, scheme: String?, authority: String?, path: String?, headerFields: HTTPFields = [:]) {
-        let methodField = HTTPField(name: .method, uncheckedValue: HTTPField.Value(unchecked: method.rawValue))
+        let methodField = HTTPField(name: .method, uncheckedValue: HTTPField.Value(uncheckedASCII: method.rawValue))
         let schemeField = scheme.map { HTTPField(name: .scheme, value: $0) }
         let authorityField = authority.map { HTTPField(name: .authority, value: $0) }
         let pathField = path.map { HTTPField(name: .path, value: $0) }
