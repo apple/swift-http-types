@@ -231,13 +231,11 @@ extension HTTPFields: Equatable {
             // arrays. This is to ensure correct ordering. Unpaired elements must be considered
             // before the current element.
             if pendingLeft.isEmpty {
-                if lhs._fields[index].name == rhs._fields[index].name {
-                    if lhs._fields[index].value == rhs._fields[index].value {
-                        continue
-                    } else {
-                        // Same name, different value, and no earlier candidate for either of them.
-                        return false
-                    }
+                if lhs._fields[index] == rhs._fields[index] {
+                    continue
+                } else if lhs._fields[index].name == rhs._fields[index].name {
+                    // Same name, different field, and no earlier candidate for either of them.
+                    return false
                 } else {
                     // Disorder starts here
                     let remaining = lhs._fields.count - index
