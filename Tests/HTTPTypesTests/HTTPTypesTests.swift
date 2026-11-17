@@ -164,6 +164,28 @@ extension HTTPField.Name {
         #expect(makeFields([(a, "1"), (a, "1"), (b, "2")]) != makeFields([(a, "1"), (b, "2"), (b, "2")]))
     }
 
+    /// Fields in the same order are compared as whole fields, like reordered ones, so the result
+    /// does not depend on the order and agrees with hashing.
+    @Test func equalityComparesWholeFields() {
+        let a = HTTPField.Name("a")!
+        let b = HTTPField.Name("b")!
+        var avoided = HTTPField(name: a, value: "1")
+        avoided.indexingStrategy = .avoid
+        let automatic = HTTPField(name: a, value: "1")
+
+        #expect(HTTPFields([avoided]) != HTTPFields([automatic]))
+        #expect(
+            HTTPFields([HTTPField(name: b, value: "2"), avoided])
+                != HTTPFields([automatic, HTTPField(name: b, value: "2")])
+        )
+
+        // Different bytes that both decode to U+FFFD in `value`.
+        let ff = HTTPField(name: a, value: [0xFF])
+        let fe = HTTPField(name: a, value: [0xFE])
+        #expect(ff.value == fe.value)
+        #expect(HTTPFields([ff]) != HTTPFields([fe]))
+    }
+
     /// A reordering where the fields `==` has set aside on one side outnumber the other side's part
     /// way through the walk.
     @Test func equalityWhenOneSideBrieflyHoldsMoreSetAsideFields() {
