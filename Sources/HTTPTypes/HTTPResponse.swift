@@ -121,8 +121,10 @@ public struct HTTPResponse: Sendable, Hashable {
         }
 
         static func isValidReasonPhrase(_ reasonPhrase: String) -> Bool {
-            reasonPhrase.utf8.allSatisfy {
-                switch $0 {
+            // Check the Unicode scalars rather than the UTF-8 bytes, since every byte of a non-ASCII
+            // scalar is in 0x80...0xFF, including those not representable in ISO Latin 1.
+            reasonPhrase.unicodeScalars.allSatisfy {
+                switch $0.value {
                 case 0x09, 0x20:
                     return true
                 case 0x21...0x7E, 0x80...0xFF:

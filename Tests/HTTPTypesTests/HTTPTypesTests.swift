@@ -377,6 +377,28 @@ extension HTTPField.Name {
         #expect(response == decoded)
     }
 
+    @Test func reasonPhraseOutsideISOLatin1() throws {
+        // Characters representable in ISO Latin 1 are kept.
+        #expect(HTTPResponse.Status(code: 200, reasonPhrase: "OK é").reasonPhrase == "OK é")
+
+        // Characters not representable in ISO Latin 1 are converted into spaces, whether or not
+        // the reason phrase also contains other invalid characters.
+        #expect(HTTPResponse.Status(code: 200, reasonPhrase: "OK €").reasonPhrase == "OK  ")
+        #expect(HTTPResponse.Status(code: 200, reasonPhrase: "OK €\n").reasonPhrase == "OK   ")
+
+        func json(_ reasonPhrase: String) -> Data {
+            Data(
+                #"{"pseudoHeaderFields":[{"name":":status","value":"200"}],"reasonPhrase":"\#(reasonPhrase)","headerFields":[]}"#
+                    .utf8
+            )
+        }
+        let decoded = try JSONDecoder().decode(HTTPResponse.self, from: json("OK é"))
+        #expect(decoded.status.reasonPhrase == "OK é")
+        #expect(throws: (any Error).self) {
+            try JSONDecoder().decode(HTTPResponse.self, from: json("OK €"))
+        }
+    }
+
     @Test func requestParsing() throws {
         let fields = [
             HTTPField(name: HTTPField.Name(parsed: ":method")!, lenientValue: "PUT".utf8),
