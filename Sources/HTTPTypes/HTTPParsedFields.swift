@@ -190,7 +190,7 @@ extension HTTPRequest {
         path: HTTPField.Value?,
         headerFields: HTTPFields
     ) {
-        let methodField = HTTPField(name: .method, uncheckedValue: HTTPField.Value(unchecked: method.rawValue))
+        let methodField = HTTPField(name: .method, uncheckedValue: HTTPField.Value(uncheckedASCII: method.rawValue))
         let schemeField = scheme.map { HTTPField(name: .scheme, uncheckedValue: $0) }
         let authorityField = authority.map { HTTPField(name: .authority, uncheckedValue: $0) }
         let pathField = path.map { HTTPField(name: .path, uncheckedValue: $0) }

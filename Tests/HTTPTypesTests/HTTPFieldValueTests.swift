@@ -186,4 +186,38 @@ extension HTTPField.Name {
 
         #expect(lhs != rhs)
     }
+
+    @Test func equalityOfNonASCIIStringAndBytes() {
+        let lhs = HTTPField(name: .foo, value: "café")
+        let rhs = HTTPField(name: .foo, value: Array("café".utf8))
+
+        #expect(lhs == rhs)
+        #expect(lhs.hashValue == rhs.hashValue)
+        #expect(rhs.value == "café")
+    }
+
+    @Test func equalityOfASCIIStringAndBytes() {
+        let lhs = HTTPField(name: .foo, value: "bar")
+        let rhs = HTTPField(name: .foo, value: Array("bar".utf8))
+
+        #expect(lhs == rhs)
+        #expect(lhs.hashValue == rhs.hashValue)
+    }
+
+    @Test func codingISOLatin1RoundTrip() throws {
+        let field = HTTPField(name: .foo, value: [0x63, 0x61, 0x66, 0xE9])
+        let encoded = try JSONEncoder().encode(field)
+        let decoded = try JSONDecoder().decode(HTTPField.self, from: encoded)
+
+        #expect(decoded == field)
+    }
+
+    @Test(arguments: ["a\r\nb", "a\u{0}b", " a", "a\t", "\u{0101}"])
+    func decodingRejectsInvalidValue(_ value: String) throws {
+        let json = try JSONEncoder().encode(["name": "foo", "value": value])
+
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(HTTPField.self, from: json)
+        }
+    }
 }
